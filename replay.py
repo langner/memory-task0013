@@ -37,6 +37,9 @@ if __name__ == "__main__":
     csa = "%s/%s.csa" %(sim.outpath,sim.outname)
 
     archive = UtilitiesManager.CreateArchiveReader()
+    if "xvfb" in sys.argv or "offscreen" in sys.argv:
+        graphics.SetOffScreenRenderingOn()
+
     archive.SetSystem(sim.box, cga, csa)
     archive.AddGraphics(graphics)
 

@@ -9,6 +9,9 @@ SYNC_OPTIONS = --verbose --progress --stats --human-readable --archive --compres
 SYNC_EXCLUDES = --exclude *.ctf --exclude *.cga --exclude *.csa
 SYNC_DATA = /home/kml/data/
 
+XVFBOPTS = "-screen 0 1280x1024x24"
+PYCULGI = "xvfb-run -s $(XVFBOPTS) python-culgi"
+
 .PHONY: default all
 default: energy gallery
 
@@ -26,7 +29,7 @@ extract-cga: $(subst .out,.cga.npy.bz2,$(SIMULATIONS_OUT))
 
 %.energy.npy.bz2: %_Inst.ctf
 	rm -rvf  $@
-	-python-culgi extract.py $< && bzip2 $(subst .bz2,,$@)
+	-"$(PYCULGI)" extract.py $< && bzip2 $(subst .bz2,,$@)
 
 %.csa.npy.bz2: %.csa
 	rm -rvf $@
@@ -51,7 +54,7 @@ copy:
 avi: $(subst .out,.avi,$(SIMULATIONS_OUT))
 
 %.avi: %.csa %.cga
-	-python-culgi replay.py $@ save && mencoder "mf://*.jpg" -mf fps=10 -o $@ -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=1600 && cp `ls *.jpg | tail -1` $(subst .avi,.jpg,$@)
+	-"$(PYCULGI)" replay.py $@ save xvfb && mencoder "mf://*.jpg" -mf fps=10 -o $@ -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=1600 && cp `ls *.jpg | tail -1` $(subst .avi,.jpg,$@)
 	rm -rvf *.jpg
 
 .PHONY: gallery
