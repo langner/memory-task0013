@@ -44,7 +44,9 @@ def printinfo(sim):
     text = "View <a href='%s/%s.out'>simulation output</a>" %(sim.outpath,sim.outname)
     text += ", <a href='%s/%s.avi'>animation (AVI)</a><br/>" %(sim.outpath,sim.outname)
     text += "<img height='250pt' src='%s/%s.jpg' />" %(sim.outpath,sim.outname)
-    text += "<img height='250pt' src='%s/%s.energy.png' />" %(sim.outpath,sim.outname)
+    text += "<img height='250pt' src='%s/%s.energy-total.png' />" %(sim.outpath,sim.outname)
+    text += "<img height='250pt' src='%s/%s.energy-field.png' />" %(sim.outpath,sim.outname)
+    text += "<img height='250pt' src='%s/%s.energy-coupling.png' />" %(sim.outpath,sim.outname)
     text += "<br/><br/>"
     return text
 
@@ -63,6 +65,18 @@ labels = {  "beadvolume"	: "Bead volume",
 }
 Ncontrol = len(control)
 
+selected = [
+    "64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop200/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob0.10_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb32.0_mob1.00_a25.0.out",
+]
+selected_simulations = [loadpath(out) for out in selected]
+
 print """<head>
 <script type="text/javascript" src="simpletree/simpletreemenu.js">
 /***********************************************
@@ -76,7 +90,18 @@ print """<head>
 
 print "<body>"
 
-print """<h4>Gallery of task0013 simulations</h4>
+print """<h3>Gallery of task0013a simulations</h3>"""
+
+print """
+<h4>Selected simulations</h4>
+<a href="javascript:ddtreemenu.flatten('simutree_selected', 'expand')">Expand All</a> | <a href="javascript:ddtreemenu.flatten('simutree_selected', 'contact')">Collapse All</a>
+<ul id="simutree_selected" class="treeview">"""
+
+print printtree(controltree(selected_simulations, control))
+
+print """</ul>
+
+<h4>All simulations</h4>
 <a href="javascript:ddtreemenu.flatten('simutree', 'expand')">Expand All</a> | <a href="javascript:ddtreemenu.flatten('simutree', 'contact')">Collapse All</a>
 <ul id="simutree" class="treeview">"""
 
@@ -86,6 +111,7 @@ print "</ul>"
 
 print """<script type="text/javascript">
 //ddtreemenu.createTree(treeid, enablepersist, opt_persist_in_days (default is 1))
+ddtreemenu.createTree("simutree_selected", true)
 ddtreemenu.createTree("simutree", true)
 </script>"""
 

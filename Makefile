@@ -3,6 +3,7 @@ MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
 SIMULATIONS_OUT = $(foreach m,$(MODELS),$(wildcard $(m)/*.out))
 SIMULATIONS_CTF = $(foreach m,$(MODELS),$(wildcard $(m)/*.ctf))
 SIMULATIONS_ENERGIES = $(foreach m,$(MODELS),$(wildcard $(m)/*.energy.npy.bz2))
+SIMULATIONS_JPG = $(foreach m,$(MODELS),$(wildcard $(m)/*.jpg))
 
 SYNC_REMOTE = ~/mnt/poly/scratch/
 SYNC_OPTIONS = --verbose --progress --stats --human-readable --archive --compress --update
@@ -59,5 +60,5 @@ avi: $(subst .out,.avi,$(SIMULATIONS_OUT))
 
 .PHONY: gallery
 gallery: gallery.html
-gallery.html: gallery.py $(SIMULATIONS_OUT)
+gallery.html: gallery.py $(SIMULATIONS_OUT) $(SIMULATIONS_JPG)
 	python-culgi gallery.py > gallery.html
