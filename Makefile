@@ -16,33 +16,33 @@ PYCULGI = "xvfb-run -s $(XVFBOPTS) python-culgi"
 .PHONY: default all
 default: energy gallery
 
-.PHONY: energy
-energy: $(subst .npy.bz2,.png,$(SIMULATIONS_ENERGIES))
+.PHONY: energy energy-total energy-field energy-coupling
+energy: energy-total energy-field energy-coupling
+energy-total: $(subst .npy.bz2,-total.png,$(SIMULATIONS_ENERGIES))
+energy-field: $(subst .npy.bz2,-field.png,$(SIMULATIONS_ENERGIES))
+energy-coupling: $(subst .npy.bz2,-coupling.png,$(SIMULATIONS_ENERGIES))
 
-%.energy.png: %.energy.npy.bz2 plot-energy.py
-	python plot-energy.py $< save
+%.energy-total.png: %.energy.npy.bz2
+	python plot-energy.py $< total save
 
-.PHONY: extract extract-energy extract-csa extract-cga
-extract: extract-energy # extract-csa extract-cga
+%.energy-field.png: %.energy.npy.bz2
+	python plot-energy.py $< field save
+
+%.energy-coupling.png: %.energy.npy.bz2
+	python plot-energy.py $< coupling save
+
+.PHONY: extract extract-energy extract-histograms
+extract: extract-energy extract-histograms
 extract-energy: $(subst .out,.energy.npy.bz2,$(SIMULATIONS_OUT))
-extract-csa: $(subst .out,.csa.npy.bz2,$(SIMULATIONS_OUT))
-extract-cga: $(subst .out,.cga.npy.bz2,$(SIMULATIONS_OUT))
+extract-histograms: $(subst .out,.histograms.npy.bz2,$(SIMULATIONS_OUT))
 
 %.energy.npy.bz2: %_Inst.ctf
 	rm -rvf  $@
 	-"$(PYCULGI)" extract.py $< && bzip2 $(subst .bz2,,$@)
 
-%.csa.npy.bz2: %.csa
+%.histograms.npy.bz2: %.csa %.cga
 	rm -rvf $@
-	-python-culgi extract.py archives $< && bzip2 $(subst .bz2,,$@)
-
-%.cga.npy.bz2: %.cga
-	rm -rvf $@
-	-python-culgi extract.py archives $< && bzip2 $(subst .bz2,,$@)
-
-#%.histograms.npy.bz2: %.csa %.cga
-#	rm -rvf  $@
-#	-python-culgi extract.py $(subst .csa,.out,$<) archive && bzip2 $(subst .bz2,,$@)
+	-"$(PYCULGI)" extract.py $(subst .csa,.out,$<) histograms && bzip2 $(subst .bz2,,$@)
 
 .PHONY: copy
 copy:
@@ -60,5 +60,5 @@ avi: $(subst .out,.avi,$(SIMULATIONS_OUT))
 
 .PHONY: gallery
 gallery: gallery.html
-gallery.html: gallery.py $(SIMULATIONS_OUT) $(SIMULATIONS_JPG)
+gallery.html: gallery.py $(SIMULATIONS_OUT) $(SIMULATIONS_JPG) */*/*.png
 	python-culgi gallery.py > gallery.html
