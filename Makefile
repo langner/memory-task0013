@@ -7,7 +7,7 @@ SIMULATIONS_JPG = $(foreach m,$(MODELS),$(wildcard $(m)/*.jpg))
 
 SYNC_REMOTE = ~/mnt/poly/scratch/
 SYNC_OPTIONS = --verbose --progress --stats --human-readable --archive --compress --update
-SYNC_EXCLUDES = --exclude *.ctf --exclude *.cga --exclude *.csa
+SYNC_EXCLUDES = --exclude *.ctf --exclude *.cga --exclude *.csa --exclude *.data-raw.npz
 SYNC_DATA = /home/kml/data/
 
 XVFBOPTS = "-screen 0 1280x1024x24"
@@ -30,6 +30,16 @@ energy-coupling: $(subst .npy.bz2,-coupling.png,$(SIMULATIONS_ENERGIES))
 
 %.energy-coupling.png: %.energy.npy.bz2
 	python plot-energy.py $< coupling save
+
+.PHONY: convert
+convert: $(subst .out,.data-raw.npz,$(SIMULATIONS_OUT))
+%.data-raw.npz: %.csa %.cga %_Inst.ctf
+	-"$(PYCULGI)" convert.py $(subst .csa,.out,$<)
+
+.PHONY: analyze
+analyze:  $(subst .out,.data-analyzed.npz,$(SIMULATIONS_OUT))
+%.data-analyzed.npz: %.data-raw.npz
+	python-culgi analyze.py $<
 
 .PHONY: extract extract-energy extract-histograms
 extract: extract-energy extract-histograms
