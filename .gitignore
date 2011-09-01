@@ -1,1 +1,7 @@
 gallery.html
+*.pyc
+*.npy
+*.npy.bz2
+*.jpg
+*.png
+*.avi
