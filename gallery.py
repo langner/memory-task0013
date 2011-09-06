@@ -45,8 +45,8 @@ def printinfo(sim):
     text += ", <a href='%s/%s.avi'>animation (AVI)</a><br/>" %(sim.outpath,sim.outname)
     text += "<img height='250pt' src='%s/%s.jpg' />" %(sim.outpath,sim.outname)
     text += "<img height='250pt' src='%s/%s.energy-total.png' />" %(sim.outpath,sim.outname)
-    text += "<img height='250pt' src='%s/%s.energy-field.png' />" %(sim.outpath,sim.outname)
-    text += "<img height='250pt' src='%s/%s.energy-coupling.png' />" %(sim.outpath,sim.outname)
+    #text += "<img height='250pt' src='%s/%s.energy-field.png' />" %(sim.outpath,sim.outname)
+    #text += "<img height='250pt' src='%s/%s.energy-coupling.png' />" %(sim.outpath,sim.outname)
     text += "<br/><br/>"
     return text
 
@@ -56,23 +56,45 @@ outs = glob.glob(outpattern)
 simulations = [loadpath(out) for out in outs]
 Nsimulations = len(simulations)
 
-control = [ "beadvolume", "temperature", "mobility", "dcoupling" ]
-labels = {  "beadvolume"	: "Bead volume",
-            "temperature"	: "Temperature",
-            "mobility"        	: "NP mobility",
-            "dcoupling"		: "Selectivity",
-            "kappa"		: "Compressibility",
+control = [ "beadvolume", "temperature", "mobility", "dexcluded", "dcoupling" ]
+labels = {  "beadvolume"    : "Bead volume",
+            "temperature"   : "Temperature",
+            "mobility"      : "NP mobility",
+            "dexcluded"     : "Demixing (c<sub>A</sub>-&kappa;)",
+            "dcoupling"     : "Selectivity (c<sub>B</sub>-c<sub>A</sub>)"
 }
 Ncontrol = len(control)
 
 selected = [
-    "64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
+    # temperature 0.05
     "64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop200/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
+    # temperature 0.10
+    # mobility 0.10
+    # selectivity 2.0
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob0.10_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop200/k15.0_nchi24.0_ca16.0_cb18.0_mob0.10_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob0.10_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca16.0_cb18.0_mob0.10_a25.0.out",
+    # selectivity 8.0
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb24.0_mob0.10_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop200/k15.0_nchi24.0_ca16.0_cb24.0_mob0.10_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb24.0_mob0.10_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca16.0_cb24.0_mob0.10_a25.0.out",
+    # selectivity 16.0
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb32.0_mob0.10_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop200/k15.0_nchi24.0_ca16.0_cb32.0_mob0.10_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb32.0_mob0.10_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca16.0_cb32.0_mob0.10_a25.0.out",
+    # mobility 1.00
+    # selectivity 2.0
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
+    # selectivity 8.0
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop200/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0.out",
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0.out",
+    # selectivity 16.0
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb32.0_mob1.00_a25.0.out",
 ]
 selected_simulations = [loadpath(out) for out in selected]
