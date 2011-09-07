@@ -18,7 +18,7 @@ SIMULATIONS_JPG = $(foreach m,$(MODELS),$(wildcard $(m)/*.jpg))
 PLOTS_ENERGY_TOTAL = $(subst .out,.energy-total.png,$(SIMULATIONS_OUT))
 PLOTS_ENERGY_FIELD = $(subst .out,.energy-field.png,$(SIMULATIONS_OUT))
 PLOTS_ENERGY_COUPL = $(subst .out,.energy-coupl.png,$(SIMULATIONS_OUT))
-PLOTS = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
+PLOTS_HIST_RADIALS = $(subst .out,.hist-radials.png,$(SIMULATIONS_OUT))
 
 # Synchronization parameters (rsync).
 SYNC_REMOTE = ~/mnt/poly/scratch/
@@ -48,14 +48,18 @@ copy:
 	chmod 644 *x*x*_A*B*/*/*
 
 # Generate the plots based on analyzed data.
-.PHONY: plot
-plot: $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
+.PHONY: plot plot-energy plot-hist
+plot: plot-energy plot-hist
+plot-energy: $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
+plot-hist: $(PLOTS_HIST_RADIALS)
 %.energy-total.png: %.data-analyzed.npz
 	python plot.py $< energy total save
 %.energy-field.png: %.data-analyzed.npz
 	python plot.py $< energy field save
 %.energy-coupl.png: %.data-analyzed.npz
 	python plot.py $< energy coupl save
+%.hist-radials.png: %.data-analyzed.npz
+	python plot.py $< hist radials save
 
 # Generate the gallery if any key output files changed.
 .PHONY: gallery

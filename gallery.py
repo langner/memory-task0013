@@ -41,10 +41,12 @@ def printsummary(sim):
     return format %params
 
 def printinfo(sim):
-    text = "View <a href='%s/%s.out'>simulation output</a>" %(sim.outpath,sim.outname)
-    text += ", <a href='%s/%s.avi'>animation (AVI)</a><br/>" %(sim.outpath,sim.outname)
-    text += "<img height='250pt' src='%s/%s.jpg' />" %(sim.outpath,sim.outname)
-    text += "<img height='250pt' src='%s/%s.energy-total.png' />" %(sim.outpath,sim.outname)
+    name = "%s/%s" %(sim.outpath,sim.outname)
+    text = "View <a href='%s.out'>simulation output</a>" %name
+    text += ", <a href='%s.avi'>animation (AVI)</a><br/>" %name
+    text += "<a href='%s.jpg'><img height='250pt' src='%s.jpg' /></a>" %(name,name)
+    text += "<a href='%s.hist-radials.png'><img border=0 height='250pt' src='%s.hist-radials.png' /></a>" %(name,name)
+    text += "<a href='%s.energy-total.png'><img border=0 height='250pt' src='%s.energy-total.png' /></a>" %(name,name)
     #text += "<img height='250pt' src='%s/%s.energy-field.png' />" %(sim.outpath,sim.outname)
     #text += "<img height='250pt' src='%s/%s.energy-coupling.png' />" %(sim.outpath,sim.outname)
     text += "<br/><br/>"
@@ -88,12 +90,15 @@ selected = [
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca16.0_cb32.0_mob0.10_a25.0.out",
     # mobility 1.00
     # selectivity 2.0
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop200/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0.out",
     # selectivity 8.0
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0.out",
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop200/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0.out",
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0.out",
+    "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0.out",
     # selectivity 16.0
     "64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb32.0_mob1.00_a25.0.out",
 ]
