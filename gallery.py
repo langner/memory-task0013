@@ -42,13 +42,24 @@ def printsummary(sim):
 
 def printinfo(sim):
     name = "%s/%s" %(sim.outpath,sim.outname)
-    text = "View <a href='%s.out'>simulation output</a>" %name
-    text += ", <a href='%s.avi'>animation (AVI)</a><br/>" %name
-    text += "<a href='%s.jpg'><img height='250pt' src='%s.jpg' /></a>" %(name,name)
-    text += "<a href='%s.hist-radials.png'><img border=0 height='250pt' src='%s.hist-radials.png' /></a>" %(name,name)
-    text += "<a href='%s.energy-total.png'><img border=0 height='250pt' src='%s.energy-total.png' /></a>" %(name,name)
-    #text += "<img height='250pt' src='%s/%s.energy-field.png' />" %(sim.outpath,sim.outname)
-    #text += "<img height='250pt' src='%s/%s.energy-coupling.png' />" %(sim.outpath,sim.outname)
+    text = "<table><tr>"
+    text += "<td width='300'><center>last snapshot<br/><a href='%s.jpg'><img height='250pt' src='%s.jpg' /></a></center></td>" %(name,name)
+    text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radials.png'><img border=0 height='250pt' src='%s.hist-radials.png' /></a></center></td>" %(name,name)
+    text += "<td width='300'><center>residual order params.<a href='%s.res-orders.png'><img border=0 height='250pt' src='%s.res-orders.png' /></a></center></td>" %(name,name)
+    text += "</tr></table>"
+    text += "Other general: "
+    text += "<a href='%s.out'>output file</a>" %name
+    text += ", <a href='%s.avi'>movie (AVI)</a>" %name
+    text += "<br/>"
+    text += "Other energies: "
+    text += "<a href='%s/%s.energy-total.png'>total energy</a>" %(sim.outpath,sim.outname)
+    text += ", <a href='%s/%s.energy-field.png'>field energy</a>" %(sim.outpath,sim.outname)
+    text += ", <a href='%s/%s.energy-coupl.png'>coupling energy</a>" %(sim.outpath,sim.outname)
+    text += "<br/>"
+    text += "Other histograms: "
+    text += "<a href='%s/%s.hist-totals.png'>total densities</a>" %(sim.outpath,sim.outname)
+    text += ", <a href='%s/%s.hist-orders.png'>order parameters</a>" %(sim.outpath,sim.outname)
+    text += ", <a href='%s/%s.res-totals.png'>residual total densities</a>" %(sim.outpath,sim.outname)
     text += "<br/><br/>"
     return text
 
@@ -127,7 +138,7 @@ print """
 print printtree(controltree(selected_simulations, control))
 
 print """</ul>
-
+<br/><hr/><br/>
 <h4>All simulations</h4>
 <a href="javascript:ddtreemenu.flatten('simutree', 'expand')">Expand All</a> | <a href="javascript:ddtreemenu.flatten('simutree', 'contact')">Collapse All</a>
 <ul id="simutree" class="treeview">"""

@@ -19,6 +19,9 @@ PLOTS_ENERGY_TOTAL = $(subst .out,.energy-total.png,$(SIMULATIONS_OUT))
 PLOTS_ENERGY_FIELD = $(subst .out,.energy-field.png,$(SIMULATIONS_OUT))
 PLOTS_ENERGY_COUPL = $(subst .out,.energy-coupl.png,$(SIMULATIONS_OUT))
 PLOTS_HIST_RADIALS = $(subst .out,.hist-radials.png,$(SIMULATIONS_OUT))
+PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
+PLOTS_HISTS = $(PLOTS_HIST_RADIALS)
+PLOTS_ALL = $(PLOTS_ENERGY) $(PLOTS_HISTS)
 
 # Synchronization parameters (rsync).
 SYNC_REMOTE = ~/mnt/poly/scratch/
@@ -50,8 +53,8 @@ copy:
 # Generate the plots based on analyzed data.
 .PHONY: plot plot-energy plot-hist
 plot: plot-energy plot-hist
-plot-energy: $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
-plot-hist: $(PLOTS_HIST_RADIALS)
+plot-energy: $(PLOTS_ENERGY)
+plot-hist: $(PLOTS_HISTS)
 %.energy-total.png: %.data-analyzed.npz
 	python plot.py $< energy total save
 %.energy-field.png: %.data-analyzed.npz
@@ -64,7 +67,7 @@ plot-hist: $(PLOTS_HIST_RADIALS)
 # Generate the gallery if any key output files changed.
 .PHONY: gallery
 gallery: gallery.html
-gallery.html: gallery.py $(SIMULATIONS_OUT) $(SIMULATIONS_JPG) $(PLOTS)
+gallery.html: gallery.py $(SIMULATIONS_OUT) $(SIMULATIONS_JPG) $(PLOTS_ALL)
 	python-culgi gallery.py > gallery.html
 
 # ########################
