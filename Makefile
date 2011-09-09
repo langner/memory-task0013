@@ -19,9 +19,14 @@ PLOTS_ENERGY_TOTAL = $(subst .out,.energy-total.png,$(SIMULATIONS_OUT))
 PLOTS_ENERGY_FIELD = $(subst .out,.energy-field.png,$(SIMULATIONS_OUT))
 PLOTS_ENERGY_COUPL = $(subst .out,.energy-coupl.png,$(SIMULATIONS_OUT))
 PLOTS_HIST_RADIALS = $(subst .out,.hist-radials.png,$(SIMULATIONS_OUT))
+PLOTS_HIST_TOTAL = $(subst .out,.hist-totals.png,$(SIMULATIONS_OUT))
+PLOTS_HIST_ORDER = $(subst .out,.hist-orders.png,$(SIMULATIONS_OUT))
+PLOTS_RES_TOTAL = $(subst .out,.res-totals.png,$(SIMULATIONS_OUT))
+PLOTS_RES_ORDER = $(subst .out,.res-orders.png,$(SIMULATIONS_OUT))
 PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
-PLOTS_HISTS = $(PLOTS_HIST_RADIALS)
-PLOTS_ALL = $(PLOTS_ENERGY) $(PLOTS_HISTS)
+PLOTS_HISTS = $(PLOTS_HIST_RADIALS) $(PLOTS_HIST_TOTAL) $(PLOTS_HIST_ORDER)
+PLOTS_RES = $(PLOTS_RES_TOTAL) $(PLOTS_RES_ORDER)
+PLOTS_ALL = $(PLOTS_ENERGY) $(PLOTS_HISTS) $(PLOTS_RES)
 
 # Synchronization parameters (rsync).
 SYNC_REMOTE = ~/mnt/poly/scratch/
@@ -51,10 +56,11 @@ copy:
 	chmod 644 *x*x*_A*B*/*/*
 
 # Generate the plots based on analyzed data.
-.PHONY: plot plot-energy plot-hist
-plot: plot-energy plot-hist
+.PHONY: plot plot-energy plot-hist plot-res
+plot: plot-energy plot-hist plot-res
 plot-energy: $(PLOTS_ENERGY)
 plot-hist: $(PLOTS_HISTS)
+plot-res: $(PLOTS_RES)
 %.energy-total.png: %.data-analyzed.npz
 	python plot.py $< energy total save
 %.energy-field.png: %.data-analyzed.npz
@@ -63,6 +69,14 @@ plot-hist: $(PLOTS_HISTS)
 	python plot.py $< energy coupl save
 %.hist-radials.png: %.data-analyzed.npz
 	python plot.py $< hist radials save
+%.hist-totals.png: %.data-analyzed.npz
+	python plot.py $< hist totals save
+%.hist-orders.png: %.data-analyzed.npz
+	python plot.py $< hist orders save
+%.res-totals.png: %.data-analyzed.npz
+	python plot.py $< hist totals_res save
+%.res-orders.png: %.data-analyzed.npz
+	python plot.py $< hist orders_res save
 
 # Generate the gallery if any key output files changed.
 .PHONY: gallery

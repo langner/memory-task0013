@@ -83,20 +83,30 @@ if __name__ == "__main__":
     nsamples = 10
     frames = hstack([0]+[range(bf,bf+nsamples) for bf in baseframes])
 
-    # Coordinates need to be shifted to coincide with the field.
-    coords = (csa[frames][:,0,:,:2] - 0.5) % 64.0
+    # Leave only the csa and cga frames we want.
+    csa = csa[frames]
+    cga = cga[frames]
 
+    # Histograms aof field values and order parameters.
+    totals = cga[:,0]+cga[:,1]
+    orders = cga[:,0]-cga[:,1]
+    hists_totals = array([histogram(f.flatten(), bins=256)[0] for f in totals])
+    hists_orders = array([histogram(f.flatten(), bins=256)[0] for f in totals])
+
+    # Coordinates need to be shifted to coincide with the field.
+    coords = (csa[:,0,:,:2] - 0.5) % 64.0
+
+    # Radial distribution histograms.
     # Disregard PBC, we are interested in short distances mostly.
     pds = [pdist(c) for c in coords]
     hists_radials = array([histogram(pd, bins=1000, range=[0.0,32*sqrt(2.0)])[0] for pd in pds])
 
-    # Field totals and order parameters at particle positions.
-    fields = cga[frames]
+    # Residual field totals and order parameters at particle positions.
     edge = range(64)
-    splines = [[RectBivariateSpline(edge,edge,ff,kx=2,ky=2) for ff in f] for f in fields]
-    values = array([[s.ev(c[:,0],c[:,1]) for s in splines[i]] for i,c in enumerate(coords)])
-    hists_totals = array([histogram(t, bins=256) for t in values[:,0,:]+values[:,1,:]])
-    hists_orders = array([histogram(t, bins=256) for t in values[:,0,:]-values[:,1,:]])
+    splines = [[RectBivariateSpline(edge,edge,ff,kx=2,ky=2) for ff in f] for f in cga]
+    values_res = array([[s.ev(c[:,0],c[:,1]) for s in splines[i]] for i,c in enumerate(coords)])
+    hists_totals_res = array([histogram(t, bins=256)[0] for t in values_res[:,0,:]+values_res[:,1,:]])
+    hists_orders_res = array([histogram(t, bins=256)[0] for t in values_res[:,0,:]-values_res[:,1,:]])
 
     print 'archive:', time.time() - T
 
@@ -107,6 +117,7 @@ if __name__ == "__main__":
     T = time.time()
 
     savez(fname+".data-analyzed.npz", energy=energy, hist_frames=frames,
-        hists_radials=hists_radials, hists_totals=hists_totals, hists_orders=hists_orders)
+        hists_totals=hists_totals, hists_orders=hists_orders,
+        hists_radials=hists_radials, hists_totals_res=hists_totals_res, hists_orders_res=hists_orders_res)
 
     print "save:", time.time() - T
