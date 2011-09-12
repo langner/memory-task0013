@@ -11,7 +11,7 @@ if __name__ == "__main__":
     t = time.time()
 
     fout = sys.argv[1]
-    fname = fraw[-4:]
+    fname = fout[:-4]
     fcga = fname + ".cga"
     fcsa = fname + ".csa"
     fctf = fname + "_Inst.ctf"

@@ -57,35 +57,35 @@ if __name__ == "__main__":
 
             H = data["hists_totals"]
             plotfname = froot+".hist-totals.png"
-            xmin, xmax = 0.0, 1.0
+            xmin, xmax = 0.0, 1.5
             xlabel = "total field density"
 
         if "orders" in sys.argv:
 
             H = data["hists_orders"]
             plotfname = froot+".hist-orders.png"
-            xmin, xmax = -1.0, 1.0
+            xmin, xmax = -1.5, 1.5
             xlabel = "order parameter"
 
         if "totals_res" in sys.argv:
 
             H = data["hists_totals_res"]
             plotfname = froot+".res-totals.png"
-            xmin, xmax = 0.0, 1.0
+            xmin, xmax = 0.0, 1.5
             xlabel = "total field density"
 
         if "orders_res" in sys.argv:
 
             H = data["hists_orders_res"]
             plotfname = froot+".res-orders.png"
-            xmin, xmax = -1.0, 1.0
+            xmin, xmax = -1.5, 1.5
             xlabel = "order parameter"
 
         if "radials" in sys.argv:
 
             H = data["hists_radials"]
             plotfname = froot+".hist-radials.png"
-            xmin, xmax = 0.0, 32
+            xmin, xmax = 0.0, 16.0
             xlabel = "NP-NP distance"
 
         S = 1.0*sum(H[0])
@@ -95,20 +95,21 @@ if __name__ == "__main__":
 
         if "radials" in sys.argv:
             pylab.plot(xrange, H[frames.index(0)]/S, label="frame 0")
-        hist = numpy.sum([H[frames.index(1+i)] for i in range(10)], axis=0)/S/10.0
-        pylab.plot(xrange, hist, label="frames 1-10")
-        hist = numpy.sum([H[frames.index(101+i)] for i in range(10)], axis=0)/S/10.0
-        pylab.plot(xrange, hist, label="frames 101-110")
-        hist = numpy.sum([H[frames.index(1001+i)] for i in range(10)], axis=0)/S/10.0
-        pylab.plot(xrange, hist, label="frames 1001-1010")
-        hist = numpy.sum([H[frames.index(10001+i)] for i in range(10)], axis=0)/S/10.0
-        pylab.plot(xrange, hist, label="frames 10001-10010")
+        hist = numpy.sum([H[frames.index(1+i)] for i in range(16)], axis=0)/S/10.0
+        pylab.plot(xrange, hist, label="frames 1-16")
+        hist = numpy.sum([H[frames.index(101+i)] for i in range(16)], axis=0)/S/10.0
+        pylab.plot(xrange, hist, label="frames 101-116")
+        hist = numpy.sum([H[frames.index(1001+i)] for i in range(16)], axis=0)/S/10.0
+        pylab.plot(xrange, hist, label="frames 1001-1016")
+        hist = numpy.sum([H[frames.index(10001+i)] for i in range(16)], axis=0)/S/10.0
+        pylab.plot(xrange, hist, label="frames 10001-10016")
         pylab.xlabel(xlabel)
-        pylab.ylabel("number of pairs")
+        pylab.ylabel("prob. density")
 
         pylab.grid()
         pylab.legend()
 
+        pylab.xlim(xmin,xmax)
         if "radials" in sys.argv:
 
             pylab.xlim(0.0,4.0)
