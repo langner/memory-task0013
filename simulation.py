@@ -116,7 +116,7 @@ class simulation:
 
         # The diblock copolymer.
         self.bcp = Palette.CreateGaussianChain("bcp", self.polymer, *self.size)
-        self.bcp.CreateHomogeneousRelativeDensity(self.density)
+        self.bcp.CreateHomogeneousRelativeDensity(self.effective_density)
         self.bcp_total = self.bcp.GetRelativeDensityFieldCmds()
         self.bcp_A = self.bcp.GetBeadTypeRelativeDensityFieldCmds("A")
         self.bcp_A.SetDisplayClampLevels(0.0, self.density)
