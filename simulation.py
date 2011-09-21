@@ -101,7 +101,11 @@ class simulation:
             setattr(self, parameter, eval(parameter))
 
         # Some derived parameters.
-        self.dcoupling = self.cb-self.ca
+        self.dexcluded = self.ca - self.kappa
+        self.dcoupling = self.cb - self.ca
+        self.volume = size[0]*size[1]
+        self.npvolume = self.ca/(self.kappa*self.density+1)
+        self.effective_density = self.density - self.population*self.npvolume/self.volume
 
     def setup(self):
 
@@ -127,7 +131,7 @@ class simulation:
         self.box.AddGaussianChain(self.bcp)
         self.box.CopySoftCoreMolecules(self.np, self.population)
 
-	# The actual nanoparticles inside the simulation box.
+        # The actual nanoparticles inside the simulation box.
         self.nanoparticles = []
         for i in range(self.population):
             self.nanoparticles.append(self.box.GetSoftCoreMoleculeCmds("np", i))
