@@ -24,7 +24,7 @@ PLOTS_HIST_RESIDUAL = $(PLOTS_HIST_RESIDUAL_TOTAL) $(PLOTS_HIST_RESIDUAL_ORDER)
 PLOTS_ALL = $(PLOTS_ENERGY) $(PLOTS_FIELD) $(PLOTS_RADIALS) $(PLOTS_RESIDUAL)
 
 # Synchronization parameters (rsync).
-SYNC_REMOTE = poly:glusterfs/
+SYNC_REMOTE = ~/mnt/poly/scratch/
 SYNC_OPTIONS = --verbose --progress --stats --human-readable --archive --compress --update
 SYNC_EXCLUDES = --exclude *.ctf* --exclude *.cga* --exclude *.csa*
 SYNC_DATA = /home/kml/data/
@@ -91,7 +91,7 @@ convert: $(subst .out,.ctf.npy,$(SIMULATIONS_OUT)) $(subst .out,.csa.npy,$(SIMUL
 .PHONY: analyze
 analyze:  $(subst .out,.energy.npy,$(SIMULATIONS_OUT)) $(subst .out,.hist-field.npy,$(SIMULATIONS_OUT)) $(subst .out,.hist-radial.npy,$(SIMULATIONS_OUT)) $(subst .out,.hist-residual.npy,$(SIMULATIONS_OUT))
 %.energy.npy %.hist-field.npy %.hist-radial.npy %.hist-residual.npy: %.out %.ctf.npy %.csa.npy %.cga.npy
-	python-culgi analyze.py $<
+	-python-culgi analyze.py $<
 
 # Generate movies and snapshots for simulations based on Culgi outputs.
 .PHONY: avi

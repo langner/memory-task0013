@@ -28,12 +28,15 @@ columns = dict(zip(energies,[4, 8, 10, 11, 12, 14]))
 
 if __name__ == "__main__":
 
-    # Filenames.
     fout = sys.argv[1]
     fname = fout[:-4]
     fctf = fname + ".ctf.npy"
     fcga = fname + ".cga.npy"
     fcsa = fname + ".csa.npy"
+
+    if not "Time used" in open(fout).read():
+        print "This simulation has not finished."
+        sys.exit(1)
 
     # ###############
     # Energy analysis
