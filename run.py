@@ -1,5 +1,9 @@
 from simulation import *
+from systems import *
 
+
+# What we currently want to run.
+phases = [ 3 ]
 
 if __name__ == "__main__":
 
@@ -8,41 +12,43 @@ if __name__ == "__main__":
     if os.environ.has_key('PBS_JOBID'):
         flogname = 'run_%s.log' %os.environ['PBS_JOBID']
 
-    for system in systems:
+    for phase in phases:
 
-        # Create the simulation object.
-        sim = simulation(*system)
-        sim.setup()
+        for system in systems[phase]:
 
-        # Base and output path.
-        basedir = os.path.abspath(os.curdir)
-        if flogname:
-            flogpath = "%s/%s" %(basedir,flogname)
-        outpath = "%s/%s" %(basedir,sim.path)
-        if Culgi.GetProcRank() == 0 and not os.path.exists(outpath):
-            os.makedirs(outpath)
+            # Create the simulation object.
+            sim = simulation(phase, *system)
+            sim.setup()
 
-        # Change to directory for this model.
-        Culgi.MpiBarrier()
-        os.chdir(outpath)
+            # Base and output path. 
+            basedir = os.path.abspath(os.curdir)
+            if flogname:
+                flogpath = "%s/%s" %(basedir,flogname)
+            outpath = "%s/%s" %(basedir,sim.path)
+            if Culgi.GetProcRank() == 0 and not os.path.exists(outpath):
+                os.makedirs(outpath)
 
-        # Skip this parameter set if output file already exists.
-        # Must return to base directory here, too!
-        if os.path.exists("%s.out" %sim.name):
+            # Change to directory for this model.
+            Culgi.MpiBarrier()
+            os.chdir(outpath)
+
+            # Skip this parameter set if output file already exists.
+            # Must return to base directory here, too!
+            if os.path.exists("%s.out" %sim.name):
+                os.chdir(basedir)
+                continue
+
+            # Print log message.
+            line = "Path: %s Output file: %s" %(sim.path,sim.name)
+            if Culgi.GetProcRank() == 0:
+                if flogpath:
+                    printnow(flogpath, line)
+                else:
+                    print line
+
+            # Run it.
+            Culgi.MpiBarrier()
+            sim.run()
+
+            # Change back to base directory.
             os.chdir(basedir)
-            continue
-
-        # Print log message.
-        line = "Path: %s Output file: %s" %(sim.path,sim.name)
-        if Culgi.GetProcRank() == 0:
-            if flogpath:
-                printnow(flogpath, line)
-            else:
-                print line
-
-        # Run it.
-        Culgi.MpiBarrier()
-        sim.run()
-
-        # Change back to base directory.
-        os.chdir(basedir)

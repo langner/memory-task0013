@@ -3,7 +3,8 @@
 # ############
 
 # Simulation output files.
-SYSTEMS = $(wildcard *x*x*_A*B*_bv?.??)
+PHASES = $(wildcard phase?)
+SYSTEMS = $(foreach p,$(PHASES),$(wildcard $(p)/*x*x*_A*B*_bv?.??))
 MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
 SIMULATIONS_OUT = $(foreach m,$(MODELS),$(wildcard $(m)/*.out))
 SIMULATIONS_JPG = $(foreach m,$(MODELS),$(wildcard $(m)/*.jpg))
@@ -49,10 +50,11 @@ all: copy plot gallery
 # Data is analyzed on cluster, so synchronize local files with that.
 .PHONY: copy
 copy:
-	rsync $(SYNC_OPTIONS) $(SYNC_EXCLUDES) $(SYNC_REMOTE)$(subst $(SYNC_DATA),,$(CURDIR))/*x*x*_A*B* .
-	chmod 755 *x*x*_A*B*
-	chmod 755 *x*x*_A*B*/*
-	chmod 644 *x*x*_A*B*/*/*
+	rsync $(SYNC_OPTIONS) $(SYNC_EXCLUDES) $(SYNC_REMOTE)$(subst $(SYNC_DATA),,$(CURDIR))/phase? .
+	chmod 755 phase?
+	chmod 755 phase?/*x*x*_A*B*
+	chmod 755 phase?/*x*x*_A*B*/*
+	chmod 644 phase?/*x*x*_A*B*/*/*
 
 # Generate the plots based on analyzed data.
 .PHONY: plot plot-energy plot-hist-field plot-hist-radial plot-hist-residual
@@ -74,11 +76,13 @@ plot-hist-residual: $(PLOTS_HIST_RESIDUAL)
 	python plot.py $< total save
 	python plot.py $< order save
 
-# Generate the gallery if any key output files changed.
+# Generate the galleries if any key output files changed.
 .PHONY: gallery
-gallery: gallery.html
-gallery.html: gallery.py $(SIMULATIONS_OUT) $(SIMULATIONS_JPG) $(SIMULATIONS_AVI) $(PLOTS_ALL)
-	python-culgi gallery.py > gallery.html
+gallery: gallery.html $(foreach p,$(PHASES),$(p)/gallery.html)
+gallery.html: gallery.py
+	python-culgi gallery.py main > gallery.html
+phase%/gallery.html: phase%/*/*/*.out phase%/*/*/*.jpg phase%/*/*/*.avi phase%/*/*/*.png
+	python-culgi gallery.py $* > phase$*/gallery.html
 
 # ########################
 # Remote targets (cluster)
@@ -103,5 +107,3 @@ avi: $(subst .out,.avi,$(SIMULATIONS_OUT))
 %.avi: %.csa %.cga
 	-"$(PYCULGI)" replay.py $@ save xvfb && mencoder "mf://*.jpg" -mf fps=10 -o $@ -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=1600 && cp `ls *.jpg | tail -1` $(subst .avi,.jpg,$@)
 	rm -rvf *.jpg
-
-

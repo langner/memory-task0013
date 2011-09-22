@@ -1,11 +1,10 @@
 from common import *
-from systems import *
 
 
 snapsfreq = 1.0
 energfreq = 0.1
 maxiters = 25000
-parameters = [  "size", "polymer", "beadvolume", "density", "nchi",
+parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "kappa", "temperature", "expansion",
                 "ca", "cb", "a", "mobility", "population",
                 "timestep", "totaltime" ]
@@ -18,6 +17,7 @@ def printnow(fname, content, mode='a'):
     f.close()
 
 def getpath(sim):
+    phase = sim.phase
     X,Y,Z = sim.size
     pol = sim.polymer
     bv = sim.beadvolume
@@ -25,7 +25,7 @@ def getpath(sim):
     pop = sim.population
     temp = sim.temperature
     exp = sim.expansion
-    return "%ix%ix%i_%s_bv%.2f/temp%.2f_exp%.2f_den%.1f_pop%i" %(X,Y,Z,pol,bv,temp,exp,den,pop)
+    return "phase%i/%ix%ix%i_%s_bv%.2f/temp%.2f_exp%.2f_den%.1f_pop%i" %(phase,X,Y,Z,pol,bv,temp,exp,den,pop)
 
 def getname(sim):
     k = sim.kappa
@@ -42,11 +42,12 @@ def getname(sim):
         name = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_mob%.2f_a%.1f" %(k,nchi,ca,cb,mob,a)
     return name    
 
-def loadpath(path):
+def loadpath(path, setup=True, main=False):
 
     outpath,outfile = os.path.split(path.strip())
-    system,model = outpath.split('/')
+    phase,system,model = outpath.split('/')
 
+    phase = int(phase[5:])
     size,pol,bv = system.split('_')
     size = map(int,size.split('x'))
     bv = float(bv[2:])
@@ -83,18 +84,24 @@ def loadpath(path):
         mob = float(mob[3:])
         a = float(a[1:])
 
-    sim = simulation(size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,0.01,10)
+    sim = simulation(phase,size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,0.01,10)
     sim.outpath = outpath
+    if not main:
+        sim.gallerypath = sim.outpath.replace("phase%s/" %phase,"")
+    else:
+        sim.gallerypath = sim.outpath
     sim.outfile = outfile
     sim.outname = outname
-    sim.setup()
+    sim.phase = phase
+    if setup:
+        sim.setup()
 
     return sim
 
 
 class simulation:
 
-    def __init__(self, size, polymer, beadvolume, temperature, expansion, density, population, kappa, nchi, ca, cb, a, mobility, timestep, totaltime):
+    def __init__(self, phase, size, polymer, beadvolume, temperature, expansion, density, population, kappa, nchi, ca, cb, a, mobility, timestep, totaltime):
 
         # Set all the parameters.
         for parameter in parameters:
@@ -105,7 +112,10 @@ class simulation:
         self.dcoupling = self.cb - self.ca
         self.volume = size[0]*size[1]
         self.npvolume = self.ca/(self.kappa*self.density+1)
-        self.effective_density = self.density - self.population*self.npvolume/self.volume
+        if self.phase > 1:
+            self.effective_density = self.density - self.population*self.npvolume/self.volume
+        else:
+            self.effective_density = self.density
 
     def setup(self):
 

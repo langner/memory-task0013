@@ -22,6 +22,13 @@ from scipy.interpolate import RectBivariateSpline
 from scipy.spatial.distance import pdist
 
 
+# Base frames and number of samples to analyze, by phase.
+PhaseFrames = {
+    "phase1" : ( [1, 11, 101, 1001, 10001], 16 ),
+    "phase2" : ( [1, 11, 101, 1001, 10001], 16 ),
+    "phase3" : ( [1, 11, 101, 1001, 10001], 16 ),
+}
+
 # Order of ctf columns.
 energies = ['nonbonded', 'inhomo', 'ideal', 'contact', 'compress', 'coupling']
 columns = dict(zip(energies,[4, 8, 10, 11, 12, 14]))
@@ -30,6 +37,7 @@ if __name__ == "__main__":
 
     fout = sys.argv[1]
     fname = fout[:-4]
+    phase = fname.split('/')[0]
     fctf = fname + ".ctf.npy"
     fcga = fname + ".cga.npy"
     fcsa = fname + ".csa.npy"
@@ -77,8 +85,7 @@ if __name__ == "__main__":
     T = time.time()
 
     # Generate list of frames to analyze, with context for averaging.
-    baseframes = [1, 11, 101, 1001, 10001]
-    nsamples = 16
+    baseframes, nsamples = PhaseFrames[phase]
     frames = hstack([0]+[range(bf,bf+nsamples) for bf in baseframes])
     nframes = len(frames)
 
@@ -91,7 +98,7 @@ if __name__ == "__main__":
     cga = cga[frames]
 
     # Sanity check for bead Z coordinates after task0013.
-    if not (os.path.abspath(os.curdir).split('/')[-1] == "task0013" or all(csa[:,:,:,2] == 0.5)):
+    if not (phase == "phase1" or all(csa[:,:,:,2] == 0.5)):
         print "Not all Z coordinates are 0.5."
         sys.exit(1)
 
