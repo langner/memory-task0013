@@ -7,24 +7,28 @@ SYSTEMS = $(wildcard *x*x*_A*B*_bv?.??)
 MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
 SIMULATIONS_OUT = $(foreach m,$(MODELS),$(wildcard $(m)/*.out))
 SIMULATIONS_JPG = $(foreach m,$(MODELS),$(wildcard $(m)/*.jpg))
-SIMULATIONS_JPG = $(foreach m,$(MODELS),$(wildcard $(m)/*.avi))
+SIMULATIONS_AVI = $(foreach m,$(MODELS),$(wildcard $(m)/*.avi))
+SIMULATIONS_ENERGY = $(foreach m,$(MODELS),$(wildcard $(m)/*.energy.npy))
+SIMULATIONS_HIST_FIELD = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-field.npy))
+SIMULATIONS_HIST_RADIAL = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-radial.npy))
+SIMULATIONS_HIST_RESIDUAL = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-residual.npy))
 
 # Plots to be generated.
-PLOTS_ENERGY_TOTAL = $(subst .out,.energy-total.png,$(SIMULATIONS_OUT))
-PLOTS_ENERGY_FIELD = $(subst .out,.energy-field.png,$(SIMULATIONS_OUT))
-PLOTS_ENERGY_COUPL = $(subst .out,.energy-coupl.png,$(SIMULATIONS_OUT))
-PLOTS_HIST_FIELD_TOTAL = $(subst .out,.hist-field-total.png,$(SIMULATIONS_OUT))
-PLOTS_HIST_FIELD_ORDER = $(subst .out,.hist-field-order.png,$(SIMULATIONS_OUT))
-PLOTS_HIST_RADIAL = $(subst .out,.hist-radial.png,$(SIMULATIONS_OUT))
-PLOTS_HIST_RESIDUAL_TOTAL = $(subst .out,.hist-residual-total.png,$(SIMULATIONS_OUT))
-PLOTS_HIST_RESIDUAL_ORDER = $(subst .out,.hist-residual-order.png,$(SIMULATIONS_OUT))
+PLOTS_ENERGY_TOTAL = $(subst .energy.npy,.energy-total.png,$(SIMULATIONS_ENERGY))
+PLOTS_ENERGY_FIELD = $(subst .energy.npy,.energy-field.png,$(SIMULATIONS_ENERGY))
+PLOTS_ENERGY_COUPL = $(subst .energy.npy,.energy-coupl.png,$(SIMULATIONS_ENERGY))
+PLOTS_HIST_FIELD_TOTAL = $(subst .hist-field.npy,.hist-field-total.png,$(SIMULATIONS_HIST_FIELD))
+PLOTS_HIST_FIELD_ORDER = $(subst .hist-field.npy,.hist-field-order.png,$(SIMULATIONS_HIST_FIELD))
+PLOTS_HIST_RADIAL = $(subst .hist-radial.npy,.hist-radial.png,$(SIMULATIONS_HIST_RADIAL))
+PLOTS_HIST_RESIDUAL_TOTAL = $(subst .hist-residual.npy,.hist-residual-total.png,$(SIMULATIONS_HIST_RESIDUAL))
+PLOTS_HIST_RESIDUAL_ORDER = $(subst .hist-residual.npy,.hist-residual-order.png,$(SIMULATIONS_HIST_RESIDUAL))
 PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
 PLOTS_HIST_FIELD = $(PLOTS_HIST_FIELD_TOTAL) $(PLOTS_HIST_FIELD_ORDER)
 PLOTS_HIST_RESIDUAL = $(PLOTS_HIST_RESIDUAL_TOTAL) $(PLOTS_HIST_RESIDUAL_ORDER)
 PLOTS_ALL = $(PLOTS_ENERGY) $(PLOTS_FIELD) $(PLOTS_RADIALS) $(PLOTS_RESIDUAL)
 
 # Synchronization parameters (rsync).
-SYNC_REMOTE = ~/mnt/poly/scratch/
+SYNC_REMOTE = poly:scratch/
 SYNC_OPTIONS = --verbose --progress --stats --human-readable --archive --compress --update
 SYNC_EXCLUDES = --exclude *.ctf* --exclude *.cga* --exclude *.csa*
 SYNC_DATA = /home/kml/data/

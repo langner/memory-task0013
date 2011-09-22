@@ -44,8 +44,8 @@ def printinfo(sim):
     name = "%s/%s" %(sim.outpath,sim.outname)
     text = "<table><tr>"
     text += "<td width='300'><center>last snapshot<br/><a href='%s.jpg'><img height='250pt' src='%s.jpg' /></a></center></td>" %(name,name)
-    text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radials.png'><img border=0 height='250pt' src='%s.hist-radials.png' /></a></center></td>" %(name,name)
-    text += "<td width='300'><center>residual order params.<a href='%s.res-orders.png'><img border=0 height='250pt' src='%s.res-orders.png' /></a></center></td>" %(name,name)
+    text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial.png'><img border=0 height='250pt' src='%s.hist-radial.png' /></a></center></td>" %(name,name)
+    text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial-zoom.png'><img border=0 height='250pt' src='%s.hist-radial-zoom.png' /></a></center></td>" %(name,name)
     text += "</tr></table>"
     text += "Other general: "
     text += "<a href='%s.out'>output file</a>" %name
@@ -57,9 +57,10 @@ def printinfo(sim):
     text += ", <a href='%s/%s.energy-coupl.png'>coupling energy</a>" %(sim.outpath,sim.outname)
     text += "<br/>"
     text += "Other histograms: "
-    text += "<a href='%s/%s.hist-totals.png'>total densities</a>" %(sim.outpath,sim.outname)
-    text += ", <a href='%s/%s.hist-orders.png'>order parameters</a>" %(sim.outpath,sim.outname)
-    text += ", <a href='%s/%s.res-totals.png'>residual total densities</a>" %(sim.outpath,sim.outname)
+    text += "<a href='%s/%s.hist-field-total.png'>total densities</a>" %(sim.outpath,sim.outname)
+    text += ", <a href='%s/%s.hist-field-order.png'>order parameters</a>" %(sim.outpath,sim.outname)
+    text += ", <a href='%s/%s.hist-residual-total.png'>residual total densities</a>" %(sim.outpath,sim.outname)
+    text += ", <a href='%s/%s.hist-residual-order.png'>residual order parameters</a>" %(sim.outpath,sim.outname)
     text += "<br/><br/>"
     return text
 

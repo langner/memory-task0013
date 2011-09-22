@@ -8,30 +8,30 @@ if __name__ == "__main__":
 
     fpath = sys.argv[1].strip()
     data = numpy.load(fpath)
-    froot = fpath.replace(".data-analyzed.npz","")
 
-    if "energy" in sys.argv:
+    if "energy.npy" in fpath:
 
-        E = data['energy']
+        froot = fpath.replace(".energy.npy","")
+        E = data
 
         if "total" in sys.argv:
-            instant = E[:,1]+E[:,3]+E[:,4]+E[:,5]+E[:,6]
-            average = E[:,7]+E[:,9]+E[:,10]+E[:,11]+E[:,12]
+            instant = data[:,1] + data[:,3] + data[:,4]  + data[:,5]  + data[:,6]
+            average = data[:,7] + data[:,9] + data[:,10] + data[:,11] + data[:,12]
             plotfname = "%s.energy-total.png" %froot
             ylabel = "total free energy"
         if "field" in sys.argv:
-            instant = E[:,3]+E[:,4]+E[:,5]
-            average = E[:,9]+E[:,10]+E[:,11]
+            instant = data[:,3] + data[:,4]  + data[:,5]
+            average = data[:,9] + data[:,10] + data[:,11]
             plotfname = "%s.energy-field.png" %froot
             ylabel = "field free energy"
         if "coupl" in sys.argv:
-            instant = E[:,6]
-            average = E[:,12]
+            instant = data[:,6]
+            average = data[:,12]
             plotfname = "%s.energy-coupl.png" %froot
             ylabel = "coupling free energy"
 
-        pylab.plot(E[:,0], instant, label="instant.")
-        pylab.plot(E[:,0], average, label="average")
+        pylab.plot(data[:,0], instant, label="instant.")
+        pylab.plot(data[:,0], average, label="average")
 
         ymin = min(instant[100:])
         ymax = max(instant[100:])
@@ -49,68 +49,72 @@ if __name__ == "__main__":
         pylab.ylim(ymin,ymax)
         pylab.legend()
 
-    if "hist" in sys.argv:
+    if "hist-field.npy" in fpath:
+        froot = fpath.replace(".hist-field.npy","")
+        frames = numpy.load(froot+".hist-frames.npy").tolist()
 
-        frames = data["hist_frames"].tolist()
-
-        if "totals" in sys.argv:
-
-            H = data["hists_totals"]
-            plotfname = froot+".hist-totals.png"
+        if "total" in sys.argv:
+            plotfname = froot+".hist-field-total.png"
+            xlabel = "overall field density"
             xmin, xmax = 0.0, 1.5
-            xlabel = "total field density"
+            data = data[:,0]
 
-        if "orders" in sys.argv:
-
-            H = data["hists_orders"]
-            plotfname = froot+".hist-orders.png"
+        if "order" in sys.argv:
+            plotfname = froot+".hist-field-order.png"
+            xlabel = "overall order parameter"
             xmin, xmax = -1.5, 1.5
-            xlabel = "order parameter"
+            data = data[:,1]
 
-        if "totals_res" in sys.argv:
+    if "hist-radial.npy" in fpath:
+        froot = fpath.replace(".hist-radial.npy","")
+        frames = numpy.load(froot+".hist-frames.npy").tolist()
+        plotfname = froot+".hist-radial.png"
+        xlabel = "NP-NP distance"
+        xmin, xmax = 0.0, 16.0
 
-            H = data["hists_totals_res"]
-            plotfname = froot+".res-totals.png"
+    if "hist-residual.npy" in fpath:
+        froot = fpath.replace(".hist-residual.npy","")
+        frames = numpy.load(froot+".hist-frames.npy").tolist()
+
+        if "total" in sys.argv:
+            plotfname = froot+".hist-residual-total.png"
+            xlabel = "residual field density"
             xmin, xmax = 0.0, 1.5
-            xlabel = "total field density"
+            data = data[:,0]
 
-        if "orders_res" in sys.argv:
-
-            H = data["hists_orders_res"]
-            plotfname = froot+".res-orders.png"
+        if "order" in sys.argv:
+            plotfname = froot+".hist-residual-order.png"
+            xlabel = "residual order parameter"
             xmin, xmax = -1.5, 1.5
-            xlabel = "order parameter"
+            data = data[:,1]
 
-        if "radials" in sys.argv:
 
-            H = data["hists_radials"]
-            plotfname = froot+".hist-radials.png"
-            xmin, xmax = 0.0, 16.0
-            xlabel = "NP-NP distance"
+    if "hist" in fpath:
 
-        S = 1.0*sum(H[0])
-        nbins = H.shape[1]
+        S = 1.0*sum(data[0])
+        nbins = data.shape[1]
         dx = (xmax-xmin)/nbins
         xrange = numpy.arange(xmin+dx/2.0,xmax+dx/2.0,dx)
 
-        if "radials" in sys.argv:
-            pylab.plot(xrange, H[frames.index(0)]/S, label="frame 0")
-        hist = numpy.sum([H[frames.index(1+i)] for i in range(16)], axis=0)/S/10.0
+        if "hist-radial.npy" in fpath:
+            pylab.plot(xrange, data[frames.index(0)]/S, label="frame 0")
+
+        hist = numpy.sum([data[frames.index(1+i)] for i in range(16)], axis=0)/S/16.0
         pylab.plot(xrange, hist, label="frames 1-16")
-        hist = numpy.sum([H[frames.index(101+i)] for i in range(16)], axis=0)/S/10.0
+        hist = numpy.sum([data[frames.index(101+i)] for i in range(16)], axis=0)/S/16.0
         pylab.plot(xrange, hist, label="frames 101-116")
-        hist = numpy.sum([H[frames.index(1001+i)] for i in range(16)], axis=0)/S/10.0
+        hist = numpy.sum([data[frames.index(1001+i)] for i in range(16)], axis=0)/S/16.0
         pylab.plot(xrange, hist, label="frames 1001-1016")
-        hist = numpy.sum([H[frames.index(10001+i)] for i in range(16)], axis=0)/S/10.0
+        hist = numpy.sum([data[frames.index(10001+i)] for i in range(16)], axis=0)/S/16.0
         pylab.plot(xrange, hist, label="frames 10001-10016")
         pylab.xlabel(xlabel)
-        pylab.ylabel("prob. density")
+        pylab.ylabel("probability density")
 
         pylab.grid()
         pylab.legend()
 
         pylab.xlim(xmin,xmax)
-        if "radials" in sys.argv:
+        if "hist-radials.npy" in fpath:
 
             pylab.xlim(0.0,4.0)
 
