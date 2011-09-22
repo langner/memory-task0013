@@ -9,20 +9,21 @@ MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
 SIMULATIONS_OUT = $(foreach m,$(MODELS),$(wildcard $(m)/*.out))
 SIMULATIONS_JPG = $(foreach m,$(MODELS),$(wildcard $(m)/*.jpg))
 SIMULATIONS_AVI = $(foreach m,$(MODELS),$(wildcard $(m)/*.avi))
-SIMULATIONS_ENERGY = $(foreach m,$(MODELS),$(wildcard $(m)/*.energy.npy))
-SIMULATIONS_HIST_FIELD = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-field.npy))
-SIMULATIONS_HIST_RADIAL = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-radial.npy))
-SIMULATIONS_HIST_RESIDUAL = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-residual.npy))
+SIMULATIONS_ENERGY = $(foreach m,$(MODELS),$(wildcard $(m)/*.energy.npy.bz2))
+SIMULATIONS_HIST_FIELD = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-field.npy.bz2))
+SIMULATIONS_HIST_RADIAL = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-radial.npy.bz2))
+SIMULATIONS_HIST_RESIDUAL = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-residual.npy.bz2))
 
 # Plots to be generated.
-PLOTS_ENERGY_TOTAL = $(subst .energy.npy,.energy-total.png,$(SIMULATIONS_ENERGY))
-PLOTS_ENERGY_FIELD = $(subst .energy.npy,.energy-field.png,$(SIMULATIONS_ENERGY))
-PLOTS_ENERGY_COUPL = $(subst .energy.npy,.energy-coupl.png,$(SIMULATIONS_ENERGY))
-PLOTS_HIST_FIELD_TOTAL = $(subst .hist-field.npy,.hist-field-total.png,$(SIMULATIONS_HIST_FIELD))
-PLOTS_HIST_FIELD_ORDER = $(subst .hist-field.npy,.hist-field-order.png,$(SIMULATIONS_HIST_FIELD))
-PLOTS_HIST_RADIAL = $(subst .hist-radial.npy,.hist-radial.png,$(SIMULATIONS_HIST_RADIAL))
-PLOTS_HIST_RESIDUAL_TOTAL = $(subst .hist-residual.npy,.hist-residual-total.png,$(SIMULATIONS_HIST_RESIDUAL))
-PLOTS_HIST_RESIDUAL_ORDER = $(subst .hist-residual.npy,.hist-residual-order.png,$(SIMULATIONS_HIST_RESIDUAL))
+PLOTS_ENERGY_TOTAL = $(subst .energy.npy.bz2,.energy-total.png,$(SIMULATIONS_ENERGY))
+PLOTS_ENERGY_FIELD = $(subst .energy.npy.bz2,.energy-field.png,$(SIMULATIONS_ENERGY))
+PLOTS_ENERGY_COUPL = $(subst .energy.npy.bz2,.energy-coupl.png,$(SIMULATIONS_ENERGY))
+PLOTS_HIST_FIELD_TOTAL = $(subst .hist-field.npy.bz2,.hist-field-total.png,$(SIMULATIONS_HIST_FIELD))
+PLOTS_HIST_FIELD_ORDER = $(subst .hist-field.npy.bz2,.hist-field-order.png,$(SIMULATIONS_HIST_FIELD))
+PLOTS_HIST_RADIAL = $(subst .hist-radial.npy.bz2,.hist-radial.png,$(SIMULATIONS_HIST_RADIAL))
+PLOTS_HIST_RADIAL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial-zoom.png,$(SIMULATIONS_HIST_RADIAL))
+PLOTS_HIST_RESIDUAL_TOTAL = $(subst .hist-residual.npy.bz2,.hist-residual-total.png,$(SIMULATIONS_HIST_RESIDUAL))
+PLOTS_HIST_RESIDUAL_ORDER = $(subst .hist-residual.npy.bz2,.hist-residual-order.png,$(SIMULATIONS_HIST_RESIDUAL))
 PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
 PLOTS_HIST_FIELD = $(PLOTS_HIST_FIELD_TOTAL) $(PLOTS_HIST_FIELD_ORDER)
 PLOTS_HIST_RESIDUAL = $(PLOTS_HIST_RESIDUAL_TOTAL) $(PLOTS_HIST_RESIDUAL_ORDER)
@@ -60,19 +61,20 @@ copy:
 .PHONY: plot plot-energy plot-hist-field plot-hist-radial plot-hist-residual
 plot: plot-energy plot-hist-field plot-hist-radial plot-hist-residual
 plot-energy: $(PLOTS_ENERGY)
-%.energy-total.png %.energy-field %.energy-coupl: %.energy.npy
+%.energy-total.png %.energy-field %.energy-coupl: %.energy.npy.bz2
 	python plot.py $< total save
 	python plot.py $< field save
 	python plot.py $< coupl save
 plot-hist-field: $(PLOTS_HIST_FIELD)
-%.hist-field-total.png %.hist-field-order.png: %.hist-field.npy
+%.hist-field-total.png %.hist-field-order.png: %.hist-field.npy.bz2
 	python plot.py $< total save
 	python plot.py $< order save
-plot-hist-radial: $(PLOTS_HIST_RADIAL)
-%.hist-radial.png: %.hist-radial.npy
+plot-hist-radial: $(PLOTS_HIST_RADIAL) $(PLOTS_HIST_RADIAL_ZOOM)
+%.hist-radial.png %.hist-radial-zoom.png: %.hist-radial.npy.bz2
 	python plot.py $< save
+	python plot.py $< zoom save
 plot-hist-residual: $(PLOTS_HIST_RESIDUAL)
-%.hist-residual-total.png %.hist-residual-order.png: %.hist-residual.npy
+%.hist-residual-total.png %.hist-residual-order.png: %.hist-residual.npy.bz2
 	python plot.py $< total save
 	python plot.py $< order save
 
@@ -95,11 +97,11 @@ convert: $(subst .out,.ctf.npy,$(SIMULATIONS_OUT)) $(subst .out,.csa.npy,$(SIMUL
 	-"$(PYCULGI)" convert.py $<
 
 # Analyze the data (npz format).
-# The resulting archive (npz) should be much smaller than the raw data.
+# The resulting archives should be much smaller than the raw data.
 .PHONY: analyze
-analyze:  $(subst .out,.energy.npy,$(SIMULATIONS_OUT)) $(subst .out,.hist-field.npy,$(SIMULATIONS_OUT)) $(subst .out,.hist-radial.npy,$(SIMULATIONS_OUT)) $(subst .out,.hist-residual.npy,$(SIMULATIONS_OUT))
-%.energy.npy %.hist-field.npy %.hist-radial.npy %.hist-residual.npy: %.out %.ctf.npy %.csa.npy %.cga.npy
-	-python-culgi analyze.py $<
+analyze:  $(subst .out,.energy.npy.bz2,$(SIMULATIONS_OUT)) $(subst .out,.hist-field.npy.bz2,$(SIMULATIONS_OUT)) $(subst .out,.hist-radial.npy.bz2,$(SIMULATIONS_OUT)) $(subst .out,.hist-residual.npy.bz2,$(SIMULATIONS_OUT))
+%.energy.npy.bz2 %.hist-field.npy.bz2 %.hist-radial.npy.bz2 %.hist-residual.npy.bz2: %.out %.ctf.npy %.csa.npy %.cga.npy
+	-python-culgi analyze.py $< && bzip2 $*.{energy,hist}*.npy
 
 # Generate movies and snapshots for simulations based on Culgi outputs.
 .PHONY: avi

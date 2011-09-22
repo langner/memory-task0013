@@ -1,3 +1,4 @@
+import bz2
 import sys
 
 import numpy
@@ -7,11 +8,11 @@ import pylab
 if __name__ == "__main__":
 
     fpath = sys.argv[1].strip()
-    data = numpy.load(fpath)
+    data = numpy.load(bz2.BZ2File(fpath))
 
-    if "energy.npy" in fpath:
+    if "energy.npy.bz2" in fpath:
 
-        froot = fpath.replace(".energy.npy","")
+        froot = fpath.replace(".energy.npy.bz2","")
         E = data
 
         if "total" in sys.argv:
@@ -49,9 +50,8 @@ if __name__ == "__main__":
         pylab.ylim(ymin,ymax)
         pylab.legend()
 
-    if "hist-field.npy" in fpath:
-        froot = fpath.replace(".hist-field.npy","")
-        frames = numpy.load(froot+".hist-frames.npy").tolist()
+    if "hist-field.npy.bz2" in fpath:
+        froot = fpath.replace(".hist-field.npy.bz2","")
 
         if "total" in sys.argv:
             plotfname = froot+".hist-field-total.png"
@@ -65,16 +65,14 @@ if __name__ == "__main__":
             xmin, xmax = -1.5, 1.5
             data = data[:,1]
 
-    if "hist-radial.npy" in fpath:
-        froot = fpath.replace(".hist-radial.npy","")
-        frames = numpy.load(froot+".hist-frames.npy").tolist()
+    if "hist-radial.npy.bz2" in fpath:
+        froot = fpath.replace(".hist-radial.npy.bz2","")
         plotfname = froot+".hist-radial.png"
         xlabel = "NP-NP distance"
         xmin, xmax = 0.0, 16.0
 
-    if "hist-residual.npy" in fpath:
-        froot = fpath.replace(".hist-residual.npy","")
-        frames = numpy.load(froot+".hist-frames.npy").tolist()
+    if "hist-residual.npy.bz2" in fpath:
+        froot = fpath.replace(".hist-residual.npy.bz2","")
 
         if "total" in sys.argv:
             plotfname = froot+".hist-residual-total.png"
@@ -95,6 +93,7 @@ if __name__ == "__main__":
         nbins = data.shape[1]
         dx = (xmax-xmin)/nbins
         xrange = numpy.arange(xmin+dx/2.0,xmax+dx/2.0,dx)
+        frames = numpy.load(bz2.BZ2File(froot+".hist-frames.npy.bz2")).tolist()
 
         if "hist-radial.npy" in fpath:
             pylab.plot(xrange, data[frames.index(0)]/S, label="frame 0")
@@ -114,9 +113,9 @@ if __name__ == "__main__":
         pylab.legend()
 
         pylab.xlim(xmin,xmax)
-        if "hist-radials.npy" in fpath:
-
-            pylab.xlim(0.0,4.0)
+        if "hist-radial.npy" in fpath and "zoom" in sys.argv:
+            plotfname = froot+".hist-radial-zoom.png"
+            pylab.xlim(0.0, 2.2)
 
     if "save" in sys.argv:
         pylab.savefig(plotfname)
