@@ -7,12 +7,13 @@ from numpy import all
 from numpy import arange
 from numpy import array
 from numpy import average
+from numpy import concatenate
 from numpy import histogram
 from numpy import hstack
 from numpy import load
 from numpy import max
 from numpy import round
-from numpy import savez
+from numpy import save
 from numpy import sqrt
 from numpy import std
 from numpy import vstack
@@ -27,37 +28,21 @@ columns = dict(zip(energies,[4, 8, 10, 11, 12, 14]))
 
 if __name__ == "__main__":
 
-    # #######
-    # Initial
-    # #######
-
-    T = time.time()
-
     # Filenames.
-    fraw = sys.argv[1]
-    fname = fraw[:-13]
-    fcga = fname + ".cga"
-    fcsa = fname + ".csa"
-    fout = fname + ".out"
-
-    # Load NumPy archive.
-    npz = load(fraw)
-    ctf = npz['ctf']
-    cga = npz['cga']
-    csa = npz['csa']
-
-    # Sanity check for bead Z coordinates after task0013.
-    if not (os.path.abspath(os.curdir).split('/')[-1] == "task0013" or all(csa[:,:,:,2] == 0.5)):
-        print "Not all Z coordinates are 0.5."
-        sys.exit(1)
-
-    print "init:", time.time() - T
+    fout = sys.argv[1]
+    fname = fout[:-4]
+    fctf = fname + ".ctf.npy"
+    fcga = fname + ".cga.npy"
+    fcsa = fname + ".csa.npy"
 
     # ###############
     # Energy analysis
     # ###############
 
     T = time.time()
+
+    # Load NumPy archive.
+    ctf = load(fctf)
 
     # Number of points to keep.
     # Note that npoints might be correct by +/-1.
@@ -92,10 +77,24 @@ if __name__ == "__main__":
     baseframes = [1, 11, 101, 1001, 10001]
     nsamples = 16
     frames = hstack([0]+[range(bf,bf+nsamples) for bf in baseframes])
+    nframes = len(frames)
+
+    # Load NumPy archives.
+    csa = load(fcsa)
+    cga = load(fcga)
 
     # Leave only the csa and cga frames we want.
     csa = csa[frames]
     cga = cga[frames]
+
+    # Sanity check for bead Z coordinates after task0013.
+    if not (os.path.abspath(os.curdir).split('/')[-1] == "task0013" or all(csa[:,:,:,2] == 0.5)):
+        print "Not all Z coordinates are 0.5."
+        sys.exit(1)
+
+    print 'archive (load):', time.time() - T
+
+    T = time.time()
 
     # Histograms of field values and order parameters.
     # Chose some arbitrary range for the bins, so to catch all values.
@@ -103,8 +102,9 @@ if __name__ == "__main__":
     fmax = 1.5
     totals = cga[:,0] + cga[:,1]
     orders = cga[:,0] - cga[:,1]
-    hists_totals = array([histogram(f.flatten(), bins=nbins, range=(0.0,fmax))[0] for f in totals])
-    hists_orders = array([histogram(f.flatten(), bins=nbins, range=(-fmax,fmax))[0] for f in orders])
+    hist_field_total = array([histogram(f.flatten(), bins=nbins, range=(0.0,fmax))[0] for f in totals])
+    hist_field_order = array([histogram(f.flatten(), bins=nbins, range=(-fmax,fmax))[0] for f in orders])
+    hist_field_shape = (nframes,1,nbins)
 
     # Coordinates need to be shifted to coincide with the field.
     coords = (csa[:,0,:,:2] - 0.5) % 64.0
@@ -115,7 +115,8 @@ if __name__ == "__main__":
     nbins = 1024
     rmax = 16.0
     pds = [pdist(c) for c in coords]
-    hists_radials = array([histogram(pd, bins=nbins, range=[0.0,rmax])[0] for pd in pds])
+    hist_radial = array([histogram(pd, bins=nbins, range=[0.0,rmax])[0] for pd in pds])
+    hist_radial_shape = (nframes,1,nbins)
 
     # Residual field totals and order parameters at particle positions.
     nbins = 256
@@ -124,10 +125,11 @@ if __name__ == "__main__":
     values_res = array([[s.ev(c[:,0],c[:,1]) for s in splines[i]] for i,c in enumerate(coords)])
     totals_res = values_res[:,0,:] + values_res[:,1,:]
     orders_res = values_res[:,0,:] - values_res[:,1,:]
-    hists_totals_res = array([histogram(t, bins=nbins, range=(0.0,fmax))[0] for t in totals_res])
-    hists_orders_res = array([histogram(t, bins=nbins, range=(-fmax,fmax))[0] for t in orders_res])
+    hist_residual_total = array([histogram(t, bins=nbins, range=(0.0,fmax))[0] for t in totals_res])
+    hist_residual_order = array([histogram(t, bins=nbins, range=(-fmax,fmax))[0] for t in orders_res])
+    hist_residual_shape = (nframes,1,nbins)
 
-    print 'archive:', time.time() - T
+    print 'archive (other):', time.time() - T
 
     # ##################
     # Save analyzed data
@@ -135,8 +137,15 @@ if __name__ == "__main__":
 
     T = time.time()
 
-    savez(fname+".data-analyzed.npz", energy=energy, hist_frames=frames,
-        hists_totals=hists_totals, hists_orders=hists_orders,
-        hists_radials=hists_radials, hists_totals_res=hists_totals_res, hists_orders_res=hists_orders_res)
+    save(fname+".energy.npy", energy)
+    save(fname+".hist-frames.npy", frames)
+    
+    save_field = concatenate([hist_field_total.reshape(hist_field_shape), hist_field_order.reshape(hist_field_shape)], axis=1)
+    save(fname+".hist-field.npy", save_field)
+
+    save(fname+".hist-radial.npy", array(hist_radial))
+
+    save_residual = concatenate([hist_residual_total.reshape(hist_residual_shape), hist_residual_order.reshape(hist_residual_shape)], axis=1)
+    save(fname+".hist-residual.npy", save_residual)
 
     print "save:", time.time() - T

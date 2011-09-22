@@ -6,32 +6,27 @@
 SYSTEMS = $(wildcard *x*x*_A*B*_bv?.??)
 MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
 SIMULATIONS_OUT = $(foreach m,$(MODELS),$(wildcard $(m)/*.out))
-SIMULATIONS_CTF = $(foreach m,$(MODELS),$(wildcard $(m)/*.ctf))
-
-# Analyzed data files (NumPy compressed format).
-SIMULATIONS_NPZ = $(foreach m,$(MODELS),$(wildcard $(m)/*.data-analyzed.npz))
-
-# Simulation snapshots.
 SIMULATIONS_JPG = $(foreach m,$(MODELS),$(wildcard $(m)/*.jpg))
+SIMULATIONS_JPG = $(foreach m,$(MODELS),$(wildcard $(m)/*.avi))
 
 # Plots to be generated.
 PLOTS_ENERGY_TOTAL = $(subst .out,.energy-total.png,$(SIMULATIONS_OUT))
 PLOTS_ENERGY_FIELD = $(subst .out,.energy-field.png,$(SIMULATIONS_OUT))
 PLOTS_ENERGY_COUPL = $(subst .out,.energy-coupl.png,$(SIMULATIONS_OUT))
-PLOTS_HIST_RADIALS = $(subst .out,.hist-radials.png,$(SIMULATIONS_OUT))
-PLOTS_HIST_TOTAL = $(subst .out,.hist-totals.png,$(SIMULATIONS_OUT))
-PLOTS_HIST_ORDER = $(subst .out,.hist-orders.png,$(SIMULATIONS_OUT))
-PLOTS_RES_TOTAL = $(subst .out,.res-totals.png,$(SIMULATIONS_OUT))
-PLOTS_RES_ORDER = $(subst .out,.res-orders.png,$(SIMULATIONS_OUT))
+PLOTS_HIST_FIELD_TOTAL = $(subst .out,.hist-field-total.png,$(SIMULATIONS_OUT))
+PLOTS_HIST_FIELD_ORDER = $(subst .out,.hist-field-order.png,$(SIMULATIONS_OUT))
+PLOTS_HIST_RADIAL = $(subst .out,.hist-radial.png,$(SIMULATIONS_OUT))
+PLOTS_HIST_RESIDUAL_TOTAL = $(subst .out,.hist-residual-total.png,$(SIMULATIONS_OUT))
+PLOTS_HIST_RESIDUAL_ORDER = $(subst .out,.hist-residual-order.png,$(SIMULATIONS_OUT))
 PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
-PLOTS_HISTS = $(PLOTS_HIST_RADIALS) $(PLOTS_HIST_TOTAL) $(PLOTS_HIST_ORDER)
-PLOTS_RES = $(PLOTS_RES_TOTAL) $(PLOTS_RES_ORDER)
-PLOTS_ALL = $(PLOTS_ENERGY) $(PLOTS_HISTS) $(PLOTS_RES)
+PLOTS_HIST_FIELD = $(PLOTS_HIST_FIELD_TOTAL) $(PLOTS_HIST_FIELD_ORDER)
+PLOTS_HIST_RESIDUAL = $(PLOTS_HIST_RESIDUAL_TOTAL) $(PLOTS_HIST_RESIDUAL_ORDER)
+PLOTS_ALL = $(PLOTS_ENERGY) $(PLOTS_FIELD) $(PLOTS_RADIALS) $(PLOTS_RESIDUAL)
 
 # Synchronization parameters (rsync).
-SYNC_REMOTE = ~/mnt/poly/scratch/
+SYNC_REMOTE = poly:glusterfs/
 SYNC_OPTIONS = --verbose --progress --stats --human-readable --archive --compress --update
-SYNC_EXCLUDES = --exclude *.ctf --exclude *.cga --exclude *.csa --exclude *.data-raw.npz
+SYNC_EXCLUDES = --exclude *.ctf* --exclude *.cga* --exclude *.csa*
 SYNC_DATA = /home/kml/data/
 
 # Frame buffer parameters (xvfb).
@@ -56,32 +51,29 @@ copy:
 	chmod 644 *x*x*_A*B*/*/*
 
 # Generate the plots based on analyzed data.
-.PHONY: plot plot-energy plot-hist plot-res
-plot: plot-energy plot-hist plot-res
+.PHONY: plot plot-energy plot-hist-field plot-hist-radial plot-hist-residual
+plot: plot-energy plot-hist-field plot-hist-radial plot-hist-residual
 plot-energy: $(PLOTS_ENERGY)
-plot-hist: $(PLOTS_HISTS)
-plot-res: $(PLOTS_RES)
-%.energy-total.png: %.data-analyzed.npz
-	python plot.py $< energy total save
-%.energy-field.png: %.data-analyzed.npz
-	python plot.py $< energy field save
-%.energy-coupl.png: %.data-analyzed.npz
-	python plot.py $< energy coupl save
-%.hist-radials.png: %.data-analyzed.npz
-	python plot.py $< hist radials save
-%.hist-totals.png: %.data-analyzed.npz
-	python plot.py $< hist totals save
-%.hist-orders.png: %.data-analyzed.npz
-	python plot.py $< hist orders save
-%.res-totals.png: %.data-analyzed.npz
-	python plot.py $< hist totals_res save
-%.res-orders.png: %.data-analyzed.npz
-	python plot.py $< hist orders_res save
+%.energy-total.png %.energy-field %.energy-coupl: %.energy.npy
+	python plot.py $< total save
+	python plot.py $< field save
+	python plot.py $< coupl save
+plot-hist-field: $(PLOTS_HIST_FIELD)
+%.hist-field-total.png %.hist-field-order.png: %.hist-field.npy
+	python plot.py $< total save
+	python plot.py $< order save
+plot-hist-radial: $(PLOTS_HIST_RADIAL)
+%.hist-radial.png: %.hist-radial.npy
+	python plot.py $< save
+plot-hist-residual: $(PLOTS_HIST_RESIDUAL)
+%.hist-residual-total.png %.hist-residual-order.png: %.hist-residual.npy
+	python plot.py $< total save
+	python plot.py $< order save
 
 # Generate the gallery if any key output files changed.
 .PHONY: gallery
 gallery: gallery.html
-gallery.html: gallery.py $(SIMULATIONS_OUT) $(SIMULATIONS_JPG) $(PLOTS_ALL)
+gallery.html: gallery.py $(SIMULATIONS_OUT) $(SIMULATIONS_JPG) $(SIMULATIONS_AVI) $(PLOTS_ALL)
 	python-culgi gallery.py > gallery.html
 
 # ########################
@@ -90,18 +82,18 @@ gallery.html: gallery.py $(SIMULATIONS_OUT) $(SIMULATIONS_JPG) $(PLOTS_ALL)
 
 # Convert Culgi output (cga/csa/ctf) to NumPy compressed archives (npz).
 .PHONY: convert
-convert: $(subst .out,.data-raw.npz,$(SIMULATIONS_OUT))
-%.data-raw.npz: %.csa %.cga %_Inst.ctf
-	-"$(PYCULGI)" convert.py $(subst .csa,.out,$<)
+convert: $(subst .out,.ctf.npy,$(SIMULATIONS_OUT)) $(subst .out,.csa.npy,$(SIMULATIONS_OUT)) $(subst .out,.cga.npy,$(SIMULATIONS_OUT))
+%.ctf.npy %.csa.npy %.cga.npy: %.out %_Inst.ctf %.csa %.cga
+	-"$(PYCULGI)" convert.py $<
 
 # Analyze the data (npz format).
-# The resulting archive (npz) should be much smaller.
+# The resulting archive (npz) should be much smaller than the raw data.
 .PHONY: analyze
-analyze:  $(subst .out,.data-analyzed.npz,$(SIMULATIONS_OUT))
-%.data-analyzed.npz: %.data-raw.npz
+analyze:  $(subst .out,.energy.npy,$(SIMULATIONS_OUT)) $(subst .out,.hist-field.npy,$(SIMULATIONS_OUT)) $(subst .out,.hist-radial.npy,$(SIMULATIONS_OUT)) $(subst .out,.hist-residual.npy,$(SIMULATIONS_OUT))
+%.energy.npy %.hist-field.npy %.hist-radial.npy %.hist-residual.npy: %.out %.ctf.npy %.csa.npy %.cga.npy
 	python-culgi analyze.py $<
 
-# Generate movies for simulations based on Culgi outputs.
+# Generate movies and snapshots for simulations based on Culgi outputs.
 .PHONY: avi
 avi: $(subst .out,.avi,$(SIMULATIONS_OUT))
 %.avi: %.csa %.cga

@@ -15,7 +15,6 @@ if __name__ == "__main__":
     fcga = fname + ".cga"
     fcsa = fname + ".csa"
     fctf = fname + "_Inst.ctf"
-    fnpz = fname + ".data-raw.npz"
 
     if not "Time used" in open(fout).read():
         print "This simulation has not finished."
@@ -59,5 +58,7 @@ if __name__ == "__main__":
     print "energy:", time.time() - t
 
     t = time.time()
-    numpy.savez(fnpz, cga=cga, csa=csa, ctf=ctf)
+    numpy.save(fname+".ctf.npy", ctf)
+    numpy.save(fcsa+".npy", csa)
+    numpy.save(fcga+".npy", cga)
     print "save:", time.time() - t
