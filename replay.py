@@ -71,5 +71,12 @@ if __name__ == "__main__":
             iframe += ifreq
             inum += 1
 
+    elif "last" in sys.argv:
+
+        archive.LoadFrame(1)
+        Culgi.StartEventLoop()
+
     else:
+    
         archive.Play()
+        Culgi.StartEventLoop()
