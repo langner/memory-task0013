@@ -115,6 +115,32 @@ selected = [
     "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi48.0_ca6.0_cb12.0_mob0.10_a25.0.out",
     "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k30.0_nchi24.0_ca21.0_cb27.0_mob0.10_a25.0.out",
     "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k30.0_nchi24.0_ca12.0_cb27.0_mob0.10_a25.0.out",
+    # phase 4
+    "phase4/64x64x1_A15B12_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca7.0_cb14.0_mob0.01_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob0.01_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.01_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca7.0_cb14.0_mob0.10_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob0.10_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.10_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca10.0_cb18.0_mob0.10_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob1.00_a25.0.out",
+    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob1.00_a25.0.out",
+    # phase 5
+    "phase5/64x64x1_A15B12_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca7.0_cb14.0_mob0.01_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob0.01_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.01_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca7.0_cb14.0_mob0.10_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob0.10_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.10_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca10.0_cb18.0_mob0.10_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob1.00_a25.0.out",
+    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob1.00_a25.0.out",
 ]
 selected.sort()
 
@@ -136,7 +162,9 @@ def footer(names):
 description = [ "These are bare NPs, 3D (Z&ne;0), with random starting ditribution.",
                 "These are bare NPs, 2D (Z=0), with random starting distribution.",
                 "These are bare NPs, 2D (Z=0), with random starting distribution, introducing extra density corrections that permit high NP concentrations.",
-                "These are bare NPs, 2D (Z=0), with uniform starting distribution.",
+                "These are bare NPs, 2D (Z=0), with random starting distribution, with another density correction at the start of the simulation.",
+                "Same as phase 4, but with somewhat uniform distribution.",
+                "same as phase 5, but with a more uniform distirbution.",
 ]
 
 
@@ -147,7 +175,7 @@ if __name__ == "__main__":
         print HEADER
         print "<body>"
         print "<h2>Gallery for task0013</h2>"
-        for phase in 1,2,3:
+        for phase in 1,2,3,4,5:
             outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*_ca*_cb*_mob*.out" %phase
             outs = glob.glob(outpattern)
             selected_simulations = [loadpath(out, setup=False, main=True) for out in selected if out.count("phase%i" %phase) > 0]
@@ -162,7 +190,7 @@ if __name__ == "__main__":
             print printtree(controltree(selected_simulations, control))
             print "</ul></li><br/>"
             print "</ul>"
-        print footer(["phase%i" %p for p in 1,2,3])
+        print footer(["phase%i" %p for p in 1,2,3,4,5])
         print "</body>"
 
     else:

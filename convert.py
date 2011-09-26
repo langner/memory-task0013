@@ -16,7 +16,9 @@ if __name__ == "__main__":
     fcsa = fname + ".csa"
     fctf = fname + "_Inst.ctf"
 
-    if not "Time used" in open(fout).read():
+    # Make sure that simulations has finished.
+    # Note that from phase 4, there are two runs for each simulation.
+    if not "Time used" in open(fout).read().strip().split('\n')[-1]:
         print "This simulation has not finished."
         sys.exit(1)
 

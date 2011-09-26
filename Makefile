@@ -1,3 +1,10 @@
+# Normally do plots and gallery, perhaps copy.
+.PHONY: default all
+default: plot gallery report
+all: copy plot gallery
+
+include $(wildcard ../common.mk)
+
 # ############
 # Output files
 # ############
@@ -43,11 +50,6 @@ PYCULGI = "xvfb-run -s $(XVFBOPTS) python-culgi"
 # Local targets
 # #############
 
-# Normally do plots and gallery, perhaps copy.
-.PHONY: default all
-default: plot gallery
-all: copy plot gallery
-
 # Data is analyzed on cluster, so synchronize local files with that.
 .PHONY: copy
 copy:
@@ -86,9 +88,13 @@ gallery.html: gallery.py
 phase%/gallery.html: phase%/*/*/*.out phase%/*/*/*.jpg phase%/*/*/*.avi phase%/*/*/*.png gallery.py
 	python-culgi gallery.py $* > phase$*/gallery.html
 
-# ########################
-# Remote targets (cluster)
-# ########################
+# Generate report.
+.PHONY: report
+report: task.pdf
+
+# #######################
+# Remote targets (manual)
+# #######################
 
 # Convert Culgi output (cga/csa/ctf) to NumPy compressed archives (npz).
 .PHONY: convert
@@ -109,3 +115,9 @@ avi: $(subst .out,.avi,$(SIMULATIONS_OUT))
 %.avi: %.csa %.cga
 	-"$(PYCULGI)" replay.py $@ save xvfb && mencoder "mf://*.jpg" -mf fps=10 -o $@ -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=1600 && cp `ls *.jpg | tail -1` $(subst .avi,.jpg,$@)
 	rm -rvf *.jpg
+
+# Get snapshot of first frame.
+.PHONY: first
+first: $(subst .out,.first.jpg,$(SIMULATIONS_OUT))
+%.first.jpg: %.out %.csa %.cga
+	-"$(PYCULGI)" replay.py $< first xvfb && mv first.jpg $@

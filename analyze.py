@@ -27,6 +27,8 @@ PhaseFrames = {
     "phase1" : ( [1, 11, 101, 1001, 10001], 16 ),
     "phase2" : ( [1, 11, 101, 1001, 10001], 16 ),
     "phase3" : ( [1, 11, 101, 1001, 10001], 16 ),
+    "phase4" : ( [1, 11, 101, 1001, 10001], 16 ),
+    "phase5" : ( [1, 11, 101, 1001, 10001], 16 ),
 }
 
 # Order of ctf columns.
@@ -42,7 +44,9 @@ if __name__ == "__main__":
     fcga = fname + ".cga.npy"
     fcsa = fname + ".csa.npy"
 
-    if not "Time used" in open(fout).read():
+    # Make sure that simulations has finished.
+    # Note that from phase 4, there are two runs for each simulation.
+    if not "Time used" in open(fout).read().strip().split('\n')[-1]:
         print "This simulation has not finished."
         sys.exit(1)
 

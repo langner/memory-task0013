@@ -6,10 +6,11 @@ from simulation import *
 if __name__ == "__main__":
 
     sim = loadpath(sys.argv[1])
-    out = "%s/%s.out" %(sim.outpath,sim.outname)
+    fout = "%s/%s.out" %(sim.outpath,sim.outname)
 
-    if "save" in sys.argv and not "Time used" in open(out).read():
-
+    # Make sure that simulations has finished.
+    # Note that from phase 4, there are two runs for each simulation.
+    if not "Time used" in open(fout).read().strip().split('\n')[-1]:
         print "This simulation has not finished."
         sys.exit(1)
 
@@ -71,10 +72,10 @@ if __name__ == "__main__":
             iframe += ifreq
             inum += 1
 
-    elif "last" in sys.argv:
+    elif "first" in sys.argv:
 
         archive.LoadFrame(1)
-        Culgi.StartEventLoop()
+        graphics.WriteJPEG("first")
 
     else:
     

@@ -1,3 +1,7 @@
+import os
+
+from numpy import sqrt
+
 from common import *
 
 
@@ -8,7 +12,7 @@ parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "kappa", "temperature", "expansion",
                 "ca", "cb", "a", "mobility", "population",
                 "timestep", "totaltime" ]
-
+Tequilibrate = 100
 
 def printnow(fname, content, mode='a'):
     f = open(fname, mode)
@@ -51,7 +55,6 @@ def loadpath(path, setup=True, main=False):
     size,pol,bv = system.split('_')
     size = map(int,size.split('x'))
     bv = float(bv[2:])
-
     temp,exp,den,pop = model.split('_')
     temp = float(temp[4:])
     exp = float(exp[3:])
@@ -144,13 +147,31 @@ class simulation:
         self.box.CopySoftCoreMolecules(self.np, self.population)
 
         # The actual nanoparticles inside the simulation box.
-        self.nanoparticles = []
-        for i in range(self.population):
-            self.nanoparticles.append(self.box.GetSoftCoreMoleculeCmds("np", i))
-            X = self.nanoparticles[i].GetCenterOfMass().GetX()
-            Y = self.nanoparticles[i].GetCenterOfMass().GetY()
+        # For phase 5 and above, use uniform starting distribution.
+        self.nanoparticles = [self.box.GetSoftCoreMoleculeCmds("np", i) for i in range(self.population)]
+        if self.phase >= 5:
+            Nx = int(sqrt(self.population))
+            Ny = int(self.population // Nx)
+            n = self.population - Nx*Ny
+            dX = self.size[0] * 1.0 / Nx
+            dY = self.size[1] * 1.0 / (Ny+1)
             Z = 0.5
-            self.nanoparticles[i].SetCenterOfMass(X, Y, Z)
+            for i in range(self.population):
+                dx = dX*MathManager.Rand()/1.75
+                dy = dY*MathManager.Rand()/1.75
+                if i < Nx*Ny:
+                    X = dX * (i%Nx + dx)
+                    Y = dY * (i//Nx + dy)
+                else:
+                    X = (i - Nx*Ny + dx) * self.size[0] * 1.0 / n
+                    Y = dY * (Ny + dy)
+                self.nanoparticles[i].SetCenterOfMass(X, Y, Z)
+        else:
+            for i in range(self.population):
+                Z = 0.5
+                X = self.nanoparticles[i].GetCenterOfMass().GetX()
+                Y = self.nanoparticles[i].GetCenterOfMass().GetY()
+                self.nanoparticles[i].SetCenterOfMass(X, Y, Z)
 
         # The calculator.
         self.calc = CalculatorsManager.CreateMBFHybridCalculator()
@@ -208,4 +229,24 @@ class simulation:
 
     def run(self):
 
+        # From phase 4, equilibrate with zero mobility and chi.
+        # And don't save the csa/cga/ctf files for this phase.
+        if self.phase >= 4:
+            self.params_SC.SetDiffusionFactor("P", 0)
+            self.params_GC.SetChi("A", "B", 0.0)
+            self.params.SetBeadFieldCoupling("P", "A", self.ca)
+            self.params.SetBeadFieldCoupling("P", "B", self.ca)
+            self.calc.SetSaveRelativeDensityFieldsOff()
+            self.calc.SetSaveCoordinatesOff()
+            self.calc.SetSaveInstantResultsOff()
+            self.calc.Run(int(Tequilibrate/self.timestep))
+            self.params_SC.SetDiffusionFactor("P", self.mobility)
+            self.params_GC.SetChi("A", "B", self.nchi/self.bcp.GetNumBeads())
+            self.params.SetBeadFieldCoupling("P", "A", self.ca)
+            self.params.SetBeadFieldCoupling("P", "B", self.cb)
+            self.calc.SetSaveRelativeDensityFieldsOn()
+            self.calc.SetSaveCoordinatesOn()
+            self.calc.SetSaveInstantResultsOn("SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,SCMElectrostaticsEnergy,SCMExternalPotentialEnergy,SCMPotentialEnergy,GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy")
+
         self.calc.Run(self.nsteps)
+
