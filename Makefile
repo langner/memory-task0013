@@ -83,7 +83,7 @@ plot-hist-residual: $(PLOTS_HIST_RESIDUAL)
 gallery: gallery.html $(foreach p,$(PHASES),$(p)/gallery.html)
 gallery.html: gallery.py
 	python-culgi gallery.py main > gallery.html
-phase%/gallery.html: phase%/*/*/*.out phase%/*/*/*.jpg phase%/*/*/*.avi phase%/*/*/*.png
+phase%/gallery.html: phase%/*/*/*.out phase%/*/*/*.jpg phase%/*/*/*.avi phase%/*/*/*.png gallery.py
 	python-culgi gallery.py $* > phase$*/gallery.html
 
 # ########################

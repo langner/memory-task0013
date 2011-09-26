@@ -108,7 +108,6 @@ class simulation:
             setattr(self, parameter, eval(parameter))
 
         # Some derived parameters.
-        self.dexcluded = self.ca - self.kappa
         self.dcoupling = self.cb - self.ca
         self.volume = size[0]*size[1]
         self.npvolume = self.ca/(self.kappa*self.density+1)
@@ -116,6 +115,9 @@ class simulation:
             self.effective_density = self.density - self.population*self.npvolume/self.volume
         else:
             self.effective_density = self.density
+
+        # The difference is not representative, use the excluded volume.
+        self.dexcluded = self.npvolume #self.ca - self.kappa
 
     def setup(self):
 
