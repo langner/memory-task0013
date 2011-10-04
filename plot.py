@@ -106,6 +106,9 @@ if __name__ == "__main__":
         pylab.plot(xrange, hist, label="frames 1001-1016")
         hist = numpy.sum([data[frames.index(10001+i)] for i in range(16)], axis=0)/S/16.0
         pylab.plot(xrange, hist, label="frames 10001-10016")
+        if 50001 in frames:
+            hist = numpy.sum([data[frames.index(50001+i)] for i in range(16)], axis=0)/S/16.0
+            pylab.plot(xrange, hist, label="frames 50001-50016")
         pylab.xlabel(xlabel)
         pylab.ylabel("probability density")
 

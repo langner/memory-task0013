@@ -150,6 +150,10 @@ class simulation:
         # For phase 5 and above, use uniform starting distribution.
         self.nanoparticles = [self.box.GetSoftCoreMoleculeCmds("np", i) for i in range(self.population)]
         if self.phase >= 5:
+            if self.phase == 5:
+                rfactor = 1.75
+            if self.phase == 6:
+                rfactor = 3.25
             Nx = int(sqrt(self.population))
             Ny = int(self.population // Nx)
             n = self.population - Nx*Ny
@@ -157,8 +161,8 @@ class simulation:
             dY = self.size[1] * 1.0 / (Ny+1)
             Z = 0.5
             for i in range(self.population):
-                dx = dX*MathManager.Rand()/1.75
-                dy = dY*MathManager.Rand()/1.75
+                dx = dX*MathManager.Rand()/rfactor
+                dy = dY*MathManager.Rand()/rfactor
                 if i < Nx*Ny:
                     X = dX * (i%Nx + dx)
                     Y = dY * (i//Nx + dy)

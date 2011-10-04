@@ -164,7 +164,7 @@ description = [ "These are bare NPs, 3D (Z&ne;0), with random starting ditributi
                 "These are bare NPs, 2D (Z=0), with random starting distribution, introducing extra density corrections that permit high NP concentrations.",
                 "These are bare NPs, 2D (Z=0), with random starting distribution, with another density correction at the start of the simulation.",
                 "Same as phase 4, but with somewhat uniform distribution.",
-                "same as phase 5, but with a more uniform distirbution.",
+                "same as phase 5, but with a more uniform distirbution and longer run time.",
 ]
 
 
@@ -175,7 +175,7 @@ if __name__ == "__main__":
         print HEADER
         print "<body>"
         print "<h2>Gallery for task0013</h2>"
-        for phase in 1,2,3,4,5:
+        for phase in 1,2,3,4,5,6:
             outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*_ca*_cb*_mob*.out" %phase
             outs = glob.glob(outpattern)
             selected_simulations = [loadpath(out, setup=False, main=True) for out in selected if out.count("phase%i" %phase) > 0]
