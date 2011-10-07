@@ -13,13 +13,14 @@ include $(wildcard ../common.mk)
 PHASES = $(wildcard phase?)
 SYSTEMS = $(foreach p,$(PHASES),$(wildcard $(p)/*x*x*_A*B*_bv?.??))
 MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
-SIMULATIONS_OUT = $(foreach m,$(MODELS),$(wildcard $(m)/*.out))
-SIMULATIONS_JPG = $(foreach m,$(MODELS),$(wildcard $(m)/*.jpg))
-SIMULATIONS_AVI = $(foreach m,$(MODELS),$(wildcard $(m)/*.avi))
-SIMULATIONS_ENERGY = $(foreach m,$(MODELS),$(wildcard $(m)/*.energy.npy.bz2))
-SIMULATIONS_HIST_FIELD = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-field.npy.bz2))
-SIMULATIONS_HIST_RADIAL = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-radial.npy.bz2))
-SIMULATIONS_HIST_RESIDUAL = $(foreach m,$(MODELS),$(wildcard $(m)/*.hist-residual.npy.bz2))
+SIMS = $(foreach s,$(MODELS),$(wildcard $(s)/k*_nchi*_ca*_cb*))
+SIMULATIONS_OUT = $(foreach m,$(SIMS),$(wildcard $(m)/*.out))
+SIMULATIONS_JPG = $(foreach m,$(SIMS),$(wildcard $(m)/*.jpg))
+SIMULATIONS_AVI = $(foreach m,$(SIMS),$(wildcard $(m)/*.avi))
+SIMULATIONS_ENERGY = $(foreach m,$(SIMS),$(wildcard $(m)/*.energy.npy.bz2))
+SIMULATIONS_HIST_FIELD = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-field.npy.bz2))
+SIMULATIONS_HIST_RADIAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-radial.npy.bz2))
+SIMULATIONS_HIST_RESIDUAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-residual.npy.bz2))
 
 # Plots to be generated.
 PLOTS_ENERGY_TOTAL = $(subst .energy.npy.bz2,.energy-total.png,$(SIMULATIONS_ENERGY))
@@ -57,13 +58,14 @@ copy:
 	chmod 755 phase?
 	chmod 755 phase?/*x*x*_A*B*
 	chmod 755 phase?/*x*x*_A*B*/*
-	chmod 644 phase?/*x*x*_A*B*/*/*
+	chmod 755 phase?/*x*x*_A*B*/*/*
+	chmod 644 phase?/*x*x*_A*B*/*/*/*
 
 # Generate the plots based on analyzed data.
 .PHONY: plot plot-energy plot-hist-field plot-hist-radial plot-hist-residual
 plot: plot-energy plot-hist-field plot-hist-radial plot-hist-residual
 plot-energy: $(PLOTS_ENERGY)
-%.energy-total.png %.energy-field %.energy-coupl: %.energy.npy.bz2
+%.energy-total.png %.energy-field.png %.energy-coupl.png: %.energy.npy.bz2
 	python plot.py $< total save
 	python plot.py $< field save
 	python plot.py $< coupl save
@@ -85,7 +87,7 @@ plot-hist-residual: $(PLOTS_HIST_RESIDUAL)
 gallery: gallery.html $(foreach p,$(PHASES),$(p)/gallery.html)
 gallery.html: gallery.py
 	python-culgi gallery.py main > gallery.html
-phase%/gallery.html: phase%/*/*/*.out phase%/*/*/*.jpg phase%/*/*/*.avi phase%/*/*/*.png gallery.py
+phase%/gallery.html: phase%/*/*/*/*.out phase%/*/*/*/*.jpg phase%/*/*/*/*.avi phase%/*/*/*/*.png gallery.py
 	python-culgi gallery.py $* > phase$*/gallery.html
 
 # Generate report.

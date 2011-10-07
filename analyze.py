@@ -1,4 +1,3 @@
-import gzip
 import os
 import sys
 import time
@@ -29,6 +28,7 @@ PhaseFrames = {
     "phase3" : ( [1, 11, 101, 1001, 10001], 16 ),
     "phase4" : ( [1, 11, 101, 1001, 10001], 16 ),
     "phase5" : ( [1, 11, 101, 1001, 10001], 16 ),
+    "phase6" : ( [1, 11, 51, 101, 501, 1001, 5001, 10001, 50001], 16 ),
 }
 
 # Order of ctf columns.
@@ -96,6 +96,11 @@ if __name__ == "__main__":
     # Load NumPy archives.
     csa = load(fcsa)
     cga = load(fcga)
+
+    # Due to a stupid mistake in the convert script, the shape sometimes needs fixing.
+    # Insert missing dimension, which represents the type of bead.
+    if len(csa.shape) == 3:
+        csa = csa.reshape((csa.shape[0],1,csa.shape[1],csa.shape[2]))
 
     # Leave only the csa and cga frames we want.
     csa = csa[frames]

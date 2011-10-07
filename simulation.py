@@ -15,55 +15,60 @@ parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
 Tequilibrate = 100
 
 def printnow(fname, content, mode='a'):
+    """ Print to a file without delay, so make sure to flush and close. """
+
     f = open(fname, mode)
     print >>f, content
     f.flush()
     f.close()
 
 def getpath(sim):
+    """ Construct output path based on simulation object. """
+
+    # First directory just differentiates between phases.
     phase = sim.phase
+    dir1 = "phase%i" %phase
+
+    # Second directory: system size, polymer architecture, bead size.
     X,Y,Z = sim.size
-    pol = sim.polymer
-    bv = sim.beadvolume
-    den = sim.density
-    pop = sim.population
-    temp = sim.temperature
-    exp = sim.expansion
-    return "phase%i/%ix%ix%i_%s_bv%.2f/temp%.2f_exp%.2f_den%.1f_pop%i" %(phase,X,Y,Z,pol,bv,temp,exp,den,pop)
+    dir2 = "%ix%ix%i_%s_bv%.2f" %(X, Y, Z, sim.polymer, sim.beadvolume)
+
+    # Third directory: system temperature, noise, density, population.
+    dir3 = "temp%.2f_exp%.2f_den%.1f_pop%i" %(sim.temperature, sim.expansion, sim.density, sim.population)
+
+    # Fourth directory: compressibility, interactions, mobilities.
+    if sim.population == 0:
+        dir4 = "k%.1f_nchi%.1f" %(sim.kappa, nchi)
+    elif sim.population == 1:
+        dir4 = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_mob%.2f" %(sim.kappa, sim.nchi, sim.ca, sim.cb, sim.mobility)
+    else:
+        dir4 = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_mob%.2f_a%.1f" %(sim.kappa, sim.nchi, sim.ca, sim.cb, sim.mobility, sim.a)
+
+    return "%s/%s/%s/%s" %(dir1, dir2, dir3, dir4)
 
 def getname(sim):
-    k = sim.kappa
-    nchi = sim.nchi
-    ca = sim.ca
-    cb = sim.cb
-    a = sim.a
-    mob = sim.mobility
-    if sim.population == 0:
-        name = "k%.1f_nchi%.1f" %(k,nchi)
-    elif sim.population == 1:
-        name = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_mob%.2f" %(k,nchi,ca,cb,mob)
-    else:
-        name = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_mob%.2f_a%.1f" %(k,nchi,ca,cb,mob,a)
-    return name    
+    """ Construct output file basename from simulation object. """
+
+    return "tt%i" %sim.totaltime  
 
 def loadpath(path, setup=True, main=False):
+    """ Create simulation object from an output file. """
 
     outpath,outfile = os.path.split(path.strip())
-    phase,system,model = outpath.split('/')
+    dir1,dir2,dir3,dir4 = outpath.split('/')
 
-    phase = int(phase[5:])
-    size,pol,bv = system.split('_')
+    phase = int(dir1[5:])
+    size,pol,bv = dir2.split('_')
     size = map(int,size.split('x'))
     bv = float(bv[2:])
-    temp,exp,den,pop = model.split('_')
+    temp,exp,den,pop = dir3.split('_')
     temp = float(temp[4:])
     exp = float(exp[3:])
     den = float(den[3:])
     pop = int(pop[3:])
 
-    outname = outfile[:-4]
     if pop == 0:
-        k,nchi = outname.split('_')
+        k,nchi = dir4.split('_')
         k = float(k[1:])
         nchi = float(nchi[4:])
         ca = 0.0
@@ -71,7 +76,7 @@ def loadpath(path, setup=True, main=False):
         mob = 0.0
         a = 0.0
     elif pop ==1:
-        k,nchi,ca,cb,mob = outname.split('_')
+        k,nchi,ca,cb,mob = dir4.split('_')
         k = float(k[1:])
         nchi = float(nchi[4:])
         ca = float(ca[2:])
@@ -79,7 +84,7 @@ def loadpath(path, setup=True, main=False):
         mob = float(mob[3:])
         a = 0.0
     else:
-        k,nchi,ca,cb,mob,a = outname.split('_')
+        k,nchi,ca,cb,mob,a = dir4.split('_')
         k = float(k[1:])
         nchi = float(nchi[4:])
         ca = float(ca[2:])
@@ -87,7 +92,10 @@ def loadpath(path, setup=True, main=False):
         mob = float(mob[3:])
         a = float(a[1:])
 
-    sim = simulation(phase,size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,0.01,10)
+    outname = outfile[:-4]
+    totaltime = int(outname[2:])
+
+    sim = simulation(phase,size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,0.01,totaltime)
     sim.outpath = outpath
     if not main:
         sim.gallerypath = sim.outpath.replace("phase%s/" %phase,"")
