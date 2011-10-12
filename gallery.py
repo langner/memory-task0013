@@ -1,6 +1,7 @@
 # encoding: utf8
 
 import glob
+import os
 import sys
 
 from simulation import *
@@ -169,12 +170,19 @@ if __name__ == "__main__":
         print HEADER
         print "<body>"
         print "<h2>Gallery for task0013</h2>"
+        print "<hr/>"
+        print "<h3>Analyses of experimental images</h3>"
+        print "<ul>"
+        print "<li><a href='exp/gallery.html'>Separate page with analyses</a></li>"
+        print "</ul"
+        print "<hr/>"
+        print "<h3>Simulation results</h3>"
         phases.reverse()
         for phase in phases:
             outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*_ca*_cb*_mob*/t*.out" %phase
             outs = glob.glob(outpattern)
             favorite_simulations = [loadpath(out, setup=False, main=True) for out in favorite if out.count("phase%i" %phase) > 0]
-            print "<h3>Phase %i (%i runs, %i favorite)</h3>" %(phase, len(outs), len(favorite_simulations))
+            print "<h4>Phase %i (%i runs, %i favorite)</h3>" %(phase, len(outs), len(favorite_simulations))
             print "<ul>"
             print "<li>%s</li>" %description[phase-1]
             print """<li><a href="phase%i/gallery.html">Link to full gallery</a></li>""" %phase
@@ -186,6 +194,68 @@ if __name__ == "__main__":
             print "</ul></li>"
             print "</ul>"
         print footer(["phase%i" %p for p in phases])
+        print "</body>"
+
+    elif "exp" in sys.argv:
+
+        print HEADER
+        print "<body>"
+        print "<h2>Gallery for Karol's analyses experimental results</h2>"
+        print "<h4>SEM images</h4>"
+        print "<ul>"
+        print "<li><a href='sem/'>Directory with all images I recieved</a>; <b>note</b>: I appended the length of the scale bar to the filename of each image</li>"
+        print "<li><a href='sem-analyzed/'>Directory with all analyzed images</a></li>"
+        print "<li><a href='sem-misc/'>Directory with other images (not analyzed)</a></li>"
+        print "</ul>"
+        print """<a href="javascript:ddtreemenu.flatten('simutree_sem', 'expand')">Expand All</a> |
+                 <a href="javascript:ddtreemenu.flatten('simutree_sem', 'contact')">Collapse All</a>"""
+        print """<ul id="simutree_sem" class="treeview">"""
+        bsource = open("exp/benchmark/source").read()
+        bname = "benchmark/F20-atom_res.preview"
+        print "<li>Benchmark image (from <a href='%s'>%s</a>)<ul>" %(bsource,bsource)
+        print "<table><tr>"
+        print "<td><center>original<br/><a href='%s.png'><img src='%s.png' height='250'></a></td>" %(bname,bname)
+        print "<td><center>nanoparticles<br/><a href='%s-nps.png'><img src='%s-nps.png' height='250'></a></td>" %(bname,bname)
+        print "<td><center>radial distribution<br/><a href='%s-rdf.png'><img src='%s-rdf.png' height='250'></a></td>" %(bname,bname)
+        print "</tr></table>"
+        print "Other images:"
+        print " <a href='%s-filter.png'>filtered</a>" %bname
+        print " <a href='%s-thresh.png'>threshold</a>" %bname
+        print " <a href='%s-seeds.png'>regional maxima</a>" %bname
+        print " <a href='%s-dist.png'>distances</a>" %bname
+        print " <a href='%s-coms.png'>NP centers</a>" %bname
+        print "<br/><br/>"
+        print "</ul></li>"
+        pegs = [p.split('/')[-1] for p in glob.glob("exp/sem-analyzed/*k")]
+        for peg in pegs:
+            print "<li>%s PEG length<ul>" %peg
+            Cs = [p.split('/')[-1] for p in glob.glob("exp/sem-analyzed/%s/*" %peg)]
+            Cs.sort()
+            Cs.append(Cs.pop(Cs.index('C10')))
+            for C in Cs:
+                print "<li>concentration %s<ul>" %C
+                rdfs = glob.glob("exp/sem-analyzed/%s/%s/*-rdf.png" %(peg,C))
+                rdfs.sort()
+                for rdf in rdfs:
+                    name = os.path.splitext(os.path.split(rdf)[-1])[0][:-4]
+                    ipath = "sem/%s/%s/%s" %(peg,C,name)
+                    apath = "sem-analyzed/%s/%s/%s" %(peg,C,name)
+                    print "<li>Image %s<ul>" %name
+                    print "<table><tr>"
+                    print "<td><center>original<br/><a href='%s.jpg'><img src='%s.jpg' height='250'></a></td>" %(ipath,ipath)
+                    print "<td><center>nanoparticles<br/><a href='%s-nps.png'><img src='%s-nps.png' height='250'></a></td>" %(apath,apath)
+                    print "<td><center>radial distribution<br/><a href='%s-rdf.png'><img src='%s-rdf.png' height='250'></a></td>" %(apath,apath)
+                    print "</tr></table>"
+                    print "Other images:"
+                    print " <a href='%s-filtered.png'>filtered</a>" %apath
+                    print " <a href='%s-threshold.png'>threshold</a>" %apath
+                    print " <a href='%s-coms.png.png'>NP centers</a>" %apath
+                    print "<br/><br/>"
+                    print "</ul></li>"
+                print "</ul></li>"
+            print "</ul></li>"
+        print "</ul>"
+        print footer(["sem"])
         print "</body>"
 
     else:

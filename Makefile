@@ -1,7 +1,7 @@
 # Normally do plots and gallery, perhaps copy.
 .PHONY: default all
-default: plot gallery report
-all: copy plot gallery
+default: plot gallery report exp
+all: copy default
 
 include $(wildcard ../common.mk)
 
@@ -84,15 +84,22 @@ plot-hist-residual: $(PLOTS_HIST_RESIDUAL)
 
 # Generate the galleries if any key output files changed.
 .PHONY: gallery
-gallery: gallery.html $(foreach p,$(PHASES),$(p)/gallery.html)
+gallery: gallery.html $(foreach p,$(PHASES),$(p)/gallery.html) exp/gallery.html
 gallery.html: gallery.py
 	python-culgi gallery.py main > gallery.html
 phase%/gallery.html: phase%/*/*/*/*.out phase%/*/*/*/*.jpg phase%/*/*/*/*.avi phase%/*/*/*/*.png gallery.py
 	python-culgi gallery.py $* > phase$*/gallery.html
+exp/gallery.html: gallery.py exp/sem-analyzed/*/*/*.png
+	python-culgi gallery.py exp > $@
 
 # Generate report.
 .PHONY: report
 report: task.pdf
+
+# Analyze experimental data.
+.PHONY: exp
+exp:
+	$(MAKE) -c exp
 
 # #######################
 # Remote targets (manual)
