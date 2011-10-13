@@ -89,25 +89,35 @@ if __name__ == "__main__":
 
     if "hist" in fpath:
 
-        S = 1.0*sum(data[0])
         nbins = data.shape[1]
         dx = (xmax-xmin)/nbins
         xrange = numpy.arange(xmin+dx/2.0,xmax+dx/2.0,dx)
+        strips = numpy.pi * dx * (2*xrange + dx)
         frames = numpy.load(bz2.BZ2File(froot+".hist-frames.npy.bz2")).tolist()
 
         if "hist-radial.npy" in fpath:
-            pylab.plot(xrange, data[frames.index(0)]/S, label="frame 0")
+            hist = data[frames.index(0)] / strips
+            hist /= sum(hist)
+            pylab.plot(xrange, hist, label="frame 0")
 
-        hist = numpy.sum([data[frames.index(1+i)] for i in range(16)], axis=0)/S/16.0
+        factor = 16.0
+        if "hist-radial.npy" in fpath:
+            factor *= strips
+        hist = numpy.sum([data[frames.index(1+i)] for i in range(16)], axis=0) / factor
+        hist /= sum(hist)
         pylab.plot(xrange, hist, label="frames 1-16")
-        hist = numpy.sum([data[frames.index(101+i)] for i in range(16)], axis=0)/S/16.0
+        hist = numpy.sum([data[frames.index(101+i)] for i in range(16)], axis=0) / factor
+        hist /= sum(hist)
         pylab.plot(xrange, hist, label="frames 101-116")
-        hist = numpy.sum([data[frames.index(1001+i)] for i in range(16)], axis=0)/S/16.0
+        hist = numpy.sum([data[frames.index(1001+i)] for i in range(16)], axis=0) / factor
+        hist /= sum(hist)
         pylab.plot(xrange, hist, label="frames 1001-1016")
-        hist = numpy.sum([data[frames.index(10001+i)] for i in range(16)], axis=0)/S/16.0
+        hist = numpy.sum([data[frames.index(10001+i)] for i in range(16)], axis=0) / factor
+        hist /= sum(hist)
         pylab.plot(xrange, hist, label="frames 10001-10016")
         if 50001 in frames:
-            hist = numpy.sum([data[frames.index(50001+i)] for i in range(16)], axis=0)/S/16.0
+            hist = numpy.sum([data[frames.index(50001+i)] for i in range(16)], axis=0) / factor
+            hist /= sum(hist)
             pylab.plot(xrange, hist, label="frames 50001-50016")
         pylab.xlabel(xlabel)
         pylab.ylabel("probability density")

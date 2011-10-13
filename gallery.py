@@ -169,6 +169,7 @@ if __name__ == "__main__":
         print HEADER
         print "<body>"
         print "<h2>Gallery for task0013</h2>"
+        phases.reverse()
         for phase in phases:
             outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*_ca*_cb*_mob*/t*.out" %phase
             outs = glob.glob(outpattern)
