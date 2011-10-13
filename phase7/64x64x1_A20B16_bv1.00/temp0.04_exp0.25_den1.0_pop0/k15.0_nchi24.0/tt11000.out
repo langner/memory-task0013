@@ -1,0 +1,230 @@
+@CulgiVersion: 5.0.1
+MBF-Hybrid Simulation of box
+Job Start time: Mon Oct 31 23:39:41 2011
+----------------------------------------------------------------------------
+
+Simulation Parameters:
+----------------------
+
+Field Diffusion: off
+Bead Diffusion: off
+Time step: 0.01
+
+Mesoscopic bead-field hybrid interaction parameters:
+----------------------------------------------------
+
+Bead-Field coupling parameters:
+Bead  Field  parameter  
+
+System Details:
+---------------
+
+Box: 64 X 64 X 1
+GAUSSIANCHAIN: bcp (A20B16):  (Average number density: 1)
+Overall gaussian beads number density: 1
+Overall Soft-core bead number density: 0
+
+Initial Explicit Charge: 0
+
+Initial Energies:
+
+Average Energies:
+
+Average Explicit Charge: 0
+
+Final Energies:
+
+Final Explicit Charge: 0
+
+Time used by 100900 calculation steps on 2 processors: 0 Hours 0 Minutes 9 Seconds.
+
+@CulgiVersion: 5.0.1
+MBF-Hybrid Simulation of box
+Job Start time: Mon Oct 31 23:39:50 2011
+----------------------------------------------------------------------------
+
+Simulation Parameters:
+----------------------
+
+Field Diffusion: on
+Bead Diffusion: off
+Field Diffusion frequency: 1
+Time step: 0.01
+
+DDFT Engine parameters: 
+Field diffusion Method: EntropyFieldDynamics
+Kappa: 15
+Reference density: 1
+
+NLESolverEngine parameters, DDFT Molecular Diffusion
+Strict tolerance: On
+Direction optimization Method: SteepestDescent
+Starting Alpha: 0.5
+Reset Alpha: On
+Tolerance: 0.0001
+Maximum Iterations: 25000
+Maximum Line Iterations: 5
+
+Gaussian chain interaction parameters:
+---------------------------------------
+
+Bead parameters:
+Type  Volume  Diffusion  Viscosity  Expansion  ExtFieldConst  ChargeType  Charge  pK   Dielec  ImplIonInter  
+A     1       1          1          0.25       1              Strong      0       N/A  1       0             
+B     1       1          1          0.25       1              Strong      0       N/A  1       0             
+
+Binary interaction parameters:
+Type1  Type2  Chi  ChiL  
+A      B      0    0     
+
+Mesoscopic bead-field hybrid interaction parameters:
+----------------------------------------------------
+
+Bead-Field coupling parameters:
+Bead  Field  parameter  
+
+System Details:
+---------------
+
+Box: 64 X 64 X 1
+GAUSSIANCHAIN: bcp (A20B16):  (Average number density: 1)
+Overall gaussian beads number density: 1
+Overall Soft-core bead number density: 0
+
+Initial Gaussian Chains Density Inhomogeneity: 5.4956e-15
+
+Initial Explicit Charge: 0
+
+Initial Energies:
+Gaussian total free energy: -521.503
+Gaussian ideal free energy: -521.503
+Gaussian contact free energy: 0
+Gaussian compressibility free energy: 0
+Gaussian electrostatic free energy: 0
+
+Average Energies:
+Gaussian total free energy: -521.272
+Gaussian ideal free energy: -521.371
+Gaussian contact free energy: 0
+Gaussian compressibility free energy: 0.0995106
+Gaussian electrostatic free energy: 0
+
+Average Explicit Charge: 0
+
+Average Gaussian Chains Density Inhomogeneity: 0.00580073
+
+Final Energies:
+Gaussian total free energy: -521.273
+Gaussian ideal free energy: -521.371
+Gaussian contact free energy: 0
+Gaussian compressibility free energy: 0.0983433
+Gaussian electrostatic free energy: 0
+
+Final Gaussian Chains Density Inhomogeneity: 0.00585505
+
+Iteration report, DDFT Molecular Diffusion
+Number of solves: 10000
+Number of function calls: 69999
+Average number of iterations: 5.9999 (min 5, max 6)
+Average end norm: 6.17001e-05 (min 5.23387e-05, max 8.23684e-05)
+
+
+Final Explicit Charge: 0
+
+Time used by 10000 calculation steps on 2 processors: 0 Hours 8 Minutes 11 Seconds.
+
+@CulgiVersion: 5.0.1
+MBF-Hybrid Simulation of box
+Job Start time: Mon Oct 31 23:48:01 2011
+----------------------------------------------------------------------------
+
+Simulation Parameters:
+----------------------
+
+Field Diffusion: on
+Bead Diffusion: off
+Field Diffusion frequency: 1
+Time step: 0.01
+
+DDFT Engine parameters: 
+Field diffusion Method: EntropyFieldDynamics
+Kappa: 15
+Reference density: 1
+
+NLESolverEngine parameters, DDFT Molecular Diffusion
+Strict tolerance: On
+Direction optimization Method: SteepestDescent
+Starting Alpha: 0.5
+Reset Alpha: On
+Tolerance: 0.0001
+Maximum Iterations: 25000
+Maximum Line Iterations: 5
+
+Gaussian chain interaction parameters:
+---------------------------------------
+
+Bead parameters:
+Type  Volume  Diffusion  Viscosity  Expansion  ExtFieldConst  ChargeType  Charge  pK   Dielec  ImplIonInter  
+A     1       1          1          0.25       1              Strong      0       N/A  1       0             
+B     1       1          1          0.25       1              Strong      0       N/A  1       0             
+
+Binary interaction parameters:
+Type1  Type2  Chi       ChiL  
+A      B      0.666667  0     
+
+Mesoscopic bead-field hybrid interaction parameters:
+----------------------------------------------------
+
+Bead-Field coupling parameters:
+Bead  Field  parameter  
+
+System Details:
+---------------
+
+Box: 64 X 64 X 1
+GAUSSIANCHAIN: bcp (A20B16):  (Average number density: 1)
+Overall gaussian beads number density: 1
+Overall Soft-core bead number density: 0
+
+Initial Gaussian Chains Density Inhomogeneity: 0.00585505
+
+Initial Explicit Charge: 0
+
+Initial Energies:
+Gaussian total free energy: 152.924
+Gaussian ideal free energy: -521.371
+Gaussian contact free energy: 674.197
+Gaussian compressibility free energy: 0.0983433
+Gaussian electrostatic free energy: 0
+
+Average Energies:
+Gaussian total free energy: 9.77552
+Gaussian ideal free energy: -260.401
+Gaussian contact free energy: 269.243
+Gaussian compressibility free energy: 0.933673
+Gaussian electrostatic free energy: 0
+
+Average Explicit Charge: 0
+
+Average Gaussian Chains Density Inhomogeneity: 0.399434
+
+Final Energies:
+Gaussian total free energy: 8.9444
+Gaussian ideal free energy: -259.643
+Gaussian contact free energy: 267.641
+Gaussian compressibility free energy: 0.946419
+Gaussian electrostatic free energy: 0
+
+Final Gaussian Chains Density Inhomogeneity: 0.400232
+
+Iteration report, DDFT Molecular Diffusion
+Number of solves: 1100000
+Number of function calls: 8460587
+Average number of iterations: 6.69144 (min 6, max 7)
+Average end norm: 6.63087e-05 (min 4.87426e-05, max 0.0001)
+
+
+Final Explicit Charge: 0
+
+Time used by 1100000 calculation steps on 2 processors: 17 Hours 53 Minutes 23 Seconds.
+

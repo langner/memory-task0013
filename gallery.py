@@ -78,7 +78,7 @@ labels = {  "beadvolume"    : "Bead volume",
             "dcoupling"     : "Selectivity (c<sub>B</sub>-c<sub>A</sub>)"
 }
 
-phases = [ 1, 2, 3, 4, 5, 6] 
+phases = [ 1, 2, 3, 4, 5, 6, 7] 
 favorite = [
     # phase 1
     "phase1/64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
@@ -136,6 +136,8 @@ favorite = [
     "phase6/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.01_a25.0/tt55000.out",
     "phase6/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt55000.out",
     "phase6/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.10_a25.0/tt55000.out",
+    # phase 7
+    "phase7/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
 ]
 favorite.sort()
 
@@ -167,7 +169,8 @@ description = [ "Bare NPs moving in 3D (Z&ne;0), random starting ditribution.",
                 "Same as phase 2, with initial density correction for high NP concentrations.",
                 "Same as phase 3, with initial density equilibration.",
                 "Same as phase 4, with somewhat ordered starting distribution.",
-                "same as phase 5, with more ordered starting distribution, and 5x longer run time.",
+                "Same as phase 5, with more ordered starting distribution, and 5x longer run time.",
+                "Same as phase 6, with initial nanoparticle equilibration.",
 ]
 
 
