@@ -37,12 +37,21 @@ def getpath(sim):
     dir3 = "temp%.2f_exp%.2f_den%.1f_pop%i" %(sim.temperature, sim.expansion, sim.density, sim.population)
 
     # Fourth directory: compressibility, interactions, mobilities.
-    if sim.population == 0:
-        dir4 = "k%.1f_nchi%.1f" %(sim.kappa, nchi)
-    elif sim.population == 1:
-        dir4 = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_mob%.2f" %(sim.kappa, sim.nchi, sim.ca, sim.cb, sim.mobility)
+    # Previously 2 significant digits were used for mobility, now
+    #  three are needed sometimes, but we still need to support two.
+    if sim.mobility >= 0.01:
+        mobilityformat = "mob%.2f"
     else:
-        dir4 = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_mob%.2f_a%.1f" %(sim.kappa, sim.nchi, sim.ca, sim.cb, sim.mobility, sim.a)
+        mobilityformat = "mob%.3f"
+    if sim.population == 0:
+        format = "k%.1f_nchi%.1f"
+        dir4 = format %(sim.kappa, nchi)
+    elif sim.population == 1:
+        format = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_"+mobilityformat
+        dir4 = format %(sim.kappa, sim.nchi, sim.ca, sim.cb, sim.mobility)
+    else:
+        format = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_"+mobilityformat+"_a%.1f"
+        dir4 = format %(sim.kappa, sim.nchi, sim.ca, sim.cb, sim.mobility, sim.a)
 
     return "%s/%s/%s/%s" %(dir1, dir2, dir3, dir4)
 
