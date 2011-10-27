@@ -1,0 +1,134 @@
+CULGI VERSION:5.0.1
+set X [ DefineVariable  @a(int){24} ]
+set Y [ DefineVariable  @a(int){24} ]
+set Z [ DefineVariable  @a(int){1} ]
+set Nvf [ DefineVariable  @a(float){0.15} ]
+set gvf [ DefineVariable  @a(float){0.0} ]
+set dca [ DefineVariable  @a(float){5} ]
+set dcb [ DefineVariable  @a(float){5} ]
+set kappa [ DefineVariable  @a(float){15} ]
+set refden [ DefineVariable  @a(float){1.0} ]
+#
+
+set V [ Math  @a(string){int}  @a(freestring){@s@$X*$Y*$Z} ]
+set Vnp [ Math  @a(string){float}  @a(freestring){(2*$kappa+$dca+$dcb)/(2*($kappa*$refden+1))} ]
+set density [ Math  @a(string){float}  @a(freestring){@s@$refden*(1-$Nvf)} ]
+set gdensity [ Math  @a(string){float}  @a(freestring){@s@$refden*$Nvf*$gvf} ]
+set Nnp [ Math  @a(string){int}  @a(freestring){@s@$V*$refden*$Nvf*(1-$gvf)/$Vnp} ]
+[ Print  @a(freestring){@s@$density, $gdensity, $Nnp} ]
+#
+
+set box [ $Palette CreateMesoBox  @a(string){box}  @a(int){$X}  @a(int){$Y}  @a(int){$Z} ] @C CulgiPaletteCmds
+#
+
+set g [ $GraphicsManager CreateGraphics ] @C CulgiGraphicsMgrCmds
+// set g [ $GraphicsManager CreateGLGraphics ] @C CulgiGraphicsMgrCmds
+// set g1 [ $GraphicsManager CreateGraphics ] @C CulgiGraphicsMgrCmds
+[ $g AddViewable  @a(CulgiViewable){$box} ] @C CulgiGraphicsCmds
+// [ $g1 AddViewable  @a(CulgiViewable){$box} ] @C CulgiGraphicsCmds
+#
+
+set bcp [ $Palette CreateGaussianChain  @a(string){bcp}  @a(string){A10B26}  @a(int){$X}  @a(int){$Y}  @a(int){$Z} ] @C CulgiPaletteCmds
+set graft [ $Palette CreateGaussianChain  @a(string){bcp}  @a(string){G16}  @a(int){$X}  @a(int){$Y}  @a(int){$Z} ] @C CulgiPaletteCmds
+[ $bcp CreateHomogeneousRelativeDensity  @a(float){$density} ] @C CulgiGaussianChainCmds
+[ $graft CreateHomogeneousRelativeDensity  @a(float){$gdensity} ] @C CulgiGaussianChainCmds
+set bcp_A [ $bcp GetBeadTypeRelativeDensityFieldCmds  @a(string){A} ] @C CulgiGaussianChainCmds
+[ $bcp_A SetRayCastingSampleDistance  @a(float){0.5} ] @C CulgiFieldCmds
+set bcp_B [ $bcp GetBeadTypeRelativeDensityFieldCmds  @a(string){B} ] @C CulgiGaussianChainCmds
+[ $bcp_B SetRayCastingSampleDistance  @a(float){0.5} ] @C CulgiFieldCmds
+set graft_G [ $graft GetBeadTypeRelativeDensityFieldCmds  @a(string){G} ] @C CulgiGaussianChainCmds
+[ $bcp_A SetDisplayClampLevels  @a(float){0.0}  @a(float){$refden} ] @C CulgiFieldCmds
+[ $bcp_B SetDisplayClampLevels  @a(float){0.0}  @a(float){$refden} ] @C CulgiFieldCmds
+[ $graft_G SetDisplayClampLevels  @a(float){0.0}  @a(float){$refden} ] @C CulgiFieldCmds
+[ $bcp_A ClearColorMap ] @C CulgiFieldCmds
+[ $bcp_B ClearColorMap ] @C CulgiFieldCmds
+[ $graft_G ClearColorMap ] @C CulgiFieldCmds
+[ $bcp_B AddVolumeDisplayRGBPoint  @a(float){0.0}  @a(int){0}  @a(int){0}  @a(int){256} ] @C CulgiFieldCmds
+[ $bcp_B AddVolumeDisplayRGBPoint  @a(float){0.4}  @a(int){0}  @a(int){256}  @a(int){0} ] @C CulgiFieldCmds
+[ $bcp_B AddVolumeDisplayRGBPoint  @a(float){1.0}  @a(int){256}  @a(int){0}  @a(int){0} ] @C CulgiFieldCmds
+[ $bcp_A AddVolumeDisplayRGBPoint  @a(float){0.0}  @a(int){256}  @a(int){0}  @a(int){0} ] @C CulgiFieldCmds
+[ $bcp_A AddVolumeDisplayRGBPoint  @a(float){0.4}  @a(int){0}  @a(int){256}  @a(int){0} ] @C CulgiFieldCmds
+[ $bcp_A AddVolumeDisplayRGBPoint  @a(float){1.0}  @a(int){0}  @a(int){0}  @a(int){256} ] @C CulgiFieldCmds
+[ $graft_G AddVolumeDisplayRGBPoint  @a(float){0.0}  @a(int){0}  @a(int){0}  @a(int){0} ] @C CulgiFieldCmds
+[ $graft_G AddVolumeDisplayRGBPoint  @a(float){$Nvf}  @a(int){256}  @a(int){256}  @a(int){0} ] @C CulgiFieldCmds
+[ $graft_G AddVolumeDisplayRGBPoint  @a(float){1.0}  @a(int){256}  @a(int){256}  @a(int){256} ] @C CulgiFieldCmds
+[ $box AddGaussianChain  @a(CulgiGaussianChainCmds){$bcp} ] @C CulgiMesoBoxCmds
+// [ $box AddGaussianChain  @a(CulgiGaussianChainCmds){$graft} ] @C CulgiMesoBoxCmds
+[ $g AddViewable  @a(CulgiViewable){$bcp_A} ] @C CulgiGraphicsCmds
+[ $g SetClippingPlaneOff ] @C CulgiGraphicsCmds
+[ $g AddViewable  @a(CulgiViewable){$bcp_B} ] @C CulgiGraphicsCmds
+// [ $g1 AddViewable  @a(CulgiViewable){$graft_G} ] @C CulgiGraphicsCmds
+#
+
+set np [ $Palette CreateSoftCoreMolecule  @a(string){np}  @a(string){P} ] @C CulgiPaletteCmds
+[ $box CopySoftCoreMolecules  @a(CulgiSoftCoreMoleculeCmds){$np}  @a(int){$Nnp} ] @C CulgiMesoBoxCmds
+[ Loop  @a(string){i}  @a(float){0}  @a(float){<}  @a(float){$Nnp}  @a(float){1} ]
+set npi [ $box GetSoftCoreMoleculeCmds  @a(string){np}  @a(int){$i} ] @C CulgiMesoBoxCmds
+[ $npi SetBeadDisplayRadius  @a(string){P}  @a(float){1.0} ] @C CulgiSoftCoreMoleculeCmds
+[ $g AddViewable  @a(CulgiViewable){$npi} ] @C CulgiGraphicsCmds
+// [ $g1 AddViewable  @a(CulgiViewable){$npi} ] @C CulgiGraphicsCmds
+[ End ]
+#
+
+[ $g WriteJPEG  @a(string){test} ] @C CulgiGraphicsCmds
+set calc [ $CalculatorsManager CreateMBFHybridCalculator ] @C CulgiCalculatorsMgrCmds
+[ $calc SetSystem  @a(CulgiMesoBoxCmds){$box} ] @C CulgiMBFHybridCalculatorCmds
+[ $calc AddGraphics  @a(Culgi3DGraphics){$g} ] @C CulgiMBFHybridCalculatorCmds
+// [ $calc AddGraphics  @a(Culgi3DGraphics){$g1} ] @C CulgiMBFHybridCalculatorCmds
+[ $calc SetGraphicsUpdateFrequency  @a(int){50} ] @C CulgiMBFHybridCalculatorCmds
+#
+
+[ $calc SetKappa  @a(float){$kappa} ] @C CulgiMBFHybridCalculatorCmds
+[ $calc SetFieldDiffusionMethod  @a(string){EntropyFieldDynamics} ] @C CulgiMBFHybridCalculatorCmds
+[ $calc SetBeadDiffusionFrequency  @a(int){5} ] @C CulgiMBFHybridCalculatorCmds
+[ $calc SetFieldDiffusionFrequency  @a(int){1} ] @C CulgiMBFHybridCalculatorCmds
+[ $calc SetTimeStep  @a(float){0.01} ] @C CulgiMBFHybridCalculatorCmds
+[ $calc SetTemperature  @a(float){1.0} ] @C CulgiMBFHybridCalculatorCmds
+#
+
+[ $calc SetSaveInstantResultsOn  @a(string){SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,SCMElectrostaticsEnergy,SCMExternalPotentialEnergy,SCMPotentialEnergy,GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy} ] @C CulgiMBFHybridCalculatorCmds
+[ $calc SetInstantResultsSaveFrequency  @a(int){1} ] @C CulgiMBFHybridCalculatorCmds
+#
+
+[ $calc SetSaveRelativeDensityFieldsOn ] @C CulgiMBFHybridCalculatorCmds
+[ $calc SetRelativeDensityFieldSaveFrequency  @a(int){50} ] @C CulgiMBFHybridCalculatorCmds
+#
+
+set params [ $calc GetParametersCmds ] @C CulgiMBFHybridCalculatorCmds
+set ca [ Math  @a(string){int}  @a(freestring){@s@$kappa+$dca} ]
+set cb [ Math  @a(string){int}  @a(freestring){@s@$kappa+$dcb} ]
+[ $params SetBeadFieldCoupling  @a(string){P}  @a(string){A}  @a(float){$ca} ] @C CulgiMBFHybridParametersCmds
+[ $params SetBeadFieldCoupling  @a(string){P}  @a(string){B}  @a(float){$cb} ] @C CulgiMBFHybridParametersCmds
+[ $params SetBeadFieldCoupling  @a(string){P}  @a(string){G}  @a(float){$kappa} ] @C CulgiMBFHybridParametersCmds
+set params_GC [ $params GetGCParametersCmds ] @C CulgiMBFHybridParametersCmds
+[ $params_GC SetChi  @a(string){A}  @a(string){B}  @a(float){0.66} ] @C CulgiGCParametersCmds
+[ $params_GC SetChi  @a(string){G}  @a(string){A}  @a(float){0.1} ] @C CulgiGCParametersCmds
+[ $params_GC SetChi  @a(string){G}  @a(string){B}  @a(float){0.1} ] @C CulgiGCParametersCmds
+[ $params_GC SetExpansionParameter  @a(string){A}  @a(float){0.01} ] @C CulgiGCParametersCmds
+[ $params_GC SetExpansionParameter  @a(string){B}  @a(float){0.01} ] @C CulgiGCParametersCmds
+[ $params_GC SetExpansionParameter  @a(string){G}  @a(float){0.01} ] @C CulgiGCParametersCmds
+set params_SC [ $params GetSCMParametersCmds ] @C CulgiMBFHybridParametersCmds
+[ $params_SC SetDiffusionFactor  @a(string){P}  @a(float){0.01} ] @C CulgiSCMParametersCmds
+[ $params_SC SetA  @a(string){P}  @a(string){P}  @a(float){25} ] @C CulgiSCMParametersCmds
+set engine [ $calc GetDDFTEngineCmds ] @C CulgiMBFHybridCalculatorCmds
+[ $engine SetMaxIterations  @a(int){25000} ] @C CulgiDDFTEngineCmds
+#
+
+[ $calc Run  @a(int){100000} ] @C CulgiMBFHybridCalculatorCmds
+#
+
+[ Loop  @a(string){i}  @a(float){0}  @a(float){<}  @a(float){$Nnp}  @a(float){1} ]
+set npii [ $box GetSoftCoreMoleculeCmds  @a(string){np}  @a(int){$i} ] @C CulgiMesoBoxCmds
+set npii_Bead_0 [ $npii GetBeadCmds  @a(int){0} ] @C CulgiSoftCoreMoleculeCmds
+set f [ $npii_Bead_0 GetForce ] @C CulgiSoftCoreBeadCmds
+set fx [ $f GetX ] @C CulgiPointCmds
+set fy [ $f GetY ] @C CulgiPointCmds
+set fz [ $f GetZ ] @C CulgiPointCmds
+[ Print  @a(freestring){@s@$fx<Tab>$fy<Tab>$fz<Newline>} ]
+[ End ]
+GUI Information: 
+GUI Title:
+General Information: 
+Icon Path: 
+Arguments Info: 
+#
