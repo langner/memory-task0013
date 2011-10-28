@@ -144,13 +144,21 @@ HEADER = """<head>
         </script>
         <link rel="stylesheet" type="text/css" href="simpletree/simpletree.css" />
         </head>"""
+HEADERabove = """<head>
+        <script type="text/javascript" src="../simpletree/simpletreemenu.js">
+        </script>
+        <link rel="stylesheet" type="text/css" href="../simpletree/simpletree.css" />
+        </head>"""
 
-def footer(names):
+def footer(names, above=False):
     text = ""
     text += '<script type="text/javascript">\n'
     text += "//ddtreemenu.createTree(treeid, enablepersist, opt_persist_in_days (default is 1))\n"
     for name in names:
         text += 'ddtreemenu.createTree("simutree_%s", true)\n' %name
+    if above:
+        text += 'ddtreemenu.closefolder = "../"+ddtreemenu.closefolder\n'
+        text += 'ddtreemenu.openfolder = "../"+ddtreemenu.openfolder\n'
     text += "</script>\n"
     return text
 
@@ -198,7 +206,7 @@ if __name__ == "__main__":
 
     elif "exp" in sys.argv:
 
-        print HEADER
+        print HEADERabove
         print "<body>"
         print "<h2>Gallery for Karol's analyses experimental results</h2>"
         print "<h4>SEM images</h4>"
@@ -255,7 +263,7 @@ if __name__ == "__main__":
                 print "</ul></li>"
             print "</ul></li>"
         print "</ul>"
-        print footer(["sem"])
+        print footer(["sem"], above=True)
         print "</body>"
 
     else:
@@ -272,7 +280,7 @@ if __name__ == "__main__":
         # Get favorite simulations.
         favorite_simulations = [loadpath(out, setup=False) for out in favorite if out.count("phase%i" %phase) > 0]
 
-        print HEADER
+        print HEADERabove
         print "<body>"
         print "<h2>Gallery for task0013 - phase %i</h2>" %phase
         print "<h4>Favorite runs</h4>"
@@ -287,5 +295,5 @@ if __name__ == "__main__":
         print """<ul id="simutree_all" class="treeview">"""
         print printtree(controltree(simulations, control))
         print "</ul>"
-        print footer(["favorite", "all"])
+        print footer(["favorite", "all"], above=True)
         print "</body>"

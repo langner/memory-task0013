@@ -2,7 +2,7 @@ import os
 
 from numpy import sqrt
 
-from common import *
+from pyculgi import *
 
 
 snapsfreq = 1.0
