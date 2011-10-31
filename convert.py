@@ -29,7 +29,7 @@ if __name__ == "__main__":
     nframes = archive.GetNumberOfFrames()
     beads = [sim.box.GetSoftCoreMoleculeCmds("np",np).GetBeadCmds(0) for np in range(sim.population)]
 
-    # Create the arrays beforehand, which should save memory.
+    # Create the arrays beforehand, which should save memory
     cga = numpy.zeros((nframes,2,64,64))
     csa = numpy.zeros((nframes,1,sim.population,3))
 
@@ -43,8 +43,12 @@ if __name__ == "__main__":
         T1 += time.time() - t
 
         t = time.time()
-        coords = [b.GetCoordinates() for b in beads]
-        csa[nframe,0] = [[c.GetX(),c.GetY(),c.GetZ()] for c in coords]
+
+        # Transform NP coordinates, only if there are any
+        if sim.population > 0:
+            coords = [b.GetCoordinates() for b in beads]
+            csa[nframe,0] = [[c.GetX(),c.GetY(),c.GetZ()] for c in coords]
+
         T2 += time.time() - t
 
         t = time.time()
@@ -61,7 +65,10 @@ if __name__ == "__main__":
     print "energy:", time.time() - t
 
     t = time.time()
+
+    # Save the arrays
     numpy.save(fname+".ctf.npy", ctf)
-    numpy.save(fcsa+".npy", csa)
     numpy.save(fcga+".npy", cga)
+    numpy.save(fcsa+".npy", csa)
+
     print "save:", time.time() - t

@@ -11,7 +11,7 @@ def controltree(sims, params):
     tree = {}
     for value in set([getattr(s,params[0]) for s in sims]):
         filtered = [s for s in sims if getattr(s,params[0]) == value]
-        if params[1:]:
+        if params[1:] and not (params[0] == "mobility" and s.population > 0):
             tree[value,params[0]] = controltree(filtered, params[1:])
         else:
             tree[value,params[0]] = filtered
@@ -25,12 +25,14 @@ def printtree(tree):
         value,param = branch
         if param == "dexcluded":
             value = "%.2f" %value
-        text += "<li><b>%s:</b> %s<ul>\n" %(labels[param],value)
+        if not (param == "mobility" and value == 0.0):
+            text += "<li><b>%s:</b> %s<ul>\n" %(labels[param],value)
+        else:
+            text += "<li><b>Neat BCP matrix</b><ul>\n"
         if type(tree[branch]) is dict:
             text += printtree(tree[branch])
         else:
             toshow = [(printsummary(s),s) for s in tree[branch]]
-            #toshow.sort()
             for summary,s in toshow:
                 text += "<li>%s<ul>" %summary
                 text += "\n%s\n" %printinfo(s)
@@ -39,35 +41,59 @@ def printtree(tree):
     return text
 
 def printsummary(sim):
+    """
+    Print the summary line that appears as the list item.
+    Contents depend on whether are nanoparticles in the system.
+    """
+
     size = "%ix%ix%i" %(sim.size[0], sim.size[1], sim.size[2])
-    format = "Kappa %.1f, c<sub>A</sub> %.1f, c<sub>B</sub> %.1f, exp. %.2f for %s (nchi=%.1f) in a %s box with <b>%i</b> NPs (a=%.1f)"
-    params = (sim.kappa,sim.ca,sim.cb,sim.expansion,sim.polymer,sim.nchi,size,sim.population,sim.a)
+    if sim.population > 0:
+        format = "Kappa %.1f, c<sub>A</sub> %.1f, c<sub>B</sub> %.1f, exp. %.2f for %s (nchi=%.1f) in a %s box with <b>%i</b> NPs (a=%.1f)"
+        params = (sim.kappa,sim.ca,sim.cb,sim.expansion,sim.polymer,sim.nchi,size,sim.population,sim.a)
+    else:
+        format = "Kappa %.1f, exp. %.2f for %s (nchi=%.1f) in a %s box"
+        params = (sim.kappa,sim.expansion,sim.polymer,sim.nchi,size)
+
     return format %params
 
 def printinfo(sim):
+    """
+    Print the the contents for a single simulation run, displayed after expanding the list element.
+    Perform a check on population (sim.population) for several of the things; if there are no nanoparticles,
+        then the RDF cannot be displayed, for example.
+    First snapshots are available only since phase 4.
+    """
+
     name = "%s/%s" %(sim.gallerypath,sim.outname)
     text = "<table><tr>"
     text += "<td width='300'><center>last snapshot<br/><a href='%s.jpg'><img height='250pt' src='%s.jpg' /></a></center></td>" %(name,name)
-    text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial.png'><img border=0 height='250pt' src='%s.hist-radial.png' /></a></center></td>" %(name,name)
-    text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial-zoom.png'><img border=0 height='250pt' src='%s.hist-radial-zoom.png' /></a></center></td>" %(name,name)
+    if sim.population > 0:
+        text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial.png'><img border=0 height='250pt' src='%s.hist-radial.png' /></a></center></td>" %(name,name)
+        text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial-zoom.png'><img border=0 height='250pt' src='%s.hist-radial-zoom.png' /></a></center></td>" %(name,name)
     text += "</tr></table>"
+
     text += "Other general: "
     text += "<a href='%s.out'>output file</a>" %name
     if sim.phase >= 4:
         text += ", <a href='%s.first.jpg'>first snapshot</a>" %name
     text += ", <a href='%s.avi'>movie (AVI)</a>" %name
     text += "<br/>"
+
     text += "Other energies: "
     text += "<a href='%s.energy-total.png'>total energy</a>" %name
     text += ", <a href='%s.energy-field.png'>field energy</a>" %name
-    text += ", <a href='%s.energy-coupl.png'>coupling energy</a>" %name
+    if sim.population > 0:
+        text += ", <a href='%s.energy-coupl.png'>coupling energy</a>" %name
     text += "<br/>"
+
     text += "Other histograms: "
     text += "<a href='%s.hist-field-total.png'>total densities</a>" %name
     text += ", <a href='%s.hist-field-order.png'>order parameters</a>" %name
-    text += ", <a href='%s.hist-residual-total.png'>residual total densities</a>" %name
-    text += ", <a href='%s.hist-residual-order.png'>residual order parameters</a>" %name
+    if sim.population > 0:
+        text += ", <a href='%s.hist-residual-total.png'>residual total densities</a>" %name
+        text += ", <a href='%s.hist-residual-order.png'>residual order parameters</a>" %name
     text += "<br/><br/>"
+
     return text
 
 control = [ "beadvolume", "temperature", "mobility", "dexcluded" ]
@@ -190,7 +216,7 @@ if __name__ == "__main__":
         print "<h3>Simulation results</h3>"
         phases.reverse()
         for phase in phases:
-            outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*_ca*_cb*_mob*/t*.out" %phase
+            outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*/t*.out" %phase
             outs = glob.glob(outpattern)
             favorite_simulations = [loadpath(out, setup=False, main=True) for out in favorite if out.count("phase%i" %phase) > 0]
             print "<h4>Phase %i (%i runs, %i favorite)</h3>" %(phase, len(outs), len(favorite_simulations))
@@ -275,7 +301,7 @@ if __name__ == "__main__":
         phase = int(sys.argv[1])
 
         # Get all simulations.
-        outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*_ca*_cb*_mob*/*.out" %phase
+        outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*/*.out" %phase
         outs = glob.glob(outpattern)
         outs.sort()
         simulations = [loadpath(out, setup=False) for out in outs]

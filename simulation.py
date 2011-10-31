@@ -46,7 +46,7 @@ def getpath(sim):
         mobilityformat = "mob%.3f"
     if sim.population == 0:
         format = "k%.1f_nchi%.1f"
-        dir4 = format %(sim.kappa, nchi)
+        dir4 = format %(sim.kappa, sim.nchi)
     elif sim.population == 1:
         format = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_"+mobilityformat
         dir4 = format %(sim.kappa, sim.nchi, sim.ca, sim.cb, sim.mobility)
@@ -168,7 +168,7 @@ class simulation:
         # For phase 5 and 6, use some ordered starting distribution.
         # For phase 7, use a random starting distribution again (equilibrate later).
         self.nanoparticles = [self.box.GetSoftCoreMoleculeCmds("np", i) for i in range(self.population)]
-        if self.phase >= 5:
+        if self.phase >= 5 and self.population != 0:
             if self.phase == 5:
                 rfactor = 1.75
             if self.phase >= 6:

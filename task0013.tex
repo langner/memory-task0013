@@ -1,0 +1,44 @@
+The general idea here is to explore the parameter space of our particle--field coexistence model\cite{2008-Sevink-Fraaije} with respect to particle aggregation in a BCP film of comparable thickness. However, a direct goal is to find conditions that will produce a nanoparticle and block copolymer arrangement similar to experiments on ultra thin films. The properties we would like to compare are:
+\begin{enumerate}
+\item the visual appearance of snapshots and SEM images at different times
+\item the radial distribution functions for nanoparticles and possibly corresponding power spectra
+\item the change in interparticle distnaces as a function of time, derived from the above
+\end{enumerate}
+
+It is clear that the simulation will provide a higher resolution in these comparisons. They can also provide additional insight into the factors governing the changes.
+
+\section{The experimental system}
+
+General features of the experimental systems:
+\begin{enumerate}
+\item the block copolymer system still phase separates, but the formation of standing lamella/cyulinders is inhibited large NP concentrations,
+\item nanoparticles exhibit initially some packing, with one peak in $g(r)$ corresponding to some NP--NP distance, which later shrinks and sometimes evolves into a clear hexagonal packing,
+\item nanoparticles are usually found in rugged clusters in later stages, deformed so as to fit into lamellas.
+\end{enumerate}
+
+\subsection{Additional image analysis performed by Karol}
+
+Since there are more images than were actually analyzed (I think?), I decided to put in the effort to automatically analyze a large number of images with respect to NP--NP distnces. This can be done by applying three step to each image:
+\begin{enumerate}
+\item smoothing the image on a scale smaller than NP--NP distances,
+\item contrast stretching and evening out brightness across the image,
+\item dynamic thresholding to extract areas with nanoparticles,
+\item watersheding the distnce transform starting from regional maxima,
+\item labelling and measuring centers of mass of the segmented regions.
+\end{enumerate}
+
+With the centers of nanoparticles extracted, it is streightforward to calculate the radial distribution functions, which give more direct infromation about nanoparticle correlations and can be compared directly to RDFs from simulations.
+
+\section{The simulations}
+
+Simulations are divided into several phases:
+\begin{enumerate}
+\item Phase 1 -- the starting point is a simple collection of independent beads, each one spherical and representing an entire nanoparticle with core and corona, floating in a quasi-2D layer of block copolymer that is supposed to represent the ultra thin film. Since they model entire grafted NPs, these beads need to be quite soft and should be able to overlap. The extent of these beads is generally around 0.8 in dimensionless units, and the cut-off for interactions is 1.0 (which means they do not directly feel anything beyond this distance).
+\item phase 2 -- in this phase I fixed the vertical coordinate of all nanoparticles to zero, restricting their motion to two dimensions.
+\item phase 3 -- introduces a density correction that allows for high NP loadings.
+\item phase 4 -- introduces the equilibration of polymer around nanoparticles at the beginning.
+\item phase 5 -- uses a smoewhat ordered initial distribution, instead of random.
+\item phase 6 -- uses a more ordered initial distribution, and longer simulation times were tested.
+\item phase 7 -- introduces an equilibration of particles positions before turning on interactions.
+\item phase 8 (planned) -- introduce a larger nanoparticle model.
+\end{enumerate}

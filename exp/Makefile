@@ -1,8 +1,4 @@
-# SEM images and outputs.
-SEM_JPGS = $(wildcard sem/*/C*/*.jpg)
-SEM_RDFS = $(subst sem/,sem-analyzed/,$(subst .jpg,-rdf.png,$(SEM_JPGS)))
-
-# Frame buffer parameters (xvfb).
+# Frame buffer parameters (xvfb)
 XVFBOPTS = "-screen 11 1280x1024x24"
 PYTHON = "xvfb-run -s $(XVFBOPTS) python-culgi"
 
@@ -10,18 +6,28 @@ PYTHON = "xvfb-run -s $(XVFBOPTS) python-culgi"
 default: all
 all: benchmark sem sem-comp
 
-benchmark: benchmark/F20-atom_res.preview-rdf.png
-benchmark/%-rdf.png: benchmark/%.png
-	"$(PYTHON)" benchmark.py $< save && bzip2 benchmark/$**.npy
+# A becnhmark
+BENCHMARK = benchmark/F20-atom_res.preview
+benchmark: $(BENCHMARK)-rdf.png
+$(BENCHMARK)-rdf.png: $(BENCHMARK).png benchmark.py common.py
+	rm -rvf $@
+	"$(PYTHON)" benchmark.py $< save
+	-bzip2 benchmark/$**.npy
+	rm -rvf benchmark/$**.npy
+	sleep 2
 
-sem: $(SEM_RDFS)
-sem-analyzed/%-rdf.png: sem/%.jpg
-	"$(PYTHON)" sem.py $< save && bzip2 $(subst -rdf.png,-*.npy,$@)
+# SEM images
+SEM_JPGS = $(wildcard sem/*/C*/*.jpg)
+SEM_NPS = $(subst sem/,sem-analyzed/,$(subst .jpg,-nps.png,$(SEM_JPGS)))
+SEM_RDF = $(subst sem/,sem-analyzed/,$(subst .jpg,-rdf.png,$(SEM_JPGS)))
+sem: $(SEM_NPS) $(SEM_RDF)
+sem-analyzed/%-nps.png sem-analyzed/%-rdf.png: sem/%.jpg
+	"$(PYTHON)" sem.py $< save
+	-bzip2 $**.npy
+	rm -rvf $**.npy
+	sleep 2
 
-#sem-comp: $(foreach c,$(SEM_CONC),sem-rdf.$(c).png)
-
-#sem/rdf/%.png: sem/%.tif
-#	python analyze.py $< save
-
-#sem-rdf.%.png: sem/%.*.tif
-#	python analyze.py comp $^
+.PHONY: clean
+clean:
+	rm -rvf benchmark/*.npy* benchmark/*-{coms,filtered,nps,rdf,threshold}.png
+	rm -rvf sem-analyzed/*/*/*.{npy,bz2,png}

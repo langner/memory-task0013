@@ -7,10 +7,25 @@ import pylab
 from analyze import PhaseFrames
 
 
+def correction(X,Y,R):
+    ang1 = 2 * numpy.pi
+    ang2 = 2 * numpy.pi - 2.0
+    ang3 = 2 * numpy.pi - 2.0
+    ang4 = 3 * numpy.pi / 2.0 - 2.0
+    V1 = (0.5*X - R)*(0.5*Y - R)
+    V2 = R*(0.5*X - R)
+    V3 = R*(0.5*Y - R)
+    V4 = R**2
+    ref = (V1+V2+V3+V4) * 2 * numpy.pi
+    return (ang1*V1 + ang2*V2 + ang3*V3 + ang4*V4) / ref
+
+
 if __name__ == "__main__":
 
     fpath = sys.argv[1].strip()
-    phase = fpath.split('/')[0]
+    phase,model,system,params,run = fpath.split('/')
+    size = map(int,model.split("_")[0].split('x'))
+    population = int(system.split('_')[-1][3:])
     data = numpy.load(bz2.BZ2File(fpath))
 
     if "energy.npy.bz2" in fpath:
@@ -97,32 +112,26 @@ if __name__ == "__main__":
         nbins = data.shape[1]
         dx = (xmax-xmin)/nbins
         xrange = numpy.arange(xmin+dx/2.0,xmax+dx/2.0,dx)
-        strips = numpy.pi * dx * (2*xrange + dx)
         frames = numpy.load(bz2.BZ2File(froot+".hist-frames.npy.bz2")).tolist()
 
         if "hist-radial.npy" in fpath:
-            hist = data[frames.index(0)] / strips
-            hist /= sum(hist)
+            strips = correction(size[0],size[1],xrange) * 2 * numpy.pi * xrange * dx
+            factor = 2 * size[0] * size[1] / (population * strips * (population-1))
+            hist = factor * data[frames.index(0)]
             pylab.plot(xrange, hist, label="frame 0")
+        else:
+            factor = 1.0 / sum(data[0])
 
-        factor = 1.0*nsamples
-        if "hist-radial.npy" in fpath:
-            factor *= strips
-        hist = numpy.sum([data[frames.index(1+i)] for i in range(nsamples)], axis=0) / factor
-        hist /= sum(hist)
+        hist = factor * numpy.sum([data[frames.index(1+i)] for i in range(nsamples)], axis=0) / nsamples
         pylab.plot(xrange, hist, label="frames 1-%i" %(1+nsamples))
-        hist = numpy.sum([data[frames.index(101+i)] for i in range(nsamples)], axis=0) / factor
-        hist /= sum(hist)
+        hist = factor * numpy.sum([data[frames.index(101+i)] for i in range(nsamples)], axis=0) / nsamples
         pylab.plot(xrange, hist, label="frames 101-%i" %(101+nsamples))
-        hist = numpy.sum([data[frames.index(1001+i)] for i in range(nsamples)], axis=0) / factor
-        hist /= sum(hist)
+        hist = factor * numpy.sum([data[frames.index(1001+i)] for i in range(nsamples)], axis=0) / nsamples
         pylab.plot(xrange, hist, label="frames 1001-%i" %(1001+nsamples))
-        hist = numpy.sum([data[frames.index(10001+i)] for i in range(nsamples)], axis=0) / factor
-        hist /= sum(hist)
+        hist = factor * numpy.sum([data[frames.index(10001+i)] for i in range(nsamples)], axis=0) / nsamples
         pylab.plot(xrange, hist, label="frames 10001-%i" %(10001+nsamples))
         if 50001 in frames:
-            hist = numpy.sum([data[frames.index(50001+i)] for i in range(nsamples)], axis=0) / factor
-            hist /= sum(hist)
+            hist = factor * numpy.sum([data[frames.index(50001+i)] for i in range(nsamples)], axis=0) / nsamples
             pylab.plot(xrange, hist, label="frames 50001-%i" %(50001+nsamples))
         pylab.xlabel(xlabel)
         pylab.ylabel("probability density")
