@@ -45,7 +45,6 @@ if __name__ == "__main__":
     archive.AddGraphics(graphics)
 
     graphics.SetDisplay3DAxesOff()
-    graphics.SetInputText("")
     graphics.SetSize(500,500)
     graphics.SetPosition(100,100)
     graphics.Zoom(1.3)
@@ -62,12 +61,14 @@ if __name__ == "__main__":
         for i in range(int(tslow*fps)):
             archive.LoadFrame(iframe)
             num = ("%i" %inum).zfill(4)
+            graphics.SetInputText("")
             graphics.WriteJPEG("frame_%s" %num)
             iframe += 1
             inum += 1
         while iframe < N:
             archive.LoadFrame(iframe)
             num = ("%i" %inum).zfill(4)
+            graphics.SetInputText("")
             graphics.WriteJPEG("frame_%s" %num)
             iframe += ifreq
             inum += 1
