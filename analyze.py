@@ -18,8 +18,13 @@ from numpy import sqrt
 from numpy import std
 from numpy import vstack
 from numpy.linalg import norm
+
+from scipy import mean
+from scipy import var
 from scipy.interpolate import RectBivariateSpline
 from scipy.spatial.distance import pdist
+from scipy.stats import kurtosis
+from scipy.stats import skew
 
 
 # Base frames and number of samples to analyze, by phase
@@ -81,11 +86,13 @@ if __name__ == "__main__":
 
     # Load csa archive only if there are NPs
     # Sanity check for bead Z coordinates after phase1
+    # Also coordinates need to be shifted to coincide with the field
     if pop > 0:
         csa = load(gzip.open(fcsa))
         if not (phase == "phase1" or all(csa[:,:,:,2] == 0.5)):
             print "Not all Z coordinates are 0.5"
             sys.exit(1)
+        coords = (csa[:,0,:,:2] - 0.5) % 64.0
 
     print "init:", time.time() - T
 
@@ -113,6 +120,16 @@ if __name__ == "__main__":
     deviations = [[std(ctf[i*freq:(i+1)*freq,columns[en]]) for i in range(npoints+1)] for en in energies]
     deviations = [array(dev) for dev in deviations]
 
+    # Statistics of NPs on the grid
+    # We only need look at the X and Y coordinates, since Z is fixed
+    # Mean - from 0 to 1, where 0.5 is the grid point
+    # Variance - should ideally be 0.085
+    # Skewness - should be 0
+    # Kurtosis - should ideally be -1.2
+    if pop > 0:
+        offsets = (coords+0.5 - (coords+0.5).astype(int))[::freq]
+        offsets = [[mean(o),var(o),skew(o),kurtosis(o)] for o in offsets]
+
     print 'energy:', time.time() - T
 
     # ##########
@@ -135,11 +152,9 @@ if __name__ == "__main__":
     # Leave only the cga frames we want
     cga = cga[frames]
 
-    # Do the same for csa frames, plus generate true coordinates
-    # Coordinates need to be shifted to coincide with the field
+    # Do the same for csa frames if there are in fact NPs
     if pop > 0:
         csa = csa[frames]
-        coords = (csa[:,0,:,:2] - 0.5) % 64.0
 
     # Histograms of field values and order parameters
     # Chose some arbitrary range for the bins, so to catch all values
@@ -183,7 +198,7 @@ if __name__ == "__main__":
 
     # Stack vectors of energies and other instantaneous scalar results
     # Keep the indices together with all these, for reference
-    energy = vstack([indices]+instants+averages+deviations).transpose()
+    energy = vstack([indices]+instants+averages+deviations+offsets).transpose()
 
     # Save the instananeous results as energies
     save(fname+".energy.npy", energy)
