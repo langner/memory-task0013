@@ -130,10 +130,10 @@ convert: $(subst .out,.ctf.npy.gz,$(SIMS_OUT_NEW)) $(subst .out,.csa.npy.gz,$(SI
 %.ctf.npy.gz %.csa.npy.gz %.cga.npy.gz: %.out %_Inst.ctf %.csa %.cga
 	-"$(PYCULGI)" convert.py $< && gzip $*{_Inst.ctf,.csa,.cga} && gzip $*.{ctf,csa,cga}.npy
 
-# Analyze the data (npy format., compressed)
+# Analyze the data (npy format, compressed)
 # The resulting archives should be much smaller than the raw data
-# Do not depend on csa files, which are missing for neat systems (energy and fields should suffice)
+# Do not depend explicitely on csa files, which are missing for neat systems (energy and fields should suffice)
 .PHONY: analyze
-analyze:  $(subst .out,.energy.npy.bz2,$(SIMS_OUT)) $(subst .out,.hist-field.npy.bz2,$(SIMS_OUT))
+analyze: $(subst .out,.energy.npy.bz2,$(SIMS_OUT)) $(subst .out,.hist-field.npy.bz2,$(SIMS_OUT))
 %.energy.npy.bz2 %.hist-field.npy.bz2: %.out %.ctf.npy.gz %.cga.npy.gz
-	-python-culgi analyze.py $< && bzip2 $*.{energy,hist}*.npy
+	-python-culgi analyze.py $< energy histograms && bzip2 $*.energy*.npy $*.hist*.npy
