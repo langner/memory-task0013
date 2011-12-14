@@ -24,6 +24,7 @@ if __name__ == "__main__":
 
     fpath = sys.argv[1].strip()
     phase,model,system,params,run = fpath.split('/')
+    phase = int(phase[5:])
     size = map(int,model.split("_")[0].split('x'))
     population = int(system.split('_')[-1][3:])
     data = numpy.load(bz2.BZ2File(fpath))
@@ -36,37 +37,66 @@ if __name__ == "__main__":
         if "total" in sys.argv:
             instant = data[:,1] + data[:,3] + data[:,4]  + data[:,5]  + data[:,6]
             average = data[:,7] + data[:,9] + data[:,10] + data[:,11] + data[:,12]
+            dataset = { "instant.": instant, "average": average }
             plotfname = "%s.energy-total.png" %froot
             ylabel = "total free energy"
-        if "field" in sys.argv:
+        elif "field" in sys.argv:
             instant = data[:,3] + data[:,4]  + data[:,5]
             average = data[:,9] + data[:,10] + data[:,11]
+            dataset = { "instant.": instant, "average": average }
             plotfname = "%s.energy-field.png" %froot
             ylabel = "field free energy"
-        if "coupl" in sys.argv:
+        elif "coupl" in sys.argv and population > 0:
             instant = data[:,6]
             average = data[:,12]
+            dataset = { "instant.": instant, "average": average }
             plotfname = "%s.energy-coupl.png" %froot
             ylabel = "coupling free energy"
+        elif "offsets" in sys.argv and phase >= 7 and population > 0:
+            mean = data[:,19]
+            var = data[:,20]
+            skew = data[:,21]
+            kurtosis = data[:,22]
+            dataset = { "mean": mean, "variance": var, "skewness": skew, "kurtosis": kurtosis }
+            plotfname = "%s.offsets.png"  %froot
+            ylabel = "offset relative to grid midpoint"
+        else:
+            sys.exit(0)
 
-        pylab.plot(data[:,0], instant, label="instant.")
-        pylab.plot(data[:,0], average, label="average")
+        for ds in dataset:
+            pylab.plot(data[:,0], dataset[ds], label=ds)
 
-        ymin = min(instant[100:])
-        ymax = max(instant[100:])
+        ymin = min([min(dataset[ds][100:]) for ds in dataset])
+        ymax = max([max(dataset[ds][100:]) for ds in dataset])
         dy = ymax - ymin
         if "field" in sys.argv:
             ymin = ymax - dy/1.05
-            ymax = ymax + dy/250
+            ymax = ymax + dy/100
         else:
-            ymin = ymin - dy/250
+            ymin = ymin - dy/100
             ymax = ymin + dy/1.05
+        if "offsets" in sys.argv:
+            ymin = -1.3
+            ymax = 0.6
 
         pylab.xlabel("time step")
         pylab.ylabel(ylabel)
 
+        xmin = data[0,0]
+        xmax = data[-1,0]*1.1
+        pylab.xlim(xmin,xmax)
         pylab.ylim(ymin,ymax)
-        pylab.legend()
+        pylab.legend(loc="best")
+
+        if "offsets" in sys.argv:
+            pylab.axhline(y=0.5, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
+            pylab.axhline(y=1.0/12, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
+            pylab.axhline(y=0.0, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
+            pylab.axhline(y=-1.2, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
+            pylab.text(xmax*1.01, 0.5, "0.5", fontsize=12, horizontalalignment="left", verticalalignment="center")
+            pylab.text(xmax*1.01, 1.0/12, "1/12", fontsize=12, horizontalalignment="left", verticalalignment="center")
+            pylab.text(xmax*1.01, 0.0, "0.0", fontsize=12, horizontalalignment="left", verticalalignment="center")
+            pylab.text(xmax*1.01, -1.2, "-1.2", fontsize=12, horizontalalignment="left", verticalalignment="center")
 
     if "hist-field.npy.bz2" in fpath:
         froot = fpath.replace(".hist-field.npy.bz2","")

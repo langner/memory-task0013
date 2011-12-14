@@ -77,6 +77,8 @@ def printinfo(sim):
     if sim.phase >= 4:
         text += ", <a href='%s.first.jpg'>first snapshot</a>" %name
     text += ", <a href='%s.avi'>movie (AVI)</a>" %name
+    if sim.population > 0:
+        text += ", <a href='%s.offsets.png'>grid offset statistics</a>" %name
     text += "<br/>"
 
     text += "Other energies: "

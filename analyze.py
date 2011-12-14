@@ -29,13 +29,13 @@ from scipy.stats import skew
 
 # Base frames and number of samples to analyze, by phase
 PhaseFrames = {
-    "phase1" : ( [1, 11, 101, 1001, 10001], 16 ),
-    "phase2" : ( [1, 11, 101, 1001, 10001], 16 ),
-    "phase3" : ( [1, 11, 101, 1001, 10001], 16 ),
-    "phase4" : ( [1, 11, 101, 1001, 10001], 16 ),
-    "phase5" : ( [1, 11, 101, 1001, 10001], 16 ),
-    "phase6" : ( [1, 11, 51, 101, 501, 1001, 5001, 10001, 50001], 16 ),
-    "phase7" : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
+    1 : ( [1, 11, 101, 1001, 10001], 16 ),
+    2 : ( [1, 11, 101, 1001, 10001], 16 ),
+    3 : ( [1, 11, 101, 1001, 10001], 16 ),
+    4 : ( [1, 11, 101, 1001, 10001], 16 ),
+    5 : ( [1, 11, 101, 1001, 10001], 16 ),
+    6 : ( [1, 11, 51, 101, 501, 1001, 5001, 10001, 50001], 16 ),
+    7 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
 }
 
 # Order of ctf columns
@@ -57,7 +57,7 @@ class Analysis():
         self.fname = fout[:-4]
 
         # Extract phase from the path
-        self.phase = self.fname.split('/')[0]
+        self.phase = int(self.fname.split('/')[0][5:])
 
         # Extract NP population from the path
         self.pop = int(self.fname.split('/')[2].split('_')[-1][3:])
@@ -91,7 +91,7 @@ class Analysis():
         # Also coordinates need to be shifted to coincide with the field
         if self.pop > 0:
             self.csa = load(gzip.open(self.fcsa))
-            if not (self.phase == "phase1" or all(self.csa[:,:,:,2] == 0.5)):
+            if not (self.phase == 1 or all(self.csa[:,:,:,2] == 0.5)):
                 print "Not all Z coordinates are 0.5"
                 sys.exit(1)
             self.csa = (self.csa[:,0,:,:2] - 0.5) % 64.0
@@ -110,7 +110,8 @@ class Analysis():
         # Note that npoints might be correct to within +/-1
         self.npoints = 1100
         self.freq = self.ctf.shape[0]/self.npoints
-        self.freq_csa = self.csa.shape[0]/self.npoints
+        if self.pop > 0:
+            self.freq_csa = self.csa.shape[0]/self.npoints
         self.indices = self.ctf[::self.freq,0]
         self.npoints = self.ctf.shape[0]/self.freq
         self.nrange = range(self.npoints)
@@ -205,12 +206,17 @@ class Analysis():
             # Stack vectors of energies and other instantaneous scalar results
             # Keep the indices together with all these, for reference
             # We might need to drop the last elements in instantaneous results
+            # Note that the saved array is smaller when np NPs are in the system
             if len(self.instants[0]) > len(self.averages[0]):
                 n = len(self.averages[0])
                 self.indices = self.indices[:-1]
                 self.instants = [i[:-1] for i in self.instants]
-                self.offsets = [o[:-1] for o in self.offsets]
-            energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets).transpose()
+                if self.pop > 0:
+                    self.offsets = [o[:-1] for o in self.offsets]
+            if self.pop > 0:
+                energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets).transpose()
+            else:
+                energy = vstack([self.indices]+self.instants+self.averages+self.deviations).transpose()
 
             # Save the instananeous results as energies
             save(self.fname+".energy.npy", energy)
