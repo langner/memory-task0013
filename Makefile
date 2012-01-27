@@ -88,11 +88,11 @@ plot-hist-residual: $(PLOTS_HIST_RESIDUAL)
 .PHONY: gallery
 gallery: gallery.html $(foreach p,$(PHASES),$(p)/gallery.html) exp/gallery.html
 gallery.html: gallery.py
-	python-culgi gallery.py main > gallery.html
+	python-culgi gallery.py main > gallery.html && rm -rvf Culgi.log
 phase%/gallery.html: phase%/*/*/*/*.out phase%/*/*/*/*.jpg phase%/*/*/*/*.avi phase%/*/*/*/*.png gallery.py
-	python-culgi gallery.py $* > phase$*/gallery.html
+	python-culgi gallery.py $* > phase$*/gallery.html && rm -rvf Culgi.log
 exp/gallery.html: gallery.py exp/sem-analyzed/*/*/*.png
-	python-culgi gallery.py exp > $@
+	python-culgi gallery.py exp > $@ && rm -rvf Culgi.log
 
 # Generate report.
 .PHONY: report
