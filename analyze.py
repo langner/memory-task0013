@@ -87,19 +87,23 @@ class Analysis():
         self.cga = load(gzip.open(self.fcga))
 
         # Load csa archive only if there are NPs
-        # Sanity check for bead Z coordinates after phase1
-        # Also coordinates need to be shifted to coincide with the field
         if self.pop > 0:
+
             self.csa = load(gzip.open(self.fcsa))
+
+            # Due to a stupid mistake in the convert script, the shape sometimes needs fixing
+            # Insert missing dimension, which represents the type of bead
+            if len(self.csa.shape) == 3:
+                self.csa = self.csa.reshape((self.csa.shape[0],1,self.csa.shape[1],self.csa.shape[2]))
+
+            # Sanity check for bead Z coordinates after phase1
             if not (self.phase == 1 or all(self.csa[:,:,:,2] == 0.5)):
                 print "Not all Z coordinates are 0.5"
                 sys.exit(1)
-            self.csa = (self.csa[:,0,:,:2] - 0.5) % 64.0
 
-        # Due to a stupid mistake in the convert script, the shape sometimes needs fixing
-        # Insert missing dimension, which represents the type of bead
-        if self.pop > 0 and len(self.csa.shape) == 3:
-            self.csa = self.csa.reshape((self.csa.shape[0],1,self.csa.shape[1],self.csa.shape[2]))
+            # Also coordinates need to be shifted to coincide with the field
+            # And proceed only with two coordinatse (since Z is constant)
+            self.csa = (self.csa[:,:,:,:2] - 0.5) % 64.0
 
     def analyze_energy(self):
         """ Analyze energy and other scalars """
@@ -133,7 +137,7 @@ class Analysis():
         # Kurtosis - should ideally be -1.2
         if self.pop > 0:
             self.offsets = (self.csa+0.5 - (self.csa+0.5).astype(int))[::self.freq_csa]
-            self.offsets = [[f(o, axis=None) for o in self.offsets] for f in mean,var,skew,kurtosis]
+            self.offsets = [[f(o, axis=None) for o in self.offsets[:,0]] for f in mean,var,skew,kurtosis]
             self.offsets = [array(o) for o in self.offsets]
 
         return time.time() - T
@@ -179,7 +183,7 @@ class Analysis():
         # Disregard PBC, we are interested in short distances mostly
         # Therefore, generate the histogram only up to a distance of 10-20 units
         if self.pop > 0:
-            self.pds = [pdist(c) for c in self.csa[0]]
+            self.pds = [pdist(c) for c in self.csa[:,0]]
             self.hist_radial = array([histogram(pd, bins=self.nbins_rad, range=self.rrange)[0] for pd in self.pds])
             self.hist_radial_shape = (self.nframes,1,self.nbins_rad)
 
@@ -187,7 +191,7 @@ class Analysis():
         if self.pop > 0:
             self.edge = range(64)
             self.splines = [[RectBivariateSpline(self.edge,self.edge,ff,kx=1,ky=1) for ff in f] for f in self.cga]
-            self.values_res = array([[s.ev(c[:,0],c[:,1]) for s in self.splines[i]] for i,c in enumerate(self.csa)])
+            self.values_res = array([[s.ev(c[:,0],c[:,1]) for s in self.splines[i]] for i,c in enumerate(self.csa[:,0])])
             self.totals_res = self.values_res[:,0,:] + self.values_res[:,1,:]
             self.orders_res = self.values_res[:,0,:] - self.values_res[:,1,:]
             self.hist_residual_total = array([histogram(t, bins=self.nbins_res, range=self.totalrange)[0] for t in self.totals_res])
