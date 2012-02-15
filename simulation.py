@@ -39,11 +39,14 @@ def getpath(sim):
 
     # Fourth directory: compressibility, interactions, mobilities.
     # Previously 2 significant digits were used for mobility, now
-    #  three are needed sometimes, but we still need to support two.
+    #  three or even four of five are needed sometimes,
+    #  but we still need to support all the possbilities.
     if sim.mobility >= 0.01:
         mobilityformat = "mob%.2f"
-    else:
+    elif sim.mobility >= 0.001:
         mobilityformat = "mob%.3f"
+    else:
+        mobilityformat = "mob%.5f"
     if sim.population == 0:
         format = "k%.1f_nchi%.1f"
         dir4 = format %(sim.kappa, sim.nchi)
