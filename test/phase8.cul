@@ -1,0 +1,55 @@
+CULGI VERSION:6.0.0
+set N [ DefineVariable  @a(int){32} ]
+set D [ DefineVariable  @a(int){16} ]
+set box [ $Palette CreateMesoBox  @a(string){box}  @a(int){$D}  @a(int){$D}  @a(int){1} ] @C CulgiPaletteCmds
+set bcp [ $Palette CreateGaussianChain  @a(string){bcp}  @a(string){A32B20}  @a(int){$D}  @a(int){$D}  @a(int){1} ] @C CulgiPaletteCmds
+[ $bcp CreateHomogeneousRelativeDensity  @a(float){1} ] @C CulgiGaussianChainCmds
+set bcp_A [ $bcp GetBeadTypeRelativeDensityFieldCmds  @a(string){A} ] @C CulgiGaussianChainCmds
+set np [ $Palette LoadSoftCoreColloid  @a(string){np.cof} ] @C CulgiPaletteCmds
+[ $box AddGaussianChain  @a(CulgiGaussianChainCmds){$bcp} ] @C CulgiMesoBoxCmds
+[ $box CopySoftCoreColloids  @a(CulgiSoftCoreColloidCmds){$np}  @a(int){$N} ] @C CulgiMesoBoxCmds
+set Graphics [ $GraphicsManager CreateGraphics ] @C CulgiGraphicsMgrCmds
+[ $Graphics AddViewable  @a(CulgiViewable){$box} ] @C CulgiGraphicsCmds
+[ $Graphics AddViewable  @a(CulgiViewable){$bcp_A} ] @C CulgiGraphicsCmds
+[ Loop  @a(string){i}  @a(float){0}  @a(float){<}  @a(float){$N}  @a(float){1} ]
+set col_i [ $box GetSoftCoreColloidCmds  @a(int){$i} ] @C CulgiMesoBoxCmds
+set col_i_GeometricCenter [ $col_i GetGeometricCenter ] @C CulgiSoftCoreColloidCmds
+set X [ $col_i_GeometricCenter GetX ] @C CulgiPoint
+set Y [ $col_i_GeometricCenter GetY ] @C CulgiPoint
+[ $col_i SetGeometricCenter  @a(float){$X}  @a(float){$Y}  @a(float){0.5} ] @C CulgiSoftCoreColloidCmds
+[ $col_i SetConstAngularVelocity  @a(float){0}  @a(float){0}  @a(float){0} ] @C CulgiSoftCoreColloidCmds
+// [ $col_i SetConstVelocity  @a(float){0}  @a(float){0}  @a(float){0} ] @C CulgiSoftCoreColloidCmds
+[ $col_i SetConstVelocity  @a(string){Z}  @a(float){0} ] @C CulgiSoftCoreColloidCmds
+[ $col_i SetDiffusionFactor  @a(float){0.01} ] @C CulgiSoftCoreColloidCmds
+[ $Graphics AddViewable  @a(CulgiViewable){$col_i} ] @C CulgiGraphicsCmds
+[ End ]
+set MBFHybridCalculator [ $CalculatorsManager CreateMBFHybridCalculator ] @C CulgiCalculatorsMgrCmds
+[ $MBFHybridCalculator SetSystem  @a(CulgiMesoBoxCmds){$box} ] @C CulgiMBFHybridCalculatorCmds
+[ $MBFHybridCalculator SetFieldDiffusionMethod  @a(string){EntropyFieldDynamics} ] @C CulgiMBFHybridCalculatorCmds
+[ $MBFHybridCalculator SetSaveInstantResultsOn  @a(string){SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,SCMElectrostaticsEnergy,SCMExternalPotentialEnergy,SCMPotentialEnergy,GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy} ] @C CulgiMBFHybridCalculatorCmds
+[ $MBFHybridCalculator SetTemperature  @a(float){0.1} ] @C CulgiMBFHybridCalculatorCmds
+set MBFHybridCalculator_Parameters [ $MBFHybridCalculator GetParametersCmds ] @C CulgiMBFHybridCalculatorCmds
+[ $MBFHybridCalculator_Parameters SetBeadFieldCoupling  @a(string){C}  @a(string){A}  @a(float){1} ] @C CulgiMBFHybridParametersCmds
+[ $MBFHybridCalculator_Parameters SetBeadFieldCoupling  @a(string){C}  @a(string){B}  @a(float){2} ] @C CulgiMBFHybridParametersCmds
+[ $MBFHybridCalculator_Parameters SetBeadFieldCoupling  @a(string){S}  @a(string){A}  @a(float){1} ] @C CulgiMBFHybridParametersCmds
+[ $MBFHybridCalculator_Parameters SetBeadFieldCoupling  @a(string){S}  @a(string){B}  @a(float){2} ] @C CulgiMBFHybridParametersCmds
+set MBFHybridCalculator_Parameters_SCMParameters [ $MBFHybridCalculator_Parameters GetSCMParametersCmds ] @C CulgiMBFHybridParametersCmds
+[ $MBFHybridCalculator_Parameters_SCMParameters SetA  @a(string){S}  @a(string){S}  @a(float){25.0} ] @C CulgiSCMParametersCmds
+[ $MBFHybridCalculator_Parameters_SCMParameters SetA  @a(string){S}  @a(string){C}  @a(float){25.0} ] @C CulgiSCMParametersCmds
+[ $MBFHybridCalculator_Parameters_SCMParameters SetA  @a(string){C}  @a(string){C}  @a(float){25.0} ] @C CulgiSCMParametersCmds
+set MBFHybridCalculator_Parameters_GCParameters [ $MBFHybridCalculator_Parameters GetGCParametersCmds ] @C CulgiMBFHybridParametersCmds
+[ $MBFHybridCalculator_Parameters_GCParameters SetChi  @a(string){A}  @a(string){B}  @a(float){0.5} ] @C CulgiGCParametersCmds
+[ $MBFHybridCalculator_Parameters_GCParameters SetExpansionParameter  @a(string){A}  @a(float){0.1} ] @C CulgiGCParametersCmds
+[ $MBFHybridCalculator_Parameters_GCParameters SetExpansionParameter  @a(string){B}  @a(float){0.1} ] @C CulgiGCParametersCmds
+set ArchivePlugin [ $PluginsManager CreateArchivePlugin ] @C CulgiPluginsMgrCmds
+[ $MBFHybridCalculator AddPlugin  @a(CulgiPlugin){$ArchivePlugin} ] @C CulgiMBFHybridCalculatorCmds
+[ $MBFHybridCalculator SetGraphicsUpdateFrequency  @a(int){5} ] @C CulgiMBFHybridCalculatorCmds
+[ $Graphics Render ] @C CulgiGraphicsCmds
+[ $MBFHybridCalculator AddGraphics  @a(Culgi3DGraphics){$Graphics} ] @C CulgiMBFHybridCalculatorCmds
+[ $MBFHybridCalculator Run  @a(int){100000000} ] @C CulgiMBFHybridCalculatorCmds
+GUI Information: 
+GUI Title:
+General Information: 
+Icon Path: 
+Arguments Info: 
+#

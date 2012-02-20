@@ -1,0 +1,24 @@
+CULGI VERSION:6.0.0
+set np [ $Palette CreateSoftCoreMolecule  @a(string){np}  @a(string){P} ] @C CulgiPaletteCmds
+set bcp [ $Palette CreateGaussianChain  @a(string){bcp}  @a(string){A8B8}  @a(int){10}  @a(int){10}  @a(int){10} ] @C CulgiPaletteCmds
+set box [ $Palette CreateMesoBox  @a(string){box}  @a(int){10}  @a(int){10}  @a(int){10} ] @C CulgiPaletteCmds
+[ $box AddGaussianChain  @a(CulgiGaussianChainCmds){$bcp} ] @C CulgiMesoBoxCmds
+[ $box CopySoftCoreMolecules  @a(CulgiSoftCoreMoleculeCmds){$np}  @a(int){1} ] @C CulgiMesoBoxCmds
+set MBFHybridCalculator [ $CalculatorsManager CreateMBFHybridCalculator ] @C CulgiCalculatorsMgrCmds
+[ $MBFHybridCalculator SetSystem  @a(CulgiMesoBoxCmds){$box} ] @C CulgiMBFHybridCalculatorCmds
+[ $MBFHybridCalculator SetSaveInstantResultsOn  @a(string){SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,SCMElectrostaticsEnergy,SCMExternalPotentialEnergy,SCMPotentialEnergy,GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy} ] @C CulgiMBFHybridCalculatorCmds
+set ArchivePlugin [ $PluginsManager CreateArchivePlugin ] @C CulgiPluginsMgrCmds
+[ $ArchivePlugin SetFrequency  @a(int){1} ] @C CulgiArchivePluginCmds
+[ $MBFHybridCalculator AddPlugin  @a(CulgiPlugin){$ArchivePlugin} ] @C CulgiMBFHybridCalculatorCmds
+set MBFHybridCalculator_Parameters [ $MBFHybridCalculator GetParametersCmds ] @C CulgiMBFHybridCalculatorCmds
+[ $MBFHybridCalculator_Parameters SetBeadFieldCoupling  @a(string){P}  @a(string){A}  @a(float){0} ] @C CulgiMBFHybridParametersCmds
+[ $MBFHybridCalculator_Parameters SetBeadFieldCoupling  @a(string){P}  @a(string){B}  @a(float){0} ] @C CulgiMBFHybridParametersCmds
+[ $MBFHybridCalculator_Parameters SetBeadFieldCoupling  @a(string){C}  @a(string){A}  @a(float){0} ] @C CulgiMBFHybridParametersCmds
+[ $MBFHybridCalculator_Parameters SetBeadFieldCoupling  @a(string){C}  @a(string){B}  @a(float){0} ] @C CulgiMBFHybridParametersCmds
+[ $MBFHybridCalculator Run  @a(int){100} ] @C CulgiMBFHybridCalculatorCmds
+GUI Information: 
+GUI Title:
+General Information: 
+Icon Path: 
+Arguments Info: 
+#

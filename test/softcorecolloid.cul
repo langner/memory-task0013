@@ -1,0 +1,17 @@
+CULGI VERSION:6.0.0
+set np [ $Palette LoadSoftCoreColloid  @a(string){np.cof} ] @C CulgiPaletteCmds
+set bcp [ $Palette CreateGaussianChain  @a(string){bcp}  @a(string){A8B8}  @a(int){10}  @a(int){10}  @a(int){10} ] @C CulgiPaletteCmds
+set box [ $Palette CreateMesoBox  @a(string){box}  @a(int){10}  @a(int){10}  @a(int){10} ] @C CulgiPaletteCmds
+[ $box AddGaussianChain  @a(CulgiGaussianChainCmds){$bcp} ] @C CulgiMesoBoxCmds
+[ $box CopySoftCoreColloids  @a(CulgiSoftCoreColloidCmds){$np}  @a(int){1} ] @C CulgiMesoBoxCmds
+set col_0 [ $box GetSoftCoreColloidCmds  @a(int){0} ] @C CulgiMesoBoxCmds
+[ $col_0 SetDiffusionFactor  @a(float){1} ] @C CulgiSoftCoreColloidCmds
+set MBFHybridCalculator [ $CalculatorsManager CreateMBFHybridCalculator ] @C CulgiCalculatorsMgrCmds
+[ $MBFHybridCalculator SetSystem  @a(CulgiMesoBoxCmds){$box} ] @C CulgiMBFHybridCalculatorCmds
+[ $MBFHybridCalculator SetSaveInstantResultsOn  @a(string){SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,SCMElectrostaticsEnergy,SCMExternalPotentialEnergy,SCMPotentialEnergy,GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy} ] @C CulgiMBFHybridCalculatorCmds
+GUI Information: 
+GUI Title:
+General Information: 
+Icon Path: 
+Arguments Info: 
+#

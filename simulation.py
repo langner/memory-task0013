@@ -127,11 +127,11 @@ class simulation:
 
     def __init__(self, phase, size, polymer, beadvolume, temperature, expansion, density, population, kappa, nchi, ca, cb, a, mobility, timestep, totaltime):
 
-        # Set all the parameters.
+        # Set all the parameters
         for parameter in parameters:
             setattr(self, parameter, eval(parameter))
 
-        # Some derived parameters.
+        # Some derived parameters
         self.dcoupling = self.cb - self.ca
         self.volume = size[0]*size[1]
         self.npvolume = self.ca/(self.kappa*self.density+1)
@@ -140,17 +140,17 @@ class simulation:
         else:
             self.effective_density = self.density
 
-        # The difference is not representative, use the excluded volume.
-        self.dexcluded = self.npvolume #self.ca - self.kappa
+        # The difference is not representative, use the excluded volume
+        self.dexcluded = self.npvolume
 
     def setup(self):
 
-        # These follow from the time step.
+        # These follow from the time step
         self.nsteps = int(self.totaltime/self.timestep)
         self.efreq = int(1.0*self.totaltime/Nenerg/self.timestep)
         self.sfreq = int(1.0*self.totaltime/Nsnaps/self.timestep)
 
-        # The diblock copolymer.
+        # The diblock copolymer
         self.bcp = Palette.CreateGaussianChain("bcp", self.polymer, *self.size)
         self.bcp.CreateHomogeneousRelativeDensity(self.effective_density)
         self.bcp_total = self.bcp.GetRelativeDensityFieldCmds()
@@ -159,19 +159,32 @@ class simulation:
         self.bcp_B = self.bcp.GetBeadTypeRelativeDensityFieldCmds("B")
         self.bcp_B.SetDisplayClampLevels(0.0, self.density)
 
-        # The nanoparticle prototype.
-        self.np = Palette.CreateSoftCoreMolecule("np", "P")
+        # The nanoparticle prototype and initial NP distribution
+        # Until phase 7, the nanoparticle is a single bead soft core molecule
+        # From phase 8, it is a soft core colloid loaded from a Culgi object file
+        if self.phase <= 7:
+            self.np = Palette.CreateSoftCoreMolecule("np", "P")
+        else:
+            self.np = Palette.LoadSoftCoreColloid("phase%i/np.cof" %self.phase)
 
-        # The simulation box.
+        # The simulation box
+        # Note again that the nanoparticles are colloids starting from phase 8
         self.box = Palette.CreateMesoBox("box", *self.size)
         self.box.AddGaussianChain(self.bcp)
-        self.box.CopySoftCoreMolecules(self.np, self.population)
+        if self.phase <= 7:
+            self.box.CopySoftCoreMolecules(self.np, self.population)
+        else:
+            self.box.CopySoftCoreColloids(self.np, self.population)
 
-        # The actual nanoparticles inside the simulation box.
-        # For phase 5 and 6, use some ordered starting distribution.
-        # For phase 7, use a random starting distribution again (equilibrate later).
-        self.nanoparticles = [self.box.GetSoftCoreMoleculeCmds("np", i) for i in range(self.population)]
-        if self.phase >= 5 and self.population != 0:
+        # Initial distribution of nanoparticles inside the simulation box
+        # For phase 5 and 6, use some ordered starting distribution
+        # Starting phase 7, use a random starting distribution again (equilibrate later)
+        # (due to a mistake, phase 7 actually uses the same initial configuration as phase 6)
+        if self.phase <= 7:
+            self.nanoparticles = [self.box.GetSoftCoreMoleculeCmds("np", i) for i in range(self.population)]
+        else:
+            self.nanoparticles = [self.box.GetSoftCoreColloidCmds("np", i) for i in range(self.population)]
+        if self.phase >= 5 and self.phase <=7 and self.population != 0:
             if self.phase == 5:
                 rfactor = 1.75
             if self.phase >= 6:
@@ -199,13 +212,13 @@ class simulation:
                 Y = self.nanoparticles[i].GetCenterOfMass().GetY()
                 self.nanoparticles[i].SetCenterOfMass(X, Y, Z)
 
-        # The calculator.
+        # The calculator
         self.calc = CalculatorsManager.CreateMBFHybridCalculator()
         self.calc.SetSystem(self.box)
         self.calc.SetTimeStep(self.timestep)
         self.calc.SetFieldDiffusionMethod("EntropyFieldDynamics")
 
-        # The output settings.
+        # The output settings
         self.calc.SetSaveRelativeDensityFieldsOn()
         self.calc.SetSaveCoordinatesOn()
         self.calc.SetSaveInstantResultsOn("SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,SCMElectrostaticsEnergy,SCMExternalPotentialEnergy,SCMPotentialEnergy,GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy")
@@ -213,20 +226,20 @@ class simulation:
         self.calc.SetRelativeDensityFieldSaveFrequency(self.sfreq)
         self.calc.SetCoordinateSaveFrequency(self.sfreq)
 
-        # Calculator parameters and simulation engine.
+        # Calculator parameters and simulation engine
         self.params = self.calc.GetParametersCmds()
         self.params_GC = self.params.GetGCParametersCmds()
         self.params_SC = self.params.GetSCMParametersCmds()
         self.engine = self.calc.GetDDFTEngineCmds()
         self.engine.SetMaxIterations(maxiters)
 
-        # Parameters concerning mobility.
+        # Parameters concerning mobility
         self.calc.SetTemperature(self.temperature)
         self.params_GC.SetExpansionParameter("A", self.expansion)
         self.params_GC.SetExpansionParameter("B", self.expansion)
         self.params_SC.SetDiffusionFactor("P", self.mobility)
 
-        # Parameters concerning interactions.
+        # Parameters concerning interactions
         self.calc.SetKappa(self.kappa)
         self.params_GC.SetBeadVolume("A", self.beadvolume)
         self.params_GC.SetBeadVolume("B", self.beadvolume)
@@ -235,7 +248,7 @@ class simulation:
         self.params.SetBeadFieldCoupling("P", "B", self.cb)
         self.params_SC.SetA("P", "P", self.a)
 
-        # Output path and file name.
+        # Output path and file name
         self.path = getpath(self)
         self.name = getname(self)
         self.calc.SetOutputFileName(self.name)
@@ -255,19 +268,19 @@ class simulation:
 
     def run(self):
 
-        # From phase 4, we will be doing some equilibration before the actual simulation.
+        # From phase 4, we will be doing some equilibration before the actual simulation
         if self.phase >= 4:
 
-            # Turn of all archives.
+            # Turn of all archives
             self.calc.SetSaveRelativeDensityFieldsOff()
             self.calc.SetSaveCoordinatesOff()
             self.calc.SetSaveInstantResultsOff()
 
-            # No phase separation at all during equilibration.
+            # No phase separation at all during equilibration
             self.params_GC.SetChi("A", "B", 0.0)
 
-            # From phase 7, equilibrate the nanoparticles, too, first.
-            # Nanoparticles should not feel the field here at all, which is not updated.
+            # From phase 7, equilibrate the nanoparticles, too, first
+            # Nanoparticles should not feel the field here at all, which is not updated
             if self.phase >= 7:
                 self.params.SetBeadFieldCoupling("P", "A", 0.0)
                 self.params.SetBeadFieldCoupling("P", "B", 0.0)
@@ -282,14 +295,14 @@ class simulation:
             self.calc.SetBeadDiffusionOff()
             self.calc.Run(int(Teq_field/self.timestep))
 
-            # Set relevant parameters back to the original values.
+            # Set relevant parameters back to the original values
             self.params_SC.SetDiffusionFactor("P", self.mobility)
             self.params_GC.SetChi("A", "B", self.nchi/self.bcp.GetNumBeads())
             self.params.SetBeadFieldCoupling("P", "A", self.ca)
             self.params.SetBeadFieldCoupling("P", "B", self.cb)
             self.calc.SetBeadDiffusionOn()
 
-            # Turn archiving back on.
+            # Turn archiving back on
             self.calc.SetSaveRelativeDensityFieldsOn()
             self.calc.SetSaveCoordinatesOn()
             self.calc.SetSaveInstantResultsOn("SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,SCMElectrostaticsEnergy,SCMExternalPotentialEnergy,SCMPotentialEnergy,GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy")
