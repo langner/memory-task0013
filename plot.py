@@ -27,6 +27,8 @@ if __name__ == "__main__":
     phase = int(phase[5:])
     size = map(int,model.split("_")[0].split('x'))
     population = int(system.split('_')[-1][3:])
+    if phase == 8 and "shell" in sys.argv:
+        population *= 8
     data = numpy.load(bz2.BZ2File(fpath))
 
     if "energy.npy.bz2" in fpath:
@@ -37,33 +39,50 @@ if __name__ == "__main__":
         if "total" in sys.argv:
             instant = data[:,1] + data[:,3] + data[:,4]  + data[:,5]  + data[:,6]
             average = data[:,7] + data[:,9] + data[:,10] + data[:,11] + data[:,12]
+            datas = [ "instant.", "average" ]
             dataset = { "instant.": instant, "average": average }
             plotfname = "%s.energy-total.png" %froot
             ylabel = "total free energy"
         elif "field" in sys.argv:
             instant = data[:,3] + data[:,4]  + data[:,5]
             average = data[:,9] + data[:,10] + data[:,11]
+            datas = [ "instant.", "average" ]
             dataset = { "instant.": instant, "average": average }
             plotfname = "%s.energy-field.png" %froot
             ylabel = "field free energy"
         elif "coupl" in sys.argv and population > 0:
             instant = data[:,6]
             average = data[:,12]
+            datas = [ "instant.", "average" ]
             dataset = { "instant.": instant, "average": average }
             plotfname = "%s.energy-coupl.png" %froot
             ylabel = "coupling free energy"
         elif "offsets" in sys.argv and phase >= 7 and population > 0:
-            mean = data[:,19]
-            var = data[:,20]
-            skew = data[:,21]
-            kurtosis = data[:,22]
-            dataset = { "mean": mean, "variance": var, "skewness": skew, "kurtosis": kurtosis }
+            if phase == 7:
+                mean = data[:,19]
+                var = data[:,20]
+                skew = data[:,21]
+                kurtosis = data[:,22]
+                datas = [ "mean", "variance", "skewness", "kurtosis" ]
+                dataset = { "mean": mean, "variance": var, "skewness": skew, "kurtosis": kurtosis }
+            else:
+                mean = data[:,19]
+                mean_shell = data[:,20]
+                var = data[:,21]
+                var_shell = data[:,22]
+                skew = data[:,23]
+                skew_shell = data[:,24]
+                kurtosis = data[:,25]
+                kurtosis_shell = data[:,26]
+                datas = [ "mean", "mean (shell)", "variance", "variance (shell)", "skewness", "skewness (shell)", "kurtosis", "kurtosis (shell)" ]
+                dataset = { "mean": mean, "mean (shell)": mean_shell, "variance": var, "variance (shell)": var_shell,
+                            "skewness": skew, "skewness (shell)": skew_shell, "kurtosis": kurtosis, "kurtosis (shell)": kurtosis_shell }
             plotfname = "%s.offsets.png"  %froot
             ylabel = "offset relative to grid midpoint"
         else:
             sys.exit(0)
 
-        for ds in dataset:
+        for ds in datas:
             pylab.plot(data[:,0], dataset[ds], label=ds)
 
         ymin = min([min(dataset[ds][100:]) for ds in dataset])
@@ -114,12 +133,36 @@ if __name__ == "__main__":
             data = data[:,1]
 
     if "hist-radial.npy.bz2" in fpath:
+
         froot = fpath.replace(".hist-radial.npy.bz2","")
-        plotfname = froot+".hist-radial.png"
+
+        if phase > 7:
+            if "shell" in sys.argv:
+                data = data[:,1,:]
+                plotfname = froot+".hist-radial-shell"
+            else:
+                data = data[:,0,:]
+                plotfname = froot+".hist-radial"
+        else:
+            plotfname = froot+".hist-radial"
+
+        # There were no shells before phase 8
+        if phase <= 7 and "shell" in sys.argv:
+            print "No shells before phase 8"
+            exit(0);
+
+        if "zoom" in sys.argv:
+            plotfname += ".zoom.png"
+        else:
+            plotfname += ".png"
+
+        # The X axis is fixed from analysis, but we change the plotted scale later
         xlabel = "NP-NP distance"
-        xmin, xmax = 0.0, 16.0
+        xmin = 0.0
+        xmax = 16.0
 
     if "hist-residual.npy.bz2" in fpath:
+
         froot = fpath.replace(".hist-residual.npy.bz2","")
 
         if "total" in sys.argv:
@@ -138,15 +181,36 @@ if __name__ == "__main__":
     if "hist" in fpath:
 
         nsamples = PhaseFrames[phase][1]
-
+        frames = numpy.load(bz2.BZ2File(froot+".hist-frames.npy.bz2")).tolist()
         nbins = data.shape[1]
+
         dx = (xmax-xmin)/nbins
         xrange = numpy.arange(xmin+dx/2.0,xmax+dx/2.0,dx)
-        frames = numpy.load(bz2.BZ2File(froot+".hist-frames.npy.bz2")).tolist()
 
+        Npairs = population*(population-1)/2
         if "hist-radial.npy" in fpath:
+
+            # Cut out the strong peaks due to internal structure
+            # Must also adjust the effective normalization factor
+            # This very specific hack works for phase 8
+            if (phase == 8) and ("shell" in sys.argv):
+                a, b = 0.2828, 0.4
+                r1 = numpy.sqrt( (b-a)**2 + a**2 )
+                r2 = numpy.sqrt(2.0)*b
+                r3 = numpy.sqrt( (b+a)**2 + a**2 )
+                r4 = 2*b
+                b1 = int(r1//dx)
+                b2 = int(r2//dx)
+                b3 = int(r3//dx)
+                b4 = int(r4//dx)
+                data[:,b1] -= population
+                data[:,b2] -= population
+                data[:,b3] -= population
+                data[:,b4] -= population/2
+                Npairs -= population*25
+
             strips = correction(size[0],size[1],xrange) * 2 * numpy.pi * xrange * dx
-            factor = 2 * size[0] * size[1] / (population * strips * (population-1))
+            factor = size[0] * size[1] / strips / Npairs
             hist = factor * data[frames.index(0)]
             pylab.plot(xrange, hist, label="frame 0")
         else:
@@ -169,10 +233,18 @@ if __name__ == "__main__":
         pylab.grid()
         pylab.legend()
 
-        pylab.xlim(xmin,xmax)
-        if "hist-radial.npy" in fpath and "zoom" in sys.argv:
-            plotfname = froot+".hist-radial-zoom.png"
-            pylab.xlim(0.0, 2.2)
+        # We are most interested in small radial distances
+        if "hist-radial.npy" in fpath:
+            xmin = 0.0
+            if "zoom" in sys.argv:
+                if phase > 7:
+                    xmin = 1.35
+                    xmax = 3.7
+                else:
+                    xmax = 2.2
+            else:
+                xmax = 16.0
+            pylab.xlim(xmin,xmax)
 
     if "save" in sys.argv:
         pylab.savefig(plotfname)

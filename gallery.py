@@ -69,7 +69,7 @@ def printinfo(sim):
     text += "<td width='300'><center>last snapshot<br/><a href='%s.jpg'><img height='250pt' src='%s.jpg' /></a></center></td>" %(name,name)
     if sim.population > 0:
         text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial.png'><img border=0 height='250pt' src='%s.hist-radial.png' /></a></center></td>" %(name,name)
-        text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial-zoom.png'><img border=0 height='250pt' src='%s.hist-radial-zoom.png' /></a></center></td>" %(name,name)
+        text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial.zoom.png'><img border=0 height='250pt' src='%s.hist-radial.zoom.png' /></a></center></td>" %(name,name)
     text += "</tr></table>"
 
     text += "Other general: "
@@ -94,7 +94,15 @@ def printinfo(sim):
     if sim.population > 0:
         text += ", <a href='%s.hist-residual-total.png'>residual total densities</a>" %name
         text += ", <a href='%s.hist-residual-order.png'>residual order parameters</a>" %name
-    text += "<br/><br/>"
+    text += "<br/>"
+
+    if phase > 7:
+        text += "Other g(r) plots: "
+        text += "<a href='%s.hist-radial-shell.png'>g(r) for shell beads</a>" %name
+        text += ", <a href='%s.hist-radial-shell.zoom.png'>g(r) for shell beads (zoomed)</a>" %name
+        text += "<br/>"
+
+    text += "<br/>"
 
     return text
 
@@ -106,7 +114,7 @@ labels = {  "beadvolume"    : "Bead volume",
             "dcoupling"     : "Selectivity (c<sub>B</sub>-c<sub>A</sub>)"
 }
 
-phases = [ 1, 2, 3, 4, 5, 6, 7] 
+phases = [ 1, 2, 3, 4, 5, 6, 7, 8 ] 
 favorite = [
     # phase 1
     "phase1/64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
@@ -192,13 +200,14 @@ def footer(names, above=False):
     text += "</script>\n"
     return text
 
-description = [ "Bare NPs moving in 3D (Z&ne;0), random starting ditribution.",
+description = [ "Bare NPs moving in 3D (Z&ne;0), random starting ditribution",
                 "Same as phase 1, but NPs move in 2D (Z=0)",
-                "Same as phase 2, with initial density correction for high NP concentrations.",
-                "Same as phase 3, with initial density equilibration.",
-                "Same as phase 4, with somewhat ordered starting distribution.",
-                "Same as phase 5, with more ordered starting distribution, and 5x longer run time.",
-                "Same as phase 6, with initial nanoparticle equilibration.",
+                "Same as phase 2, with initial density correction for high NP concentrations",
+                "Same as phase 3, with initial density equilibration",
+                "Same as phase 4, with somewhat ordered starting distribution",
+                "Same as phase 5, with more ordered starting distribution, and 5x longer run time",
+                "Same as phase 6, with initial nanoparticle equilibration",
+                "Same as phase 7, with larger nanoparticles (stidd colloids)"
 ]
 
 

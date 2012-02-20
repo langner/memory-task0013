@@ -140,15 +140,23 @@ class simulation:
         else:
             self.effective_density = self.density
 
-        # The difference is not representative, use the excluded volume
+        # The nanoparticle prototype and initial NP distribution
+        # Until phase 7, the nanoparticle is a single bead soft core molecule
+        # From phase 8, it is a soft core colloid loaded from a Culgi object file
+        if self.phase <= 7:
+            self.np = Palette.CreateSoftCoreMolecule("np", "P")
+        else:
+            self.np = Palette.LoadSoftCoreColloid("phase%i/np.cof" %self.phase)
+
+        # We must correct the effective density from phase 8, because nanoparticles
+        # are colloids with more than one bead.
+        if self.phase > 7:
+            self.npvolume = self.np.GetNumberOfBeads()*self.ca/(self.kappa*self.density+1)
+            self.effective_density = self.density - self.population*self.npvolume/self.volume
+
+	# Use this for organizing results (not necessary for actual simultion)
+        # The difference cb-ca is not representative, use the excluded volume
         self.dexcluded = self.npvolume
-
-    def setup(self):
-
-        # These follow from the time step
-        self.nsteps = int(self.totaltime/self.timestep)
-        self.efreq = int(1.0*self.totaltime/Nenerg/self.timestep)
-        self.sfreq = int(1.0*self.totaltime/Nsnaps/self.timestep)
 
         # The diblock copolymer
         self.bcp = Palette.CreateGaussianChain("bcp", self.polymer, *self.size)
@@ -159,14 +167,6 @@ class simulation:
         self.bcp_B = self.bcp.GetBeadTypeRelativeDensityFieldCmds("B")
         self.bcp_B.SetDisplayClampLevels(0.0, self.density)
 
-        # The nanoparticle prototype and initial NP distribution
-        # Until phase 7, the nanoparticle is a single bead soft core molecule
-        # From phase 8, it is a soft core colloid loaded from a Culgi object file
-        if self.phase <= 7:
-            self.np = Palette.CreateSoftCoreMolecule("np", "P")
-        else:
-            self.np = Palette.LoadSoftCoreColloid("phase%i/np.cof" %self.phase)
-
         # The simulation box
         # Note again that the nanoparticles are colloids starting from phase 8
         self.box = Palette.CreateMesoBox("box", *self.size)
@@ -176,14 +176,23 @@ class simulation:
         else:
             self.box.CopySoftCoreColloids(self.np, self.population)
 
-        # Initial distribution of nanoparticles inside the simulation box
-        # For phase 5 and 6, use some ordered starting distribution
-        # Starting phase 7, use a random starting distribution again (equilibrate later)
-        # (due to a mistake, phase 7 actually uses the same initial configuration as phase 6)
+        # The nanoparticle hooks
         if self.phase <= 7:
             self.nanoparticles = [self.box.GetSoftCoreMoleculeCmds("np", i) for i in range(self.population)]
         else:
             self.nanoparticles = [self.box.GetSoftCoreColloidCmds("np", i) for i in range(self.population)]
+
+    def setup(self):
+
+        # These follow from the time step
+        self.nsteps = int(self.totaltime/self.timestep)
+        self.efreq = int(1.0*self.totaltime/Nenerg/self.timestep)
+        self.sfreq = int(1.0*self.totaltime/Nsnaps/self.timestep)
+
+        # Initial distribution of nanoparticles inside the simulation box
+        # For phase 5 and 6, use some ordered starting distribution
+        # Starting phase 7, use a random starting distribution again (equilibrate later)
+        # (due to a mistake, phase 7 actually uses the same initial configuration as phase 6)
         if self.phase >= 5 and self.phase <=7 and self.population != 0:
             if self.phase == 5:
                 rfactor = 1.75
@@ -219,12 +228,20 @@ class simulation:
         self.calc.SetFieldDiffusionMethod("EntropyFieldDynamics")
 
         # The output settings
-        self.calc.SetSaveRelativeDensityFieldsOn()
-        self.calc.SetSaveCoordinatesOn()
+        # The archive plugin is used in Culgi 6
         self.calc.SetSaveInstantResultsOn("SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,SCMElectrostaticsEnergy,SCMExternalPotentialEnergy,SCMPotentialEnergy,GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy")
         self.calc.SetInstantResultsSaveFrequency(self.efreq)
-        self.calc.SetRelativeDensityFieldSaveFrequency(self.sfreq)
-        self.calc.SetCoordinateSaveFrequency(self.sfreq)
+        if Culgi.GetVersionID()[0] == "6":
+                self.archive = PluginsManager.CreateArchivePlugin()
+                self.calc.AddPlugin(self.archive)
+                self.archive.SetFieldsArchiveOn()
+                self.archive.SetParticlesArchiveOn()
+                self.archive.SetFrequency(self.sfreq)
+        if Culgi.GetVersionID()[0] == "5":
+        	self.calc.SetSaveRelativeDensityFieldsOn()
+        	self.calc.SetSaveCoordinatesOn()
+        	self.calc.SetCoordinateSaveFrequency(self.sfreq)
+        	self.calc.SetRelativeDensityFieldSaveFrequency(self.sfreq)
 
         # Calculator parameters and simulation engine
         self.params = self.calc.GetParametersCmds()
@@ -234,19 +251,38 @@ class simulation:
         self.engine.SetMaxIterations(maxiters)
 
         # Parameters concerning mobility
+        # Before phase 7 nanoparticle are single beads (SC molecules with 'P' beads)
+        # From phase 8, nanoparticles are colloids with two different kinds of beads,
+        #  but the diffusion constant is set for the whole colloid
         self.calc.SetTemperature(self.temperature)
         self.params_GC.SetExpansionParameter("A", self.expansion)
         self.params_GC.SetExpansionParameter("B", self.expansion)
-        self.params_SC.SetDiffusionFactor("P", self.mobility)
+        if (self.phase <= 7):
+            self.params_SC.SetDiffusionFactor("P", self.mobility)
+        else:
+            for i in range(self.population):
+                self.nanoparticles[i].SetConstVelocity('Z', 0.0)
+                self.nanoparticles[i].SetConstAngularVelocity(0.0, 0.0, 0.0)
+                self.nanoparticles[i].SetDiffusionFactor(self.mobility)
 
         # Parameters concerning interactions
+        # From phase 8, nanoparticle are colloids with two different types of beads
         self.calc.SetKappa(self.kappa)
         self.params_GC.SetBeadVolume("A", self.beadvolume)
         self.params_GC.SetBeadVolume("B", self.beadvolume)
         self.params_GC.SetChi("A", "B", self.nchi/self.bcp.GetNumBeads())
-        self.params.SetBeadFieldCoupling("P", "A", self.ca)
-        self.params.SetBeadFieldCoupling("P", "B", self.cb)
-        self.params_SC.SetA("P", "P", self.a)
+        if self.phase <= 7:
+            self.params.SetBeadFieldCoupling("P", "A", self.ca)
+            self.params.SetBeadFieldCoupling("P", "B", self.cb)
+            self.params_SC.SetA("P", "P", self.a)
+        else:
+            self.params.SetBeadFieldCoupling("C", "A", self.ca)
+            self.params.SetBeadFieldCoupling("C", "A", self.ca)
+            self.params.SetBeadFieldCoupling("S", "B", self.cb)
+            self.params.SetBeadFieldCoupling("S", "B", self.cb)
+            self.params_SC.SetA("C", "C", self.a)
+            self.params_SC.SetA("C", "S", self.a)
+            self.params_SC.SetA("S", "S", self.a)
 
         # Output path and file name
         self.path = getpath(self)
@@ -271,9 +307,12 @@ class simulation:
         # From phase 4, we will be doing some equilibration before the actual simulation
         if self.phase >= 4:
 
-            # Turn of all archives
-            self.calc.SetSaveRelativeDensityFieldsOff()
-            self.calc.SetSaveCoordinatesOff()
+            # Turn off all archives
+            if Culgi.GetVersionID()[0] == "5":
+                self.calc.SetSaveRelativeDensityFieldsOff()
+                self.calc.SetSaveCoordinatesOff()
+            if Culgi.GetVersionID()[0] == "6":
+                self.calc.RemovePlugin(self.archive)
             self.calc.SetSaveInstantResultsOff()
 
             # No phase separation at all during equilibration
@@ -282,29 +321,54 @@ class simulation:
             # From phase 7, equilibrate the nanoparticles, too, first
             # Nanoparticles should not feel the field here at all, which is not updated
             if self.phase >= 7:
-                self.params.SetBeadFieldCoupling("P", "A", 0.0)
-                self.params.SetBeadFieldCoupling("P", "B", 0.0)
+                if self.phase == 7:
+                    self.params.SetBeadFieldCoupling("P", "A", 0.0)
+                    self.params.SetBeadFieldCoupling("P", "B", 0.0)
+                else:
+                    self.params.SetBeadFieldCoupling("C", "A", 0.0)
+                    self.params.SetBeadFieldCoupling("C", "B", 0.0)
+                    self.params.SetBeadFieldCoupling("S", "A", 0.0)
+                    self.params.SetBeadFieldCoupling("S", "B", 0.0)
                 self.calc.SetFieldDiffusionOff()
                 self.calc.Run(int(Teq_np/self.timestep))
 
             # Now equilibrate fields with only base coupling, keeping NP positions fixed.
-            self.params_SC.SetDiffusionFactor("P", 0)
-            self.params.SetBeadFieldCoupling("P", "A", self.ca)
-            self.params.SetBeadFieldCoupling("P", "B", self.ca)
+            if self.phase <= 7:
+                self.params_SC.SetDiffusionFactor("P", 0)
+                self.params.SetBeadFieldCoupling("P", "A", self.ca)
+                self.params.SetBeadFieldCoupling("P", "B", self.ca)
+            else:
+                for i in range(self.population):
+                    self.nanoparticles[i].SetDiffusionFactor(0.0)
+                self.params.SetBeadFieldCoupling("C", "A", self.ca)
+                self.params.SetBeadFieldCoupling("C", "B", self.ca)
+                self.params.SetBeadFieldCoupling("S", "A", self.ca)
+                self.params.SetBeadFieldCoupling("S", "B", self.ca)
             self.calc.SetFieldDiffusionOn()
             self.calc.SetBeadDiffusionOff()
             self.calc.Run(int(Teq_field/self.timestep))
 
             # Set relevant parameters back to the original values
-            self.params_SC.SetDiffusionFactor("P", self.mobility)
             self.params_GC.SetChi("A", "B", self.nchi/self.bcp.GetNumBeads())
-            self.params.SetBeadFieldCoupling("P", "A", self.ca)
-            self.params.SetBeadFieldCoupling("P", "B", self.cb)
+            if self.phase <= 7:
+                self.params_SC.SetDiffusionFactor("P", self.mobility)
+                self.params.SetBeadFieldCoupling("P", "A", self.ca)
+                self.params.SetBeadFieldCoupling("P", "B", self.cb)
+            else:
+                for i in range(self.population):
+                    self.nanoparticles[i].SetDiffusionFactor(self.mobility)
+                self.params.SetBeadFieldCoupling("C", "A", self.ca)
+                self.params.SetBeadFieldCoupling("C", "B", self.cb)               
+                self.params.SetBeadFieldCoupling("S", "A", self.ca)
+                self.params.SetBeadFieldCoupling("S", "B", self.cb)               
             self.calc.SetBeadDiffusionOn()
 
             # Turn archiving back on
-            self.calc.SetSaveRelativeDensityFieldsOn()
-            self.calc.SetSaveCoordinatesOn()
+            if Culgi.GetVersionID()[0] == "5":
+                self.calc.SetSaveRelativeDensityFieldsOn()
+                self.calc.SetSaveCoordinatesOn()
+            if Culgi.GetVersionID()[0] == "6":
+                self.calc.AddPlugin(self.archive)
             self.calc.SetSaveInstantResultsOn("SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,SCMElectrostaticsEnergy,SCMExternalPotentialEnergy,SCMPotentialEnergy,GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy")
 
         self.calc.Run(self.nsteps)

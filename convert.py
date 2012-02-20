@@ -16,22 +16,27 @@ if __name__ == "__main__":
     fcsa = fname + ".csa"
     fctf = fname + "_Inst.ctf"
 
-    # Make sure that simulations has finished.
-    # Note that from phase 4, there are two runs for each simulation.
+    # Make sure that simulation has finished
+    # Note that from phase 4, there are two runs for each simulation
     if not "Time used" in open(fout).read().strip().split('\n')[-1]:
         print "This simulation has not finished."
         sys.exit(1)
 
-    sim = loadpath(fout)
-
+    # Simulation and archive
+    sim = loadpath(fout, setup=False)
     archive = UtilitiesManager.CreateArchiveReader()
     archive.SetSystem(sim.box, fcga, fcsa)
     nframes = archive.GetNumberOfFrames()
-    beads = [sim.box.GetSoftCoreMoleculeCmds("np",np).GetBeadCmds(0) for np in range(sim.population)]
+
+    # Bead command objects, sorted per bead index
+    # Parameter Nbeads is number of beads per nanoparticle
+    Nbeads = sim.nanoparticles[0].GetNumberOfBeads()
+    beads = [[np.GetBeadCmds(i) for np in sim.nanoparticles] for i in range(Nbeads)]
 
     # Create the arrays beforehand, which should save memory
+    # There are always to kinds of fields, but not number of beads
     cga = numpy.zeros((nframes,2,64,64))
-    csa = numpy.zeros((nframes,1,sim.population,3))
+    csa = numpy.zeros((nframes,Nbeads,sim.population,3))
 
     print "init:", time.time() - t
 
@@ -45,9 +50,11 @@ if __name__ == "__main__":
         t = time.time()
 
         # Transform NP coordinates, only if there are any
+        # Second index is bead type
         if sim.population > 0:
-            coords = [b.GetCoordinates() for b in beads]
-            csa[nframe,0] = [[c.GetX(),c.GetY(),c.GetZ()] for c in coords]
+            coords = [[bb.GetCoordinates() for bb in b] for b in beads]
+            for i in range(Nbeads):
+                csa[nframe,i] = [[c.GetX(),c.GetY(),c.GetZ()] for c in coords[i]]
 
         T2 += time.time() - t
 

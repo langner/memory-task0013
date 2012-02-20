@@ -36,6 +36,7 @@ PhaseFrames = {
     5 : ( [1, 11, 101, 1001, 10001], 16 ),
     6 : ( [1, 11, 51, 101, 501, 1001, 5001, 10001, 50001], 16 ),
     7 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
+    8 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
 }
 
 # Order of ctf columns
@@ -62,7 +63,7 @@ class Analysis():
         # Extract NP population from the path
         self.pop = int(self.fname.split('/')[2].split('_')[-1][3:])
 
-        # Choose columns/energie to use for ctf file
+        # Choose columns/energies to use for ctf file
         if self.pop == 0:
             self.energies = energies_neat
             self.columns = columns_neat
@@ -76,7 +77,7 @@ class Analysis():
         self.fcga = self.fname + ".cga.npy.gz"
         self.fcsa = (self.fname + ".csa.npy.gz")*(self.pop > 0)
 
-        # Make sure that simulations has finished
+        # Make sure that simulation has finished
         # Note that from phase 4, there are two runs for each simulation
         if not "Time used" in open(self.fout).read().strip().split('\n')[-1]:
             print "This simulation has not finished."
@@ -101,9 +102,29 @@ class Analysis():
                 print "Not all Z coordinates are 0.5"
                 sys.exit(1)
 
-            # Also coordinates need to be shifted to coincide with the field
-            # And proceed only with two coordinatse (since Z is constant)
-            self.csa = (self.csa[:,:,:,:2] - 0.5) % 64.0
+            # Coordinates need to be shifted to coincide with the field
+            # Also, proceed only with two coordinatse (since Z is constant)
+            self.csa = (self.csa[:,:,:,:2] - 0.5)
+
+            # Apply PBC to bead coordinates
+            # In phase 8 we have some internal structure, so the modulo of a core bead
+            #   implies the modulo of all related shell beads, but in any case shell beads
+            #   are not moduloed independently
+            if self.phase <= 7:
+                self.csa %= 64.0
+            else:
+                for snap in self.csa:
+                    for icb, corebead in enumerate(snap[0]):
+                        for ix in range(2):
+                            if corebead[ix] >= 64.0:
+                                snap[:,icb,ix] %= 64.0
+
+        # Indices of beads to use for analysis
+        # In phase 8, there are core and shell beads
+        if self.phase <= 7:
+            self.bead_ind = [[0]]
+        else:
+            self.bead_ind = [[0],range(1,9)]
 
     def analyze_energy(self):
         """ Analyze energy and other scalars """
@@ -130,14 +151,16 @@ class Analysis():
         self.deviations = [std(e, axis=1) for e in E]
 
         # Statistics of NPs on the grid
-        # We only need look at the X and Y coordinates, since Z is fixed
-        # Mean - from 0 to 1, where 0.5 is the grid point
-        # Variance - should ideally be 0.085
-        # Skewness - should ideally be 0
-        # Kurtosis - should ideally be -1.2
+        #   Mean - from 0 to 1, where 0.5 is the grid point
+        #   Variance - should ideally be 0.085
+        #   Skewness - should ideally be 0
+        #   Kurtosis - should ideally be -1.2
+        # From phase 8, nanoparticles are colloids, so offsets can be calculated for both the core
+        #   and shell beads separately (all shell beads combined, and stacked right after core offsets)
+        funcs = [mean,var,skew,kurtosis]
+        self.offsets = (self.csa+0.5 - (self.csa+0.5).astype(int))[::self.freq_csa]
         if self.pop > 0:
-            self.offsets = (self.csa+0.5 - (self.csa+0.5).astype(int))[::self.freq_csa]
-            self.offsets = [[f(o, axis=None) for o in self.offsets[:,0]] for f in mean,var,skew,kurtosis]
+            self.offsets = [[f(o, axis=None) for o in self.offsets[:,bi]] for f in funcs for bi in self.bead_ind]
             self.offsets = [array(o) for o in self.offsets]
 
         return time.time() - T
@@ -180,23 +203,26 @@ class Analysis():
         self.hist_field_shape = (self.nframes,1,self.nbins_f)
 
         # Radial distribution histograms (only if there are NPs)
-        # Disregard PBC, we are interested in short distances mostly
+        # Disregard PBC, because we are interested in short distances mostly
         # Therefore, generate the histogram only up to a distance of 10-20 units
+        # From phase 8, we can also generate distributions between all shell beads
         if self.pop > 0:
-            self.pds = [pdist(c) for c in self.csa[:,0]]
-            self.hist_radial = array([histogram(pd, bins=self.nbins_rad, range=self.rrange)[0] for pd in self.pds])
-            self.hist_radial_shape = (self.nframes,1,self.nbins_rad)
+            self.pds = [[pdist(c[bi].reshape((self.pop*len(bi),2))) for bi in self.bead_ind] for c in self.csa[:]]
+            self.hist_radial = array([[histogram(pd, bins=self.nbins_rad, range=self.rrange)[0] for pd in pds] for pds in self.pds])
+            self.hist_radial_shape = (self.nframes,len(self.bead_ind),self.nbins_rad)
 
         # Residual field totals and order parameters at particle positions
         if self.pop > 0:
             self.edge = range(64)
             self.splines = [[RectBivariateSpline(self.edge,self.edge,ff,kx=1,ky=1) for ff in f] for f in self.cga]
-            self.values_res = array([[s.ev(c[:,0],c[:,1]) for s in self.splines[i]] for i,c in enumerate(self.csa[:,0])])
-            self.totals_res = self.values_res[:,0,:] + self.values_res[:,1,:]
-            self.orders_res = self.values_res[:,0,:] - self.values_res[:,1,:]
-            self.hist_residual_total = array([histogram(t, bins=self.nbins_res, range=self.totalrange)[0] for t in self.totals_res])
-            self.hist_residual_order = array([histogram(t, bins=self.nbins_res, range=self.orderrange)[0] for t in self.orders_res])
-            self.hist_residual_shape = (self.nframes,1,self.nbins_res)
+            self.values_res = array([[[s.ev(cc[:,0],cc[:,1]) for cc in c] for s in self.splines[i]] for i,c in enumerate(self.csa[:])])
+            self.totals_res = self.values_res[:,0,:,:] + self.values_res[:,1,:,:]
+            self.orders_res = self.values_res[:,0,:,:] - self.values_res[:,1,:,:]
+            hist_total = lambda data: histogram(data, bins=self.nbins_res, range=self.totalrange)[0]
+            hist_order = lambda data: histogram(data, bins=self.nbins_res, range=self.orderrange)[0]
+            self.hist_res_total = array([[hist_total(t[bi].reshape((self.pop*len(bi),))) for bi in self.bead_ind] for t in self.totals_res])
+            self.hist_res_order = array([[hist_order(t[bi].reshape((self.pop*len(bi),))) for bi in self.bead_ind] for t in self.orders_res])
+            self.hist_res_shape = (self.nframes,len(self.bead_ind),self.nbins_res)
 
         return time.time() - T
 
@@ -239,8 +265,8 @@ class Analysis():
             # Save histograms of radial distributions and residual fields
             if self.pop > 0:
                 save(self.fname+".hist-radial.npy", array(self.hist_radial))
-                total = self.hist_residual_total.reshape(self.hist_residual_shape)
-                order = self.hist_residual_order.reshape(self.hist_residual_shape)
+                total = self.hist_res_total.reshape(self.hist_res_shape)
+                order = self.hist_res_order.reshape(self.hist_res_shape)
                 save_residual = concatenate([total, order], axis=1)
                 save(self.fname+".hist-residual.npy", save_residual)
 
@@ -267,5 +293,5 @@ if __name__ == "__main__":
         print "histograms: %.2fs" %a.analyze_histograms()
 
     # Save archives
-    if "energy" in sys.argv or "histgrams" in sys.argv:
+    if "energy" in sys.argv or "histograms" in sys.argv:
         print "save:, %.2fs" %a.save()

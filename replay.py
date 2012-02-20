@@ -5,13 +5,12 @@ from simulation import *
 
 if __name__ == "__main__":
 
+    sim = loadpath(sys.argv[1], setup=False)
+    fout = "%s/%s.out" %(sim.outpath,sim.outname)
     tosave = "save" in sys.argv
 
-    sim = loadpath(sys.argv[1])
-    fout = "%s/%s.out" %(sim.outpath,sim.outname)
-
-    # Make sure that simulations has finished.
-    # Note that from phase 4, there are two runs for each simulation.
+    # Make sure that simulation has finished (if we want to save)
+    # Note that from phase 4, there are two runs for each simulation
     if tosave and not "Time used" in open(fout).read().strip().split('\n')[-1]:
         print "This simulation has not finished."
         sys.exit(1)
@@ -31,9 +30,16 @@ if __name__ == "__main__":
     graphics.AddViewable(sim.box)
     graphics.AddViewable(sim.bcp_A)
     graphics.AddViewable(sim.bcp_B)
+
+    # Remember that after phase 7 the nanoparticles are colloids
     for i in GPERange(0, sim.population, 1, "<"):
-        npi = sim.box.GetSoftCoreMoleculeCmds("np", i)
-        npi.SetBeadDisplayRadius("P", 0.75)
+        if sim.phase <= 7:
+            npi = sim.box.GetSoftCoreMoleculeCmds("np", i)
+            npi.SetBeadDisplayRadius("P", 0.75)
+        else:
+            npi = sim.box.GetSoftCoreColloidCmds("np", i)
+            npi.SetBeadDisplayRadius("C", 1.5)
+            npi.SetBeadDisplayRadius("S", 0.0)
         graphics.AddViewable(npi)
 
     cga = "%s/%s.cga" %(sim.outpath,sim.outname)
