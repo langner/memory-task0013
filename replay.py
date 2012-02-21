@@ -5,12 +5,14 @@ from simulation import *
 
 if __name__ == "__main__":
 
+    tosave = "save" in sys.argv
+
     sim = loadpath(sys.argv[1])
     fout = "%s/%s.out" %(sim.outpath,sim.outname)
 
     # Make sure that simulations has finished.
     # Note that from phase 4, there are two runs for each simulation.
-    if not "Time used" in open(fout).read().strip().split('\n')[-1]:
+    if tosave and not "Time used" in open(fout).read().strip().split('\n')[-1]:
         print "This simulation has not finished."
         sys.exit(1)
 
@@ -49,7 +51,7 @@ if __name__ == "__main__":
     graphics.SetPosition(100,100)
     graphics.Zoom(1.3)
 
-    if "save" in sys.argv:
+    if tosave:
 
         N = archive.GetNumberOfFrames()
         fps = 10.0
