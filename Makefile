@@ -12,8 +12,11 @@ include $(wildcard ../common.mk)
 # Simulation output files
 PHASES = $(wildcard phase?)
 SYSTEMS = $(foreach p,$(PHASES),$(wildcard $(p)/*x*x*_A*B*_bv?.??))
+SYSTEMS8 = $(wildcard phase8/*x*x*_A*B*_bv?.??)
 MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
+MODELS8 = $(foreach s,$(SYSTEMS8),$(wildcard $(s)/temp*_exp*_den*_pop*))
 SIMS = $(foreach m,$(MODELS),$(wildcard $(m)/k*_nchi*))
+SIMS8 = $(foreach m,$(MODELS8),$(wildcard $(m)/k*_nchi*))
 SIMS_OUT = $(foreach s,$(SIMS),$(wildcard $(s)/*.out))
 SIMS_OUT_NEW = $(subst .cga,.out,$(foreach s,$(SIMS),$(wildcard $(s)/*.cga)))
 SIMS_JPG = $(foreach m,$(SIMS),$(wildcard $(m)/*.jpg))
@@ -21,6 +24,7 @@ SIMS_AVI = $(foreach m,$(SIMS),$(wildcard $(m)/*.avi))
 SIMS_ENERGY = $(foreach m,$(SIMS),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_HIST_FIELD = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-field.npy.bz2))
 SIMS_HIST_RADIAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-radial.npy.bz2))
+SIMS_HIST_RADIAL8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RESIDUAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-residual.npy.bz2))
 
 # Plots to be generated.
@@ -29,11 +33,14 @@ PLOTS_ENERGY_FIELD = $(subst .energy.npy.bz2,.energy-field.png,$(SIMS_ENERGY))
 PLOTS_HIST_FIELD_TOTAL = $(subst .hist-field.npy.bz2,.hist-field-total.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_FIELD_ORDER = $(subst .hist-field.npy.bz2,.hist-field-order.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_RADIAL = $(subst .hist-radial.npy.bz2,.hist-radial.png,$(SIMS_HIST_RADIAL))
-PLOTS_HIST_RADIAL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial-zoom.png,$(SIMS_HIST_RADIAL))
+PLOTS_HIST_RADIAL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial.zoom.png,$(SIMS_HIST_RADIAL))
+PLOTS_HIST_RADIAL_SHELL = $(subst .hist-radial.npy.bz2,.hist-radial-shell.png,$(SIMS_HIST_RADIAL8))
+PLOTS_HIST_RADIAL_SHELL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial-shell.zoom.png,$(SIMS_HIST_RADIAL8))
 PLOTS_HIST_RESIDUAL_TOTAL = $(subst .hist-residual.npy.bz2,.hist-residual-total.png,$(SIMS_HIST_RESIDUAL))
 PLOTS_HIST_RESIDUAL_ORDER = $(subst .hist-residual.npy.bz2,.hist-residual-order.png,$(SIMS_HIST_RESIDUAL))
 PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD)
 PLOTS_HIST_FIELD = $(PLOTS_HIST_FIELD_TOTAL) $(PLOTS_HIST_FIELD_ORDER)
+PLOTS_HIST_RADIALS = $(PLOTS_HIST_RADIAL) $(PLOTS_HIST_RADIAL_ZOOM) $(PLOTS_HIST_RADIAL_SHELL) $(PLOTS_HIST_RADIAL_SHELL_ZOOM)
 PLOTS_HIST_RESIDUAL = $(PLOTS_HIST_RESIDUAL_TOTAL) $(PLOTS_HIST_RESIDUAL_ORDER)
 
 # Synchronization parameters (rsync)
@@ -66,22 +73,32 @@ copy:
 .PHONY: plot plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual
 plot: plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual
 plot-energy: $(PLOTS_ENERGY)
-%.energy-total.png %.energy-field.png: %.energy.npy.bz2
+%.energy-total.png: %.energy.npy.bz2
 	"$(PYTHON)" plot.py $< total save
+%.energy-field.png: %.energy.npy.bz2
 	"$(PYTHON)" plot.py $< field save
+%.energy-coupl.png: %.energy.npy.bz2
 	"$(PYTHON)" plot.py $< coupl save
+%.offsets.png: %.energy.npy.bz2
 	"$(PYTHON)" plot.py $< offsets save
 plot-hist-field: $(PLOTS_HIST_FIELD)
-%.hist-field-total.png %.hist-field-order.png: %.hist-field.npy.bz2
+%.hist-field-total.png: %.hist-field.npy.bz2
 	"$(PYTHON)" plot.py $< total save
+%.hist-field-order.png: %.hist-field.npy.bz2
 	"$(PYTHON)" plot.py $< order save
-plot-hist-radial: $(PLOTS_HIST_RADIAL) $(PLOTS_HIST_RADIAL_ZOOM)
-%.hist-radial.png %.hist-radial-zoom.png: %.hist-radial.npy.bz2
+plot-hist-radial: $(PLOTS_HIST_RADIALS)
+%.hist-radial.png: %.hist-radial.npy.bz2
 	"$(PYTHON)" plot.py $< save
+%.hist-radial.zoom.png: %.hist-radial.npy.bz2
 	"$(PYTHON)" plot.py $< zoom save
+%.hist-radial-shell.png: %.hist-radial.npy.bz2
+	"$(PYTHON)" plot.py $< shell save
+%.hist-radial-shell.zoom.png: %.hist-radial.npy.bz2
+	"$(PYTHON)" plot.py $< shell zoom save
 plot-hist-residual: $(PLOTS_HIST_RESIDUAL)
-%.hist-residual-total.png %.hist-residual-order.png: %.hist-residual.npy.bz2
+%.hist-residual-total.png: %.hist-residual.npy.bz2
 	"$(PYTHON)" plot.py $< total save
+%.hist-residual-order.png: %.hist-residual.npy.bz2
 	"$(PYTHON)" plot.py $< order save
 
 # Generate the galleries if any key output files changed
