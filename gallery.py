@@ -88,12 +88,18 @@ def printinfo(sim):
         text += ", <a href='%s.energy-coupl.png'>coupling energy</a>" %name
     text += "<br/>"
 
-    text += "Other histograms: "
+    text += "Field density histograms: "
     text += "<a href='%s.hist-field-total.png'>total densities</a>" %name
     text += ", <a href='%s.hist-field-order.png'>order parameters</a>" %name
+    text += "<br/>"
+
     if sim.population > 0:
-        text += ", <a href='%s.hist-residual-total.png'>residual total densities</a>" %name
-        text += ", <a href='%s.hist-residual-order.png'>residual order parameters</a>" %name
+        text += "Residual density histograms: "
+        text += ", <a href='%s.hist-residual-total.png'>residual total dens.</a>" %name
+        text += ", <a href='%s.hist-residual-order.png'>residual order param.</a>" %name
+        if phase > 7:
+            text += ", <a href='%s.hist-residual-total-shell.png'>res. total dens. (shell)</a>" %name
+            text += ", <a href='%s.hist-residual-order-shell.png'>res. order param. (shell)</a>" %name            
     text += "<br/>"
 
     if phase > 7:
@@ -207,7 +213,8 @@ description = [ "Bare NPs moving in 3D (Z&ne;0), random starting ditribution",
                 "Same as phase 4, with somewhat ordered starting distribution",
                 "Same as phase 5, with more ordered starting distribution, and 5x longer run time",
                 "Same as phase 6, with initial nanoparticle equilibration",
-                "Same as phase 7, with larger nanoparticles (stidd colloids)"
+                "Same as phase 7, with larger nanoparticles (stiff colloids)",
+                "Same as phase 8, with colloid rotational diffusion",
 ]
 
 

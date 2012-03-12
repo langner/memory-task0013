@@ -167,15 +167,28 @@ if __name__ == "__main__":
 
         if "total" in sys.argv:
             plotfname = froot+".hist-residual-total.png"
+            if "shell" in sys.argv:
+                plotfname = froot+".hist-residual-total-shell.png"
             xlabel = "residual field density"
             xmin, xmax = 0.0, 1.5
-            data = data[:,0]
+            if phase > 7 and "shell" in sys.argv:
+                data = data[:,1]
+            else:
+                data = data[:,0]
 
         if "order" in sys.argv:
             plotfname = froot+".hist-residual-order.png"
+            if "shell" in sys.argv:
+                plotfname = froot+".hist-residual-order-shell.png"
             xlabel = "residual order parameter"
             xmin, xmax = -1.5, 1.5
-            data = data[:,1]
+            if phase > 7:
+                if "shell" in sys.argv:
+                    data = data[:,3]
+                else:
+                    data = data[:,2]
+            else:
+                data = data[:,1]
 
 
     if "hist" in fpath:

@@ -12,7 +12,7 @@ parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "kappa", "temperature", "expansion",
                 "ca", "cb", "a", "mobility", "population",
                 "timestep", "totaltime" ]
-Teq_np = 1009
+Teq_np = 1000
 Teq_field = 100
 
 def printnow(fname, content, mode='a'):
@@ -154,7 +154,7 @@ class simulation:
             self.npvolume = self.np.GetNumberOfBeads()*self.ca/(self.kappa*self.density+1)
             self.effective_density = self.density - self.population*self.npvolume/self.volume
 
-	# Use this for organizing results (not necessary for actual simultion)
+        # Use this for organizing results (not necessary for actual simultion)
         # The difference cb-ca is not representative, use the excluded volume
         self.dexcluded = self.npvolume
 
@@ -254,6 +254,8 @@ class simulation:
         # Before phase 7 nanoparticle are single beads (SC molecules with 'P' beads)
         # From phase 8, nanoparticles are colloids with two different kinds of beads,
         #  but the diffusion constant is set for the whole colloid
+        # Phase 8 assumes zero angular diffusion, but phase 9 already does not
+        # From phase 9 the colloids can rotate
         self.calc.SetTemperature(self.temperature)
         self.params_GC.SetExpansionParameter("A", self.expansion)
         self.params_GC.SetExpansionParameter("B", self.expansion)
@@ -262,8 +264,13 @@ class simulation:
         else:
             for i in range(self.population):
                 self.nanoparticles[i].SetConstVelocity('Z', 0.0)
-                self.nanoparticles[i].SetConstAngularVelocity(0.0, 0.0, 0.0)
                 self.nanoparticles[i].SetDiffusionFactor(self.mobility)
+                if self.phase == 8:
+                    self.nanoparticles[i].SetConstAngularVelocity(0.0, 0.0, 0.0)
+                else:
+                    self.nanoparticles[i].SetConstAngularVelocity('X', 0.0)
+                    self.nanoparticles[i].SetConstAngularVelocity('Y', 0.0)
+                    self.nanoparticles[i].SetRotationalFactors(0.0, 0.0, self.mobility)
 
         # Parameters concerning interactions
         # From phase 8, nanoparticle are colloids with two different types of beads
