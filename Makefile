@@ -22,26 +22,32 @@ SIMS_OUT_NEW = $(subst .cga,.out,$(foreach s,$(SIMS),$(wildcard $(s)/*.cga)))
 SIMS_JPG = $(foreach m,$(SIMS),$(wildcard $(m)/*.jpg))
 SIMS_AVI = $(foreach m,$(SIMS),$(wildcard $(m)/*.avi))
 SIMS_ENERGY = $(foreach m,$(SIMS),$(wildcard $(m)/*.energy.npy.bz2))
+SIMS_ENERGY8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_HIST_FIELD = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-field.npy.bz2))
 SIMS_HIST_RADIAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RADIAL8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RESIDUAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-residual.npy.bz2))
+SIMS_HIST_RESIDUAL8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.hist-residual.npy.bz2))
 
 # Plots to be generated.
 PLOTS_ENERGY_TOTAL = $(subst .energy.npy.bz2,.energy-total.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_FIELD = $(subst .energy.npy.bz2,.energy-field.png,$(SIMS_ENERGY))
+PLOTS_ENERGY_COUPL = $(subst .hist-residual.npy.bz2,.energy-coupl.png,$(SIMS_HIST_RESIDUAL))
+PLOTS_OFFSETS = $(subst .energy.npy.bz2,.offsets.png,$(SIMS_ENERGY8))
 PLOTS_HIST_FIELD_TOTAL = $(subst .hist-field.npy.bz2,.hist-field-total.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_FIELD_ORDER = $(subst .hist-field.npy.bz2,.hist-field-order.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_RADIAL = $(subst .hist-radial.npy.bz2,.hist-radial.png,$(SIMS_HIST_RADIAL))
 PLOTS_HIST_RADIAL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial.zoom.png,$(SIMS_HIST_RADIAL))
 PLOTS_HIST_RADIAL_SHELL = $(subst .hist-radial.npy.bz2,.hist-radial-shell.png,$(SIMS_HIST_RADIAL8))
 PLOTS_HIST_RADIAL_SHELL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial-shell.zoom.png,$(SIMS_HIST_RADIAL8))
-PLOTS_HIST_RESIDUAL_TOTAL = $(subst .hist-residual.npy.bz2,.hist-residual-total.png,$(SIMS_HIST_RESIDUAL))
-PLOTS_HIST_RESIDUAL_ORDER = $(subst .hist-residual.npy.bz2,.hist-residual-order.png,$(SIMS_HIST_RESIDUAL))
-PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD)
+PLOTS_HIST_RES_TOTAL = $(subst .hist-residual.npy.bz2,.hist-residual-total.png,$(SIMS_HIST_RESIDUAL))
+PLOTS_HIST_RES_TOTAL_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-total-shell.png,$(SIMS_HIST_RESIDUAL8))
+PLOTS_HIST_RES_ORDER = $(subst .hist-residual.npy.bz2,.hist-residual-order.png,$(SIMS_HIST_RESIDUAL))
+PLOTS_HIST_RES_ORDER_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-order-shell.png,$(SIMS_HIST_RESIDUAL8))
+PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL) $(PLOTS_OFFSETS)
 PLOTS_HIST_FIELD = $(PLOTS_HIST_FIELD_TOTAL) $(PLOTS_HIST_FIELD_ORDER)
 PLOTS_HIST_RADIALS = $(PLOTS_HIST_RADIAL) $(PLOTS_HIST_RADIAL_ZOOM) $(PLOTS_HIST_RADIAL_SHELL) $(PLOTS_HIST_RADIAL_SHELL_ZOOM)
-PLOTS_HIST_RESIDUAL = $(PLOTS_HIST_RESIDUAL_TOTAL) $(PLOTS_HIST_RESIDUAL_ORDER)
+PLOTS_HIST_RES = $(PLOTS_HIST_RES_TOTAL) $(PLOTS_HIST_RES_TOTAL_SHELL) $(PLOTS_HIST_RES_ORDER) $(PLOTS_HIST_RES_ORDER_SHELL)
 
 # Synchronization parameters (rsync)
 SYNC_REMOTE = poly:scratch/
@@ -71,7 +77,7 @@ copy:
 # Generate the plots based on analyzed data
 # Don't depend on coupling and offset plots, since neat systems don't get those
 .PHONY: plot plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual
-plot: plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual
+plot: plot-energy plot-hist-field plot-hist-radial plot-hist-residual
 plot-energy: $(PLOTS_ENERGY)
 %.energy-total.png: %.energy.npy.bz2
 	"$(PYTHON)" plot.py $< total save
@@ -95,11 +101,15 @@ plot-hist-radial: $(PLOTS_HIST_RADIALS)
 	"$(PYTHON)" plot.py $< shell save
 %.hist-radial-shell.zoom.png: %.hist-radial.npy.bz2
 	"$(PYTHON)" plot.py $< shell zoom save
-plot-hist-residual: $(PLOTS_HIST_RESIDUAL)
+plot-hist-residual: $(PLOTS_HIST_RES)
 %.hist-residual-total.png: %.hist-residual.npy.bz2
 	"$(PYTHON)" plot.py $< total save
+%.hist-residual-total-shell.png: %.hist-residual.npy.bz2
+	"$(PYTHON)" plot.py $< total shell save
 %.hist-residual-order.png: %.hist-residual.npy.bz2
 	"$(PYTHON)" plot.py $< order save
+%.hist-residual-order-shell.png: %.hist-residual.npy.bz2
+	"$(PYTHON)" plot.py $< order shell save
 
 # Generate the galleries if any key output files changed
 .PHONY: gallery
