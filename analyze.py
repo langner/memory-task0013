@@ -206,8 +206,16 @@ class Analysis():
         # Disregard PBC, because we are interested in short distances mostly
         # Therefore, generate the histogram only up to a distance of 10-20 units
         # From phase 8, we can also generate distributions between all shell beads
+        # Build pair distance lists sequentially for each time frame and throw away
+        #  small distances in order to save memory
         if self.pop > 0:
-            self.pds = [[pdist(c[bi].reshape((self.pop*len(bi),2))) for bi in self.bead_ind] for c in self.csa[:]]
+            self.pds = []
+            for c in self.csa[:]:
+                self.pds.append([])
+                for bi in self.bead_ind:
+                    pd = pdist(c[bi].reshape((self.pop*len(bi),2)))
+                    pd = pd[pd<self.rmax]
+                    self.pds[-1].append(pd)
             self.hist_radial = array([[histogram(pd, bins=self.nbins_rad, range=self.rrange)[0] for pd in pds] for pds in self.pds])
             self.hist_radial_shape = (self.nframes,len(self.bead_ind),self.nbins_rad)
 
@@ -263,6 +271,7 @@ class Analysis():
             save(self.fname+".hist-field.npy", save_field)
 
             # Save histograms of radial distributions and residual fields
+            # Note that the residuals for core and shell beads are stacked from phaes 8
             if self.pop > 0:
                 save(self.fname+".hist-radial.npy", array(self.hist_radial))
                 total = self.hist_res_total.reshape(self.hist_res_shape)
