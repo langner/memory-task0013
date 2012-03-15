@@ -116,7 +116,7 @@ class Analysis():
                 for snap in self.csa:
                     for icb, corebead in enumerate(snap[0]):
                         for ix in range(2):
-                            if corebead[ix] >= 64.0:
+                            if corebead[ix] >= 64.0 or corebead[ix] < 0.0:
                                 snap[:,icb,ix] %= 64.0
 
         # Indices of beads to use for analysis
