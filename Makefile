@@ -13,41 +13,50 @@ include $(wildcard ../common.mk)
 PHASES = $(wildcard phase?)
 SYSTEMS = $(foreach p,$(PHASES),$(wildcard $(p)/*x*x*_A*B*_bv?.??))
 SYSTEMS8 = $(wildcard phase8/*x*x*_A*B*_bv?.??)
+SYSTEMS9 = $(wildcard phase9/*x*x*_A*B*_bv?.??)
 MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
 MODELS8 = $(foreach s,$(SYSTEMS8),$(wildcard $(s)/temp*_exp*_den*_pop*))
+MODELS9 = $(foreach s,$(SYSTEMS9),$(wildcard $(s)/temp*_exp*_den*_pop*))
 SIMS = $(foreach m,$(MODELS),$(wildcard $(m)/k*_nchi*))
 SIMS8 = $(foreach m,$(MODELS8),$(wildcard $(m)/k*_nchi*))
+SIMS9 = $(foreach m,$(MODELS9),$(wildcard $(m)/k*_nchi*))
 SIMS_OUT = $(foreach s,$(SIMS),$(wildcard $(s)/*.out))
 SIMS_OUT_NEW = $(subst .cga,.out,$(foreach s,$(SIMS),$(wildcard $(s)/*.cga)))
 SIMS_JPG = $(foreach m,$(SIMS),$(wildcard $(m)/*.jpg))
 SIMS_AVI = $(foreach m,$(SIMS),$(wildcard $(m)/*.avi))
 SIMS_ENERGY = $(foreach m,$(SIMS),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_ENERGY8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.energy.npy.bz2))
+SIMS_ENERGY9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_HIST_FIELD = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-field.npy.bz2))
 SIMS_HIST_RADIAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RADIAL8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.hist-radial.npy.bz2))
+SIMS_HIST_RADIAL9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RESIDUAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_RESIDUAL8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.hist-residual.npy.bz2))
+SIMS_HIST_RESIDUAL9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.hist-residual.npy.bz2))
+SIMS_HIST_ANGLES = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-angles.npy.bz2))
 
 # Plots to be generated.
 PLOTS_ENERGY_TOTAL = $(subst .energy.npy.bz2,.energy-total.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_FIELD = $(subst .energy.npy.bz2,.energy-field.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_COUPL = $(subst .hist-residual.npy.bz2,.energy-coupl.png,$(SIMS_HIST_RESIDUAL))
-PLOTS_OFFSETS = $(subst .energy.npy.bz2,.offsets.png,$(SIMS_ENERGY8))
+PLOTS_OFFSETS = $(subst .energy.npy.bz2,.offsets.png,$(SIMS_ENERGY8) $(SIMS_ENERGY9))
+PLOTS_OFFSETS_ANG = $(subst .energy.npy.bz2,.offsets-ang.png,$(SIMS_ENERGY9))
 PLOTS_HIST_FIELD_TOTAL = $(subst .hist-field.npy.bz2,.hist-field-total.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_FIELD_ORDER = $(subst .hist-field.npy.bz2,.hist-field-order.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_RADIAL = $(subst .hist-radial.npy.bz2,.hist-radial.png,$(SIMS_HIST_RADIAL))
 PLOTS_HIST_RADIAL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial.zoom.png,$(SIMS_HIST_RADIAL))
-PLOTS_HIST_RADIAL_SHELL = $(subst .hist-radial.npy.bz2,.hist-radial-shell.png,$(SIMS_HIST_RADIAL8))
-PLOTS_HIST_RADIAL_SHELL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial-shell.zoom.png,$(SIMS_HIST_RADIAL8))
+PLOTS_HIST_RADIAL_SHELL = $(subst .hist-radial.npy.bz2,.hist-radial-shell.png,$(SIMS_HIST_RADIAL8) $(SIMS_HIST_RADIAL9))
+PLOTS_HIST_RADIAL_SHELL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial-shell.zoom.png,$(SIMS_HIST_RADIAL8) $(SIMS_HIST_RADIAL9))
 PLOTS_HIST_RES_TOTAL = $(subst .hist-residual.npy.bz2,.hist-residual-total.png,$(SIMS_HIST_RESIDUAL))
-PLOTS_HIST_RES_TOTAL_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-total-shell.png,$(SIMS_HIST_RESIDUAL8))
+PLOTS_HIST_RES_TOTAL_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-total-shell.png,$(SIMS_HIST_RESIDUAL8) $(SIMS_HIST_RESIDUAL9))
 PLOTS_HIST_RES_ORDER = $(subst .hist-residual.npy.bz2,.hist-residual-order.png,$(SIMS_HIST_RESIDUAL))
-PLOTS_HIST_RES_ORDER_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-order-shell.png,$(SIMS_HIST_RESIDUAL8))
-PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL) $(PLOTS_OFFSETS)
+PLOTS_HIST_RES_ORDER_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-order-shell.png,$(SIMS_HIST_RESIDUAL8) $(SIMS_HIST_RESIDUAL9))
+PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL) $(PLOTS_OFFSETS) $(PLOTS_OFFSETS_ANG)
 PLOTS_HIST_FIELD = $(PLOTS_HIST_FIELD_TOTAL) $(PLOTS_HIST_FIELD_ORDER)
 PLOTS_HIST_RADIALS = $(PLOTS_HIST_RADIAL) $(PLOTS_HIST_RADIAL_ZOOM) $(PLOTS_HIST_RADIAL_SHELL) $(PLOTS_HIST_RADIAL_SHELL_ZOOM)
 PLOTS_HIST_RES = $(PLOTS_HIST_RES_TOTAL) $(PLOTS_HIST_RES_TOTAL_SHELL) $(PLOTS_HIST_RES_ORDER) $(PLOTS_HIST_RES_ORDER_SHELL)
+PLOTS_HIST_ANGLES = $(subst .hist-ang.npy.bz2,.hist-angles.png,$(SIMS_HIST_ANGLES))
 
 # Synchronization parameters (rsync)
 SYNC_REMOTE = poly:scratch/
@@ -76,8 +85,8 @@ copy:
 
 # Generate the plots based on analyzed data
 # Don't depend on coupling and offset plots, since neat systems don't get those
-.PHONY: plot plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual
-plot: plot-energy plot-hist-field plot-hist-radial plot-hist-residual
+.PHONY: plot plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
+plot: plot-energy plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
 plot-energy: $(PLOTS_ENERGY)
 %.energy-total.png: %.energy.npy.bz2
 	"$(PYTHON)" plot.py $< total save
@@ -87,6 +96,8 @@ plot-energy: $(PLOTS_ENERGY)
 	"$(PYTHON)" plot.py $< coupl save
 %.offsets.png: %.energy.npy.bz2
 	"$(PYTHON)" plot.py $< offsets save
+%.offsets-ang.png: %.energy.npy.bz2
+	"$(PYTHON)" plot.py $< offsets angles save
 plot-hist-field: $(PLOTS_HIST_FIELD)
 %.hist-field-total.png: %.hist-field.npy.bz2
 	"$(PYTHON)" plot.py $< total save
@@ -110,13 +121,16 @@ plot-hist-residual: $(PLOTS_HIST_RES)
 	"$(PYTHON)" plot.py $< order save
 %.hist-residual-order-shell.png: %.hist-residual.npy.bz2
 	"$(PYTHON)" plot.py $< order shell save
+plot-hist-angles: $(PLOTS_HIST_ANGLES)
+%.hist-angles.png: %.hist-ang.npy.bz2
+	"$(PYTHON)" plot.py $< angles save
 
 # Generate the galleries if any key output files changed
 .PHONY: gallery
 gallery: gallery.html $(foreach p,$(PHASES),$(p)/gallery.html) exp/gallery.html
 gallery.html: gallery.py
 	python-culgi gallery.py main > gallery.html && rm -rvf Culgi.log
-phase%/gallery.html: phase%/*/*/*/*.out phase%/*/*/*/*.jpg phase%/*/*/*/*.avi phase%/*/*/*/*.png gallery.py
+phase%/gallery.html: phase%/*/*/*/*.out gallery.py
 	python-culgi gallery.py $* > phase$*/gallery.html && rm -rvf Culgi.log
 exp/gallery.html: gallery.py exp/sem-analyzed/*/*/*.png
 	python-culgi gallery.py exp > $@ && rm -rvf Culgi.log
