@@ -72,23 +72,29 @@ def printinfo(sim):
         text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial.zoom.png'><img border=0 height='250pt' src='%s.hist-radial.zoom.png' /></a></center></td>" %(name,name)
     text += "</tr></table>"
 
-    text += "Other general: "
-    text += "<a href='%s.out'>output file</a>" %name
+    text += "Other visual: "
     if sim.phase >= 4:
         text += ", <a href='%s.first.jpg'>first snapshot</a>" %name
     text += ", <a href='%s.avi'>movie (AVI)</a>" %name
-    if sim.population > 0:
-        text += ", <a href='%s.offsets.png'>grid offset statistics</a>" %name
     text += "<br/>"
 
-    text += "Other energies: "
+    text += "General: "
+    text += "<a href='%s.out'>output file</a>" %name
+    if sim.population > 0:
+        text += ", <a href='%s.offsets.png'>grid offsets</a>" %name
+        if sim.phase > 8:
+            text += ", <a href='%s.offsets-ang.png'>angular offsets</a>" %name
+            text += ", <a href='%s.hist-ang.png'>angular distribution</a>" %name
+    text += "<br/>"
+
+    text += "Energies: "
     text += "<a href='%s.energy-total.png'>total energy</a>" %name
     text += ", <a href='%s.energy-field.png'>field energy</a>" %name
     if sim.population > 0:
         text += ", <a href='%s.energy-coupl.png'>coupling energy</a>" %name
     text += "<br/>"
 
-    text += "Field density histograms: "
+    text += "Field histograms: "
     text += "<a href='%s.hist-field-total.png'>total densities</a>" %name
     text += ", <a href='%s.hist-field-order.png'>order parameters</a>" %name
     text += "<br/>"
@@ -120,7 +126,7 @@ labels = {  "beadvolume"    : "Bead volume",
             "dcoupling"     : "Selectivity (c<sub>B</sub>-c<sub>A</sub>)"
 }
 
-phases = [ 1, 2, 3, 4, 5, 6, 7, 8 ] 
+phases = [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] 
 favorite = [
     # phase 1
     "phase1/64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
@@ -180,6 +186,8 @@ favorite = [
     "phase6/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.10_a25.0/tt55000.out",
     # phase 7
     "phase7/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
+    # phase 8
+    # phase 9
 ]
 favorite.sort()
 

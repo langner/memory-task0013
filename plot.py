@@ -27,7 +27,7 @@ if __name__ == "__main__":
     phase = int(phase[5:])
     size = map(int,model.split("_")[0].split('x'))
     population = int(system.split('_')[-1][3:])
-    if phase == 8 and "shell" in sys.argv:
+    if phase in [8,9] and "shell" in sys.argv:
         population *= 8
     data = numpy.load(bz2.BZ2File(fpath))
 
@@ -58,27 +58,37 @@ if __name__ == "__main__":
             plotfname = "%s.energy-coupl.png" %froot
             ylabel = "coupling free energy"
         elif "offsets" in sys.argv and phase >= 7 and population > 0:
-            if phase == 7:
-                mean = data[:,19]
-                var = data[:,20]
-                skew = data[:,21]
-                kurtosis = data[:,22]
+            if "angles" in sys.argv:
+                mean = data[:,27]
+                var = data[:,28]
+                skew = data[:,29]
+                kurtosis = data[:,30]
                 datas = [ "mean", "variance", "skewness", "kurtosis" ]
                 dataset = { "mean": mean, "variance": var, "skewness": skew, "kurtosis": kurtosis }
+                plotfname = "%s.offsets-ang.png" %froot
+                ylabel = "offset zero rotation"
             else:
-                mean = data[:,19]
-                mean_shell = data[:,20]
-                var = data[:,21]
-                var_shell = data[:,22]
-                skew = data[:,23]
-                skew_shell = data[:,24]
-                kurtosis = data[:,25]
-                kurtosis_shell = data[:,26]
-                datas = [ "mean", "mean (shell)", "variance", "variance (shell)", "skewness", "skewness (shell)", "kurtosis", "kurtosis (shell)" ]
-                dataset = { "mean": mean, "mean (shell)": mean_shell, "variance": var, "variance (shell)": var_shell,
-                            "skewness": skew, "skewness (shell)": skew_shell, "kurtosis": kurtosis, "kurtosis (shell)": kurtosis_shell }
-            plotfname = "%s.offsets.png"  %froot
-            ylabel = "offset relative to grid midpoint"
+                if phase == 7:
+                    mean = data[:,19]
+                    var = data[:,20]
+                    skew = data[:,21]
+                    kurtosis = data[:,22]
+                    datas = [ "mean", "variance", "skewness", "kurtosis" ]
+                    dataset = { "mean": mean, "variance": var, "skewness": skew, "kurtosis": kurtosis }
+                else:
+                    mean = data[:,19]
+                    mean_shell = data[:,20]
+                    var = data[:,21]
+                    var_shell = data[:,22]
+                    skew = data[:,23]
+                    skew_shell = data[:,24]
+                    kurtosis = data[:,25]
+                    kurtosis_shell = data[:,26]
+                    datas = [ "mean", "mean (shell)", "variance", "variance (shell)", "skewness", "skewness (shell)", "kurtosis", "kurtosis (shell)" ]
+                    dataset = { "mean": mean, "mean (shell)": mean_shell, "variance": var, "variance (shell)": var_shell,
+                                "skewness": skew, "skewness (shell)": skew_shell, "kurtosis": kurtosis, "kurtosis (shell)": kurtosis_shell }
+                plotfname = "%s.offsets.png" %froot
+                ylabel = "offset relative to grid midpoint"
         else:
             sys.exit(0)
 
@@ -97,6 +107,9 @@ if __name__ == "__main__":
         if "offsets" in sys.argv:
             ymin = -1.3
             ymax = 0.6
+            if "angles" in sys.argv:
+                ymin = -2.0
+                ymax = 4.0
 
         pylab.xlabel("time step")
         pylab.ylabel(ylabel)
@@ -108,14 +121,23 @@ if __name__ == "__main__":
         pylab.legend(loc="best")
 
         if "offsets" in sys.argv:
-            pylab.axhline(y=0.5, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
-            pylab.axhline(y=1.0/12, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
+            y_mean = 0.5
+            y_var = 1.0/12
+            str_mean = r"$\frac{1}{2}$"
+            str_var = r"$\frac{1}{12}$"
+            if "angles" in sys.argv:
+                y_mean = numpy.pi/2.0
+                y_var = numpy.pi**2/12.0
+                str_mean = r"$\frac{\pi}{2}$"
+                str_var = r"$\frac{\pi}{12}$"
+            pylab.axhline(y=y_mean, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
+            pylab.axhline(y=y_var, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
             pylab.axhline(y=0.0, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
             pylab.axhline(y=-1.2, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
-            pylab.text(xmax*1.01, 0.5, "0.5", fontsize=12, horizontalalignment="left", verticalalignment="center")
-            pylab.text(xmax*1.01, 1.0/12, "1/12", fontsize=12, horizontalalignment="left", verticalalignment="center")
-            pylab.text(xmax*1.01, 0.0, "0.0", fontsize=12, horizontalalignment="left", verticalalignment="center")
-            pylab.text(xmax*1.01, -1.2, "-1.2", fontsize=12, horizontalalignment="left", verticalalignment="center")
+            pylab.text(xmax*1.01, y_mean, str_mean, fontsize=12, horizontalalignment="left", verticalalignment="center")
+            pylab.text(xmax*1.01, y_var, str_var, fontsize=12, horizontalalignment="left", verticalalignment="center")
+            pylab.text(xmax*1.01, 0.0, r"$0.0$", fontsize=12, horizontalalignment="left", verticalalignment="center")
+            pylab.text(xmax*1.01, -1.2, r"$-\frac{6}{5}$", fontsize=12, horizontalalignment="left", verticalalignment="center")
 
     if "hist-field.npy.bz2" in fpath:
         froot = fpath.replace(".hist-field.npy.bz2","")
@@ -163,7 +185,7 @@ if __name__ == "__main__":
 
     if "hist-residual.npy.bz2" in fpath:
 
-        froot = fpath.replace(".hist-residual.npy.bz2","")
+        froot = fpath.replace(".hist-residual.npy.bz2", "")
 
         if "total" in sys.argv:
             plotfname = froot+".hist-residual-total.png"
@@ -190,6 +212,13 @@ if __name__ == "__main__":
             else:
                 data = data[:,1]
 
+    if "hist-ang.npy.bz2" in fpath:
+
+        froot = fpath.replace(".hist-ang.npy.bz2", "")
+        plotfname = froot + ".hist-ang.png"
+        xlabel = "rotation angle relative to start"
+        xmin = 0.0
+        xmax = 3.3
 
     if "hist" in fpath:
 
@@ -205,8 +234,8 @@ if __name__ == "__main__":
 
             # Cut out the strong peaks due to internal structure
             # Must also adjust the effective normalization factor
-            # This very specific hack works for phase 8
-            if (phase == 8) and ("shell" in sys.argv):
+            # This very specific hack works for phase 8 (and phase 9)
+            if (phase in [8,9]) and ("shell" in sys.argv):
                 a, b = 0.2828, 0.4
                 r1 = numpy.sqrt( (b-a)**2 + a**2 )
                 r2 = numpy.sqrt(2.0)*b
@@ -220,7 +249,7 @@ if __name__ == "__main__":
                 data[:,b2] -= population
                 data[:,b3] -= population
                 data[:,b4] -= population/2
-                Npairs -= population*25
+                Npairs -= population*25 # <<----- I think this is wrong!?!?!?!
 
             strips = correction(size[0],size[1],xrange) * 2 * numpy.pi * xrange * dx
             factor = size[0] * size[1] / strips / Npairs

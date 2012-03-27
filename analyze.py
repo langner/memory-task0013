@@ -5,6 +5,7 @@ import time
 
 from numpy import all
 from numpy import arange
+from numpy import arctan2
 from numpy import array
 from numpy import average
 from numpy import concatenate
@@ -37,6 +38,7 @@ PhaseFrames = {
     6 : ( [1, 11, 51, 101, 501, 1001, 5001, 10001, 50001], 16 ),
     7 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
     8 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
+    9 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
 }
 
 # Order of ctf columns
@@ -163,6 +165,15 @@ class Analysis():
             self.offsets = [[f(o, axis=None) for o in self.offsets[:,bi]] for f in funcs for bi in self.bead_ind]
             self.offsets = [array(o) for o in self.offsets]
 
+        # Evaluate the rotations of nanoparticle and calculate statistics
+        # This makes sense starting from phase 9
+        # Note: we take the absolute value of the angle, to make the function continuous
+        if self.phase > 8 and self.pop > 0:
+            icenter = self.bead_ind[0][0]
+            iref = self.bead_ind[1][0]
+            self.angles = [abs(arctan2(snap[iref,:,1]-snap[icenter,:,1],snap[iref,:,0]-snap[icenter,:,0])) for snap in self.csa[::self.freq_csa]]
+            self.offsets_angles = [[f(a, axis=None) for a in self.angles] for f in funcs]
+
         return time.time() - T
 
     def analyze_histograms(self):
@@ -193,6 +204,7 @@ class Analysis():
         self.nbins_f = 256
         self.nbins_rad = 1024
         self.nbins_res = 256
+        self.nbins_ang = 256
 
         # Histograms of field values and order parameters
         # Chose some arbitrary range for the bins, so to catch all values
@@ -232,6 +244,11 @@ class Analysis():
             self.hist_res_order = array([[hist_order(t[bi].reshape((self.pop*len(bi),))) for bi in self.bead_ind] for t in self.orders_res])
             self.hist_res_shape = (self.nframes,len(self.bead_ind),self.nbins_res)
 
+        # Nanoparticle rotation angles
+        # Makes sense starting from phase 9
+        if self.phase > 8 and self.pop > 0:
+            self.hist_angles = [histogram(angles, bins=self.nbins_ang)[0] for angles in self.angles]
+
         return time.time() - T
 
     def save(self):
@@ -251,8 +268,13 @@ class Analysis():
                 self.instants = [i[:-1] for i in self.instants]
                 if self.pop > 0:
                     self.offsets = [o[:-1] for o in self.offsets]
+                    if self.phase > 8:
+                        self.offsets_angles = [o[:-1] for o in self.offsets_angles]
             if self.pop > 0:
-                energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets).transpose()
+                if self.phase > 8:
+                    energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets+self.offsets_angles).transpose()
+                else:
+                    energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets).transpose()
             else:
                 energy = vstack([self.indices]+self.instants+self.averages+self.deviations).transpose()
 
@@ -278,6 +300,11 @@ class Analysis():
                 order = self.hist_res_order.reshape(self.hist_res_shape)
                 save_residual = concatenate([total, order], axis=1)
                 save(self.fname+".hist-residual.npy", save_residual)
+
+            # Save histograms of angular distributions
+            # This is available starting from phase 9
+            if self.phase > 8 and self.pop > 0:
+                save(self.fname+".hist-ang.npy", array(self.hist_angles))
 
         return time.time() - T
 

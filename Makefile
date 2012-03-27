@@ -34,13 +34,13 @@ SIMS_HIST_RADIAL9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RESIDUAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_RESIDUAL8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_RESIDUAL9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.hist-residual.npy.bz2))
-SIMS_HIST_ANGLES = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-angles.npy.bz2))
+SIMS_HIST_ANGLES = $(foreach m,$(SIMS9),$(wildcard $(m)/*.hist-ang.npy.bz2))
 
 # Plots to be generated.
 PLOTS_ENERGY_TOTAL = $(subst .energy.npy.bz2,.energy-total.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_FIELD = $(subst .energy.npy.bz2,.energy-field.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_COUPL = $(subst .hist-residual.npy.bz2,.energy-coupl.png,$(SIMS_HIST_RESIDUAL))
-PLOTS_OFFSETS = $(subst .energy.npy.bz2,.offsets.png,$(SIMS_ENERGY8) $(SIMS_ENERGY9))
+PLOTS_OFFSETS_RAD = $(subst .energy.npy.bz2,.offsets.png,$(SIMS_ENERGY8) $(SIMS_ENERGY9))
 PLOTS_OFFSETS_ANG = $(subst .energy.npy.bz2,.offsets-ang.png,$(SIMS_ENERGY9))
 PLOTS_HIST_FIELD_TOTAL = $(subst .hist-field.npy.bz2,.hist-field-total.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_FIELD_ORDER = $(subst .hist-field.npy.bz2,.hist-field-order.png,$(SIMS_HIST_FIELD))
@@ -52,11 +52,12 @@ PLOTS_HIST_RES_TOTAL = $(subst .hist-residual.npy.bz2,.hist-residual-total.png,$
 PLOTS_HIST_RES_TOTAL_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-total-shell.png,$(SIMS_HIST_RESIDUAL8) $(SIMS_HIST_RESIDUAL9))
 PLOTS_HIST_RES_ORDER = $(subst .hist-residual.npy.bz2,.hist-residual-order.png,$(SIMS_HIST_RESIDUAL))
 PLOTS_HIST_RES_ORDER_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-order-shell.png,$(SIMS_HIST_RESIDUAL8) $(SIMS_HIST_RESIDUAL9))
-PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL) $(PLOTS_OFFSETS) $(PLOTS_OFFSETS_ANG)
+PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
+PLOTS_OFFSETS = $(PLOTS_OFFSETS_RAD) $(PLOTS_OFFSETS_ANG)
 PLOTS_HIST_FIELD = $(PLOTS_HIST_FIELD_TOTAL) $(PLOTS_HIST_FIELD_ORDER)
 PLOTS_HIST_RADIALS = $(PLOTS_HIST_RADIAL) $(PLOTS_HIST_RADIAL_ZOOM) $(PLOTS_HIST_RADIAL_SHELL) $(PLOTS_HIST_RADIAL_SHELL_ZOOM)
 PLOTS_HIST_RES = $(PLOTS_HIST_RES_TOTAL) $(PLOTS_HIST_RES_TOTAL_SHELL) $(PLOTS_HIST_RES_ORDER) $(PLOTS_HIST_RES_ORDER_SHELL)
-PLOTS_HIST_ANGLES = $(subst .hist-ang.npy.bz2,.hist-angles.png,$(SIMS_HIST_ANGLES))
+PLOTS_HIST_ANGLES = $(subst .hist-ang.npy.bz2,.hist-ang.png,$(SIMS_HIST_ANGLES))
 
 # Synchronization parameters (rsync)
 SYNC_REMOTE = poly:scratch/
@@ -86,7 +87,7 @@ copy:
 # Generate the plots based on analyzed data
 # Don't depend on coupling and offset plots, since neat systems don't get those
 .PHONY: plot plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
-plot: plot-energy plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
+plot: plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
 plot-energy: $(PLOTS_ENERGY)
 %.energy-total.png: %.energy.npy.bz2
 	"$(PYTHON)" plot.py $< total save
@@ -96,6 +97,7 @@ plot-energy: $(PLOTS_ENERGY)
 	"$(PYTHON)" plot.py $< coupl save
 %.offsets.png: %.energy.npy.bz2
 	"$(PYTHON)" plot.py $< offsets save
+plot-offsets: $(PLOTS_OFFSETS)
 %.offsets-ang.png: %.energy.npy.bz2
 	"$(PYTHON)" plot.py $< offsets angles save
 plot-hist-field: $(PLOTS_HIST_FIELD)
@@ -122,7 +124,7 @@ plot-hist-residual: $(PLOTS_HIST_RES)
 %.hist-residual-order-shell.png: %.hist-residual.npy.bz2
 	"$(PYTHON)" plot.py $< order shell save
 plot-hist-angles: $(PLOTS_HIST_ANGLES)
-%.hist-angles.png: %.hist-ang.npy.bz2
+%.hist-ang.png: %.hist-ang.npy.bz2
 	"$(PYTHON)" plot.py $< angles save
 
 # Generate the galleries if any key output files changed
@@ -177,5 +179,5 @@ convert: $(subst .out,.ctf.npy.gz,$(SIMS_OUT_NEW)) $(subst .out,.csa.npy.gz,$(SI
 # Do not depend explicitely on csa files, which are missing for neat systems (energy and fields should suffice)
 .PHONY: analyze
 analyze: $(subst .out,.energy.npy.bz2,$(SIMS_OUT)) $(subst .out,.hist-field.npy.bz2,$(SIMS_OUT))
-%.energy.npy.bz2 %.hist-field.npy.bz2: %.out %.ctf.npy.gz %.cga.npy.gz
+%.energy.npy.bz2 %.hist-field.npy.bz2: %.out
 	-python-culgi analyze.py $< energy histograms && bzip2 $*.energy*.npy $*.hist*.npy
