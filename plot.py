@@ -26,7 +26,7 @@ if __name__ == "__main__":
     phase,model,system,params,run = fpath.split('/')
     phase = int(phase[5:])
     size = map(int,model.split("_")[0].split('x'))
-    population = int(system.split('_')[-1][3:])
+    population = int(system.split('_')[3][3:])
     if phase in [8,9] and "shell" in sys.argv:
         population *= 8
     data = numpy.load(bz2.BZ2File(fpath))

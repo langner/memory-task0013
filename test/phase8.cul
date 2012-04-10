@@ -1,6 +1,6 @@
 CULGI VERSION:6.0.0
-set N [ DefineVariable  @a(int){32} ]
-set D [ DefineVariable  @a(int){16} ]
+set N [ DefineVariable  @a(int){8} ]
+set D [ DefineVariable  @a(int){8} ]
 set box [ $Palette CreateMesoBox  @a(string){box}  @a(int){$D}  @a(int){$D}  @a(int){1} ] @C CulgiPaletteCmds
 set bcp [ $Palette CreateGaussianChain  @a(string){bcp}  @a(string){A32B20}  @a(int){$D}  @a(int){$D}  @a(int){1} ] @C CulgiPaletteCmds
 [ $bcp CreateHomogeneousRelativeDensity  @a(float){1} ] @C CulgiGaussianChainCmds
@@ -41,6 +41,8 @@ set MBFHybridCalculator_Parameters_GCParameters [ $MBFHybridCalculator_Parameter
 [ $MBFHybridCalculator_Parameters_GCParameters SetChi  @a(string){A}  @a(string){B}  @a(float){0.5} ] @C CulgiGCParametersCmds
 [ $MBFHybridCalculator_Parameters_GCParameters SetExpansionParameter  @a(string){A}  @a(float){0.1} ] @C CulgiGCParametersCmds
 [ $MBFHybridCalculator_Parameters_GCParameters SetExpansionParameter  @a(string){B}  @a(float){0.1} ] @C CulgiGCParametersCmds
+[ $MBFHybridCalculator_Parameters_GCParameters SetDiffusionFactor  @a(string){A}  @a(float){0.0001} ] @C CulgiGCParametersCmds
+[ $MBFHybridCalculator_Parameters_GCParameters SetDiffusionFactor  @a(string){B}  @a(float){0.0001} ] @C CulgiGCParametersCmds
 set ArchivePlugin [ $PluginsManager CreateArchivePlugin ] @C CulgiPluginsMgrCmds
 [ $MBFHybridCalculator AddPlugin  @a(CulgiPlugin){$ArchivePlugin} ] @C CulgiMBFHybridCalculatorCmds
 [ $MBFHybridCalculator SetGraphicsUpdateFrequency  @a(int){5} ] @C CulgiMBFHybridCalculatorCmds

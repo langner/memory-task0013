@@ -34,7 +34,7 @@ if __name__ == "__main__":
     beads = [[np.GetBeadCmds(i) for np in sim.nanoparticles] for i in range(Nbeads)]
 
     # Create the arrays beforehand, which should save memory
-    # There are always to kinds of fields, but not number of beads
+    # There are always two kinds of fields, but not number of beads
     cga = numpy.zeros((nframes,2,64,64))
     csa = numpy.zeros((nframes,Nbeads,sim.population,3))
 

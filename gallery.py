@@ -47,14 +47,19 @@ def printsummary(sim):
     """
 
     size = "%ix%ix%i" %(sim.size[0], sim.size[1], sim.size[2])
+    summary = "Kappa %.1f" %sim.kappa
+    if sim.population > 1:
+        summary += ", c<sub>A</sub> %.1f, c<sub>B</sub> %.1f" %(sim.ca, sim.cb)
+    summary += ", exp %.2f for %s (nchi=%.1f" %(sim.expansion, sim.polymer, sim.nchi)
+    if sim.phase > 9:
+        summary += ", chmob=%.2f" %sim.chmob
+    summary += ") in a %s box" %size
     if sim.population > 0:
-        format = "Kappa %.1f, c<sub>A</sub> %.1f, c<sub>B</sub> %.1f, exp. %.2f for %s (nchi=%.1f) in a %s box with <b>%i</b> NPs (a=%.1f)"
-        params = (sim.kappa,sim.ca,sim.cb,sim.expansion,sim.polymer,sim.nchi,size,sim.population,sim.a)
-    else:
-        format = "Kappa %.1f, exp. %.2f for %s (nchi=%.1f) in a %s box"
-        params = (sim.kappa,sim.expansion,sim.polymer,sim.nchi,size)
+        summary += " with <b>%i</b> NP(s)" %sim.population
+    if sim.population > 1:
+        summary += " (a=%.1f)" %sim.a
 
-    return format %params
+    return summary
 
 def printinfo(sim):
     """
@@ -101,7 +106,7 @@ def printinfo(sim):
 
     if sim.population > 0:
         text += "Residual density histograms: "
-        text += ", <a href='%s.hist-residual-total.png'>residual total dens.</a>" %name
+        text += "<a href='%s.hist-residual-total.png'>residual total dens.</a>" %name
         text += ", <a href='%s.hist-residual-order.png'>residual order param.</a>" %name
         if phase > 7:
             text += ", <a href='%s.hist-residual-total-shell.png'>res. total dens. (shell)</a>" %name
@@ -126,7 +131,7 @@ labels = {  "beadvolume"    : "Bead volume",
             "dcoupling"     : "Selectivity (c<sub>B</sub>-c<sub>A</sub>)"
 }
 
-phases = [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] 
+phases = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] 
 favorite = [
     # phase 1
     "phase1/64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
@@ -185,9 +190,21 @@ favorite = [
     "phase6/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt55000.out",
     "phase6/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.10_a25.0/tt55000.out",
     # phase 7
+    "phase7/64x64x1_A20B16_bv1.00/temp0.04_exp0.25_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a10.0/tt11000.out",
+    "phase7/64x64x1_A20B16_bv1.00/temp0.06_exp0.17_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a10.0/tt11000.out",
+    "phase7/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.001_a10.0/tt11000.out",
+    "phase7/64x64x1_A15B12_bv1.00/temp0.10_exp0.10_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a10.0/tt11000.out",
     "phase7/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
     # phase 8
-    # phase 9
+    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop768/k15.0_nchi24.0_ca2.0_cb4.0_mob0.001_a5.0/tt11000.out",
+    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1024/k15.0_nchi24.0_ca2.0_cb4.0_mob0.001_a5.0/tt11000.out",
+    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop512/k15.0_nchi24.0_ca2.0_cb4.0_mob0.001_a10.0/tt11000.out",
+    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop256/k15.0_nchi24.0_ca2.0_cb4.0_mob0.01_a5.0/tt11000.out",
+    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop512/k15.0_nchi24.0_ca3.0_cb6.0_mob0.01_a5.0/tt11000.out",
+    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop768/k15.0_nchi24.0_ca3.0_cb6.0_mob0.01_a5.0/tt11000.out",
+    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop256/k15.0_nchi32.0_ca2.0_cb4.0_mob0.01_a10.0/tt11000.out",
+    "phase8/64x64x1_A20B16_bv1.00/temp0.20_exp0.01_den1.0_pop512/k15.0_nchi24.0_ca2.0_cb4.0_mob0.01_a20.0/tt11000.out",
+   # phase 9
 ]
 favorite.sort()
 
@@ -223,6 +240,7 @@ description = [ "Bare NPs moving in 3D (Z&ne;0), random starting ditribution",
                 "Same as phase 6, with initial nanoparticle equilibration",
                 "Same as phase 7, with larger nanoparticles (stiff colloids)",
                 "Same as phase 8, with colloid rotational diffusion",
+                "Same as phase 9, with altered BCP mobility",
 ]
 
 

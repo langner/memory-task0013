@@ -39,6 +39,7 @@ PhaseFrames = {
     7 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
     8 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
     9 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
+   10 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
 }
 
 # Order of ctf columns
@@ -63,7 +64,7 @@ class Analysis():
         self.phase = int(self.fname.split('/')[0][5:])
 
         # Extract NP population from the path
-        self.pop = int(self.fname.split('/')[2].split('_')[-1][3:])
+        self.pop = int(self.fname.split('/')[2].split('_')[3][3:])
 
         # Choose columns/energies to use for ctf file
         if self.pop == 0:

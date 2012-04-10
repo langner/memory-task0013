@@ -11,7 +11,8 @@ maxiters = 25000
 parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "kappa", "temperature", "expansion",
                 "ca", "cb", "a", "mobility", "population",
-                "timestep", "totaltime" ]
+                "timestep", "totaltime" ,
+                "chmob"]
 Teq_np = 1000
 Teq_field = 100
 
@@ -35,12 +36,15 @@ def getpath(sim):
     dir2 = "%ix%ix%i_%s_bv%.2f" %(X, Y, Z, sim.polymer, sim.beadvolume)
 
     # Third directory: system temperature, noise, density, population.
+    # From phase 10, add the chain mobility here as a parameter.
     dir3 = "temp%.2f_exp%.2f_den%.1f_pop%i" %(sim.temperature, sim.expansion, sim.density, sim.population)
+    if sim.phase > 9:
+        dir3 += "_chmob%.2f" %sim.chmob
 
     # Fourth directory: compressibility, interactions, mobilities.
     # Previously 2 significant digits were used for mobility, now
-    #  three or even four of five are needed sometimes,
-    #  but we still need to support all the possbilities.
+    #  three or even four or five are needed sometimes,
+    #  but we still need to support all the possbilities to be backwards compatible.
     if sim.mobility >= 0.01:
         mobilityformat = "mob%.2f"
     elif sim.mobility >= 0.001:
@@ -74,11 +78,16 @@ def loadpath(path, setup=True, main=False):
     size,pol,bv = dir2.split('_')
     size = map(int,size.split('x'))
     bv = float(bv[2:])
-    temp,exp,den,pop = dir3.split('_')
+    if phase < 10:
+        temp,exp,den,pop = dir3.split('_')
+    else:
+        temp,exp,den,pop,chmob = dir3.split('_')
     temp = float(temp[4:])
     exp = float(exp[3:])
     den = float(den[3:])
     pop = int(pop[3:])
+    if phase > 9:
+        chmob = float(chmob[5:])
 
     if pop == 0:
         k,nchi = dir4.split('_')
@@ -108,7 +117,10 @@ def loadpath(path, setup=True, main=False):
     outname = outfile[:-4]
     totaltime = int(outname[2:])
 
-    sim = simulation(phase,size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,0.01,totaltime)
+    if phase < 10:
+        sim = simulation(phase,size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,0.01,totaltime)
+    else:
+        sim = simulation(phase,size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,0.01,totaltime,chmob=chmob)
     sim.outpath = outpath
     if not main:
         sim.gallerypath = sim.outpath.replace("phase%s/" %phase,"")
@@ -125,11 +137,12 @@ def loadpath(path, setup=True, main=False):
 
 class simulation:
 
-    def __init__(self, phase, size, polymer, beadvolume, temperature, expansion, density, population, kappa, nchi, ca, cb, a, mobility, timestep, totaltime):
+    def __init__(self, phase, size, polymer, beadvolume, temperature, expansion, density, population, kappa, nchi, ca, cb, a, mobility, timestep, totaltime, chmob=None):
 
         # Set all the parameters
         for parameter in parameters:
-            setattr(self, parameter, eval(parameter))
+            if parameter != None:
+                setattr(self, parameter, eval(parameter))
 
         # Some derived parameters
         self.dcoupling = self.cb - self.ca
@@ -256,6 +269,7 @@ class simulation:
         #  but the diffusion constant is set for the whole colloid
         # Phase 8 assumes zero angular diffusion, but phase 9 already does not
         # From phase 9 the colloids can rotate
+        # From phase 10, the GC chain mobilities can change
         self.calc.SetTemperature(self.temperature)
         self.params_GC.SetExpansionParameter("A", self.expansion)
         self.params_GC.SetExpansionParameter("B", self.expansion)
@@ -271,6 +285,9 @@ class simulation:
                     self.nanoparticles[i].SetConstAngularVelocity('X', 0.0)
                     self.nanoparticles[i].SetConstAngularVelocity('Y', 0.0)
                     self.nanoparticles[i].SetRotationalFactors(0.0, 0.0, self.mobility)
+        if self.phase > 9:
+            self.params_GC.SetDiffusionFactor("A", self.chmob)
+            self.params_GC.SetDiffusionFactor("B", self.chmob)
 
         # Parameters concerning interactions
         # From phase 8, nanoparticle are colloids with two different types of beads
