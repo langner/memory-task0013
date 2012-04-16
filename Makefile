@@ -144,14 +144,14 @@ phase%/gallery.html: phase%/*/*/*/*.out gallery.py
 exp/gallery.html: gallery.py exp/sem-analyzed/*/*/*.png
 	"$(PYCULGI)" gallery.py exp > $@ && rm -rvf Culgi.log
 
-# Generate report.
+# Generate report
 .PHONY: report
-report: task.pdf
+report: $(NAME).pdf
 
-# Analyze experimental data.
+# Analyze experimental data
 .PHONY: exp
 exp:
-	$(MAKE) -c exp
+	$(MAKE) -C exp
 
 # #############################
 # Remote targets (run manually)

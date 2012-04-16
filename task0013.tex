@@ -1,46 +1,58 @@
-The general idea here is to explore the parameter space of our particle--field coexistence model\cite{2008-Sevink-Fraaije} in terms of its effecton particle aggregation in a BCP film of comparable thickness. For that reason, the simulations are two-dimensional. A more direct goal is to find conditions that will produce BCP morphology and nanoparticle clustering similar to Roy's experiments on ultra thin films. The aspects we would like to compare are:
+The most general aim here is to explore the parameter space of the particle--field coexistence model\cite{2008-Sevink-Fraaije, 2012-Langner-Sevink}, in the context of particle aggregation in a BCP film of comparable thickness. For that reason, the simulations are two-dimensional, and one coordinate (Z) of the particles is always fixed. A more immediate goal is to find the conditions that will produce a BCP morphology and nanoparticle clustering similar to Roy's experiments on ultra thin films. The aspects we would like to compare are:
 \begin{enumerate}
+\setlength{\itemsep}{-2pt}
 \item visual appearance of snapshots, and SEM images at different times
 \item radial distribution functions for nanoparticles and possibly corresponding power spectra
 \item changes in interparticle distances as a function of time, derived from the above
-\item changes in block copolymer topology
-\item a measure of the distance of nanoparticles from BCP interfaces
+\item the average distance of nanoparticles from BCP interfaces
+\item changes in block copolymer topology (less important)
 \end{enumerate}
 
-It is clear that the simulation will provide a higher resolution in these comparisons. They can also provide additional insight into the factors governing the changes.
+It is clear that simulations can provide a higher time resolution in these comparisons. They can also provide additional insight into the factors that govern (or not) the experimental changes.
 
 \section{The experimental system}
 
 General features of the experimental systems:
 \begin{enumerate}
-\item the block copolymer system still phase separates, but the formation of standing lamella/cyulinders is inhibited large NP concentrations,
-\item nanoparticles exhibit initially some packing, with one peak in $g(r)$ corresponding to some NP--NP distance, which later shrinks and sometimes evolves into a clear hexagonal packing,
+\setlength{\itemsep}{-2pt}
+\item the block copolymer system still phase separates for large NP concentrations, but the formation of standing lamella/cylinders can be inhibited,
+\item nanoparticles exhibit initially some packing, with one weak peak in $g(r)$ corresponding to some NP--NP distance, which later shrinks and sometimes evolves into a clear hexagonal packing,
 \item nanoparticles are usually found in rugged clusters in later stages, deformed so as to fit into lamellas.
 \end{enumerate}
 
 \subsection{Additional image analysis performed by Karol}
 
-Since there are more images than were actually analyzed (I think?), I decided to put in the effort to automatically analyze a large number of images with respect to NP--NP distnces. This can be done by applying three step to each image:
+Since there are more images than were actually analyzed, I decided to put in the effort to analyze a large number of images in terms of NP--NP distances (later also maybe BCP morphology). This I did by applying three steps to each image:
 \begin{enumerate}
+\setlength{\itemsep}{-2pt}
 \item smoothing the image on a scale smaller than NP--NP distances,
 \item contrast stretching and evening out brightness across the image,
 \item dynamic thresholding to extract areas with nanoparticles,
-\item watersheding the distnce transform starting from regional maxima,
-\item labelling and measuring centers of mass of the segmented regions.
+\item watersheding the distance transform starting from regional maxima,
+\item labelling and measuring centers of mass for the segmented regions.
 \end{enumerate}
 
-With the centers of nanoparticles extracted, it is streightforward to calculate the radial distribution functions, which give more direct infromation about nanoparticle correlations and can be compared directly to RDFs from simulations.
+With the centers of nanoparticles extracted, obtaining the radial distribution function $g(r)$ is straightforward, which give more direct infromation about nanoparticle correlations and can be compared directly to RDFs from simulations.
 
 \section{The simulations}
 
-Simulations are divided into several phases:
-\begin{enumerate}
-\item Phase 1 -- the starting point is a simple collection of independent beads, each one spherical and representing an entire nanoparticle with core and corona, floating in a quasi-2D layer of block copolymer that is supposed to represent the ultra thin film. Since they model entire grafted NPs, these beads need to be quite soft and should be able to overlap. The extent of these beads is generally around 0.8 in dimensionless units, and the cut-off for interactions is 1.0 (which means they do not directly feel anything beyond this distance).
-\item phase 2 -- in this phase I fixed the vertical coordinate of all nanoparticles to zero, restricting their motion to two dimensions.
-\item phase 3 -- introduces a density correction that allows for high NP loadings.
-\item phase 4 -- introduces the equilibration of polymer around nanoparticles at the beginning.
-\item phase 5 -- uses a smoewhat ordered initial distribution, instead of random.
-\item phase 6 -- uses a more ordered initial distribution, and longer simulation times were tested.
-\item phase 7 -- introduces an equilibration of particles positions before turning on interactions.
-\item phase 8 (planned) -- introduce a larger nanoparticle model.
-\end{enumerate}
+Simulations were divided into several phases, with new phases added as needed:
+\begin{itemize}
+\setlength{\itemsep}{-2pt}
+\item[] \link{task0013/phase1/gallery.html}{phase 1} -- the starting point is a simple collection of independent beads, each one spherical and representing an entire nanoparticle with core and corona, floating in a quasi-2D layer of block copolymer that is supposed to represent the ultra thin film. Since they model entire grafted NPs, these beads need to be quite soft and should be able to overlap to a large extent. The size of these beads is generally around 0.8 in dimensionless units, and the cut-off for interactions interparticle interactions is comparable,
+\item[] \link{task0013/phase2/gallery.html}{phase 2} -- in this phase I fixed the vertical coordinates (Z) of all nanoparticles to zero, restricting their motion to two dimensions,
+\item[] \link{task0013/phase3/gallery.html}{phase 3} -- introduces a density correction that allows for high NP loadings,
+\item[] \link{task0013/phase4/gallery.html}{phase 4} -- introduces the equilibration of polymer around nanoparticles before the simulation,
+\item[] \link{task0013/phase5/gallery.html}{phase 5} -- uses a smoewhat ordered initial distribution, instead of random,
+\item[] \link{task0013/phase6/gallery.html}{phase 6} -- uses a more ordered initial distribution, and longer simulation times were tested,
+\item[] \link{task0013/phase7/gallery.html}{phase 7} -- introduces an equilibration of particles positions before turning on selective interactions,
+\item[] \link{task0013/phase8/gallery.html}{phase 8} -- introduces a larger nanoparticle model, so as to tune the NP-to-BCP size ratio,
+\item[] \link{task0013/phase9/gallery.html}{phase 9} -- adds rotational diffusion to the NP model,
+\item[] \link{task0013/phase10/gallery.html}{phase 10} -- alters the mobility of BCP chains,
+\end{itemize}
+
+\subsection{Figuring out the length scales}
+
+\subsubsection{Block copolymer volume ratio}
+
+Block copolymer matrix: 1MDa PS-PMMA with a PDI od 1.2 and 35 wt\% PS. To compare with simulations, we need to convert to volume ratios, so I calculate the relative volume ratios of PS and PMMA in this diblock. The density of PS is around 1.05 g/cm$^3$ and for PMMA it is 1.18 g/cm$^3$. The molecular weight of styrene is is 104.15Da and for PMMA it is 100.12 Da, which translates into around 3360 monomers of styrene and 7490 monomers of MMA in each BCP chain. The PS block occupies a total of roughly 553 nm$^3$ and the PMMA block roughly 1056 nm$^3$, in each BCP chain. This implies a volume ratio of about 1:1.9, something like A21B11 in our simulation language.

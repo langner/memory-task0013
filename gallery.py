@@ -59,6 +59,8 @@ def printsummary(sim):
     if sim.population > 1:
         summary += " (a=%.1f)" %sim.a
 
+    summary += ", tt=%i" %sim.totaltime
+
     return summary
 
 def printinfo(sim):
@@ -281,7 +283,7 @@ if __name__ == "__main__":
 
         print HEADERabove
         print "<body>"
-        print "<h2>Gallery for Karol's analyses experimental results</h2>"
+        print "<h2>Gallery for Karol's analyses of experimental results</h2>"
         print "<h4>SEM images</h4>"
         print "<ul>"
         print "<li><a href='sem/'>Directory with all images I recieved</a>; <b>note</b>: I appended the length of the scale bar to the filename of each image</li>"
@@ -330,7 +332,7 @@ if __name__ == "__main__":
                     print "Other images:"
                     print " <a href='%s-filtered.png'>filtered</a>" %apath
                     print " <a href='%s-threshold.png'>threshold</a>" %apath
-                    print " <a href='%s-coms.png.png'>NP centers</a>" %apath
+                    print " <a href='%s-coms.png'>NP centers</a>" %apath
                     print "<br/><br/>"
                     print "</ul></li>"
                 print "</ul></li>"

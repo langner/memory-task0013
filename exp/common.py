@@ -234,12 +234,10 @@ class SEMAnalysis():
         if not os.path.exists(self.fthreshold+".png"):
             pylab.figure(2)
             pylab.savefig(self.fthreshold+".png")
-        if not os.path.exists(self.fnps+".png"):
-            pylab.figure(3)
-            pylab.savefig(self.fnps+".png")
+        pylab.figure(3)
+        pylab.savefig(self.fnps+".png")
         if not os.path.exists(self.fcoms+".png"):
             pylab.figure(4)
             pylab.savefig(self.fcoms+".png")
-        if not os.path.exists(self.frdf+".png"):
-            pylab.figure(5)
-            pylab.savefig(self.frdf+".png")
+        pylab.figure(5)
+        pylab.savefig(self.frdf+".png")

@@ -23,7 +23,8 @@ SEM_RDF = $(subst sem/,sem-analyzed/,$(subst .jpg,-rdf.png,$(SEM_JPGS)))
 sem: $(SEM_NPS) $(SEM_RDF)
 sem-analyzed/%-nps.png sem-analyzed/%-rdf.png: sem/%.jpg
 	"$(PYTHON)" sem.py $< save
-	-bzip2 $**.npy
+	rm -rvf $**.npy.bz2
+	-bzip2 sem-analyzed/$**.npy
 	rm -rvf $**.npy
 	sleep 2
 
