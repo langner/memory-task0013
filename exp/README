@@ -1,0 +1,37 @@
+--------------------------
+Description of directories
+--------------------------
+
+benchmark
+---------
+
+Model images for banchmarking the analysis procedure.
+
+sem
+---
+
+These directories contain a subset of the archives obtained from Amit, converted to JPEG with a sampling factor of 1x1 (some were TIFFs and some JPEGS with the same quality).
+
+Filenames in the unzipped directories were appended with the size of the scale bar in the images.
+
+There can also be links to sem-other in the unpacked directory.
+
+sem-other
+---------
+
+Images I did not recieve from Amit, but used in the analysis.
+
+sem-misc
+--------
+
+Images that are of low quality, resolution or otherwise unfit for analysis. Doubled images also were moved here.
+
+sem-analyzed
+------------
+
+Contains analysis results.
+
+sem-old
+-------
+
+Old images, Fourier transforms and other files from a previous archive.

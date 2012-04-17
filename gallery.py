@@ -72,7 +72,7 @@ def printinfo(sim):
     First snapshots are available only since phase 4.
     """
 
-    name = "%s/%s" %(sim.gallerypath,sim.outname)
+    name = "%s/%s" %(sim.gallerypath,sim.name)
     text = "<table><tr>"
     text += "<td width='300'><center>last snapshot<br/><a href='%s.jpg'><img height='250pt' src='%s.jpg' /></a></center></td>" %(name,name)
     if sim.population > 0:
@@ -222,6 +222,13 @@ HEADERabove = """<head>
         <link rel="stylesheet" type="text/css" href="../simpletree/simpletree.css" />
         </head>"""
 
+def printlist(items):
+    lines = "<ul>"
+    for it in items:
+        lines += "<li>%s</li>" %it
+    lines += "</ul>"
+    return lines
+
 def footer(names, above=False):
     text = ""
     text += '<script type="text/javascript">\n'
@@ -252,32 +259,43 @@ if __name__ == "__main__":
 
     if "main" in sys.argv:
 
+        # Header and title
         print HEADER
         print "<body>"
         print "<h2>Gallery for task0013</h2>"
         print "<hr/>"
+
+        # Link to gallery with experimental analyses
         print "<h3>Analyses of experimental images</h3>"
-        print "<ul>"
-        print "<li><a href='exp/gallery.html'>Separate page with analyses</a></li>"
-        print "</ul"
+        print printlist(["<a href='exp/gallery.html'>Separate page with analyses</a></li>"])
         print "<hr/>"
+
+        # List of simulations results, with links to full galleries
         print "<h3>Simulation results</h3>"
         phases.reverse()
+        print """<ul id="simutree_gallery" class="treeview">"""
         for phase in phases:
+            print "<li>"
             outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*/t*.out" %phase
             outs = glob.glob(outpattern)
             favorite_simulations = [loadpath(out, setup=False, main=True) for out in favorite if out.count("phase%i" %phase) > 0]
             print "<h4>Phase %i (%i runs, %i favorite)</h3>" %(phase, len(outs), len(favorite_simulations))
-            print "<ul>"
-            print "<li>%s</li>" %description[phase-1]
-            print """<li><a href="phase%i/gallery.html">Link to full gallery</a></li>""" %phase
-            print "<li>Favorite runs:"
-            print """<a href="javascript:ddtreemenu.flatten('simutree_phase%i', 'expand')">Expand All</a> |
-                     <a href="javascript:ddtreemenu.flatten('simutree_phase%i', 'contact')">Collapse All</a>""" %(phase,phase)
-            print """<ul id="simutree_phase%i" class="treeview">""" %phase
-            print printtree(controltree(favorite_simulations, control))
-            print "</ul></li>"
-            print "</ul>"
+            print printlist([
+                    "%s" %description[phase-1],
+                    """<a href="phase%i/gallery.html">Full gallery on separate page</a>""" %phase,
+                    "Favorite runs:<br/>"
+                    + """<a href="javascript:ddtreemenu.flatten('simutree_phase%i', 'expand')">Expand All</a> |""" %phase
+                    + """<a href="javascript:ddtreemenu.flatten('simutree_phase%i', 'contact')">Collapse All</a>""" %phase
+                    + """<ul id="simutree_phase%i" class="treeview">""" %phase
+                    + printtree(controltree(favorite_simulations, control))
+                    + "</ul>"
+            ])
+            print "</li>"
+        print "</ul>"
+
+        # Footer
+        print "<hr/>"
+        print footer(["gallery"])
         print footer(["phase%i" %p for p in phases])
         print "</body>"
 

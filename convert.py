@@ -3,6 +3,8 @@ import time
 
 import numpy
 
+from pyculgi import *
+
 from simulation import *
 
 

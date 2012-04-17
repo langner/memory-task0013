@@ -1,17 +1,18 @@
 import sys
 
-from simulation import *
+from pyculgi import *
+
+from simulation import loadpath
 
 
 if __name__ == "__main__":
 
     sim = loadpath(sys.argv[1], setup=False)
-    fout = "%s/%s.out" %(sim.outpath,sim.outname)
     tosave = "save" in sys.argv
 
     # Make sure that simulation has finished (if we want to save)
     # Note that from phase 4, there are two runs for each simulation
-    if tosave and not "Time used" in open(fout).read().strip().split('\n')[-1]:
+    if tosave and not "Time used" in open(sim.outpath).read().strip().split('\n')[-1]:
         print "This simulation has not finished."
         sys.exit(1)
 
@@ -42,9 +43,9 @@ if __name__ == "__main__":
             npi.SetBeadDisplayRadius("S", 0.0)
         graphics.AddViewable(npi)
 
-    cga = "%s/%s.cga" %(sim.outpath,sim.outname)
+    cga = "%s/%s.cga" %(sim.path,sim.name)
     if sim.population > 0:
-        csa = "%s/%s.csa" %(sim.outpath,sim.outname)
+        csa = "%s/%s.csa" %(sim.path,sim.name)
 
     archive = UtilitiesManager.CreateArchiveReader()
     if "xvfb" in sys.argv or "offscreen" in sys.argv:

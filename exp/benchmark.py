@@ -5,14 +5,15 @@ from common import pylab, SEMAnalysis
 
 if __name__ == "__main__":
 
-    # Create object and load image.
+    # Create object and load image
     analysis = SEMAnalysis()
     analysis.loadimage(sys.argv[1], cropy=(0,850))
 
-    # Do the analysis.
+    # Do the analysis
     analysis.radialdistribution()
+    analysis.fitrdf()
 
-    # Do the plotting.
+    # Do the plotting
     analysis.plot()
 
     if "save" in sys.argv:

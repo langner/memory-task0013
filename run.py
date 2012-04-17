@@ -1,9 +1,23 @@
+import os
+
+from pyculgi import *
+
 from simulation import *
 from systems import *
 
 
 # What we currently want to run
-phases = [ 9, 10, 11 ]
+phases_to_run = [ 9, 10, 11 ]
+
+
+def printnow(fname, content, mode='a'):
+    """Print to a file without delay, so make sure to flush and close."""
+
+    f = open(fname, mode)
+    print >>f, content
+    f.flush()
+    f.close()
+
 
 if __name__ == "__main__":
 
@@ -12,33 +26,37 @@ if __name__ == "__main__":
     if os.environ.has_key('PBS_JOBID'):
         flogname = 'run_%s.log' %os.environ['PBS_JOBID']
 
-    for phase in phases:
+    for p in phases_to_run:
 
-        for system in systems[phase]:
+        for s in systems[p]:
+
+            # Remember the current base directory we start from
+            basedir = os.path.abspath(os.curdir)
 
             # Create the simulation object
-            sim = simulation(phase, *system)
+            sim = Simulation(p, *s)
             sim.setup()
 
-            # Base and output path
-            basedir = os.path.abspath(os.curdir)
-            if flogname:
-                flogpath = "%s/%s" %(basedir,flogname)
-            outpath = "%s/%s" %(basedir,sim.path)
-            if Culgi.GetProcRank() == 0 and not os.path.exists(outpath):
-                os.makedirs(outpath)
+            # Create the output directory if needed.
+            outdir = "%s/%s" %(basedir, sim.path)
+            if Culgi.GetProcRank() == 0 and not os.path.exists(outdir):
+                os.makedirs(outdir)
 
-            # Change to directory for this model
+            # Move to the output directory.
             Culgi.MpiBarrier()
-            os.chdir(outpath)
+            os.chdir(outdir)
 
-            # Skip this parameter set if output file already exists
+            # Skip this parameter set if output file already exists.
             # Must return to base directory here, too!
             if os.path.exists("%s.out" %sim.name):
                 os.chdir(basedir)
                 continue
 
-            # Print log message
+            # Log file to print message to during simulations.
+            if flogname:
+                flogpath = "%s/%s" %(basedir,flogname)
+
+            # Print a log message there that the simulation is starting.
             line = "Path: %s Output file: %s" %(sim.path,sim.name)
             if Culgi.GetProcRank() == 0:
                 if flogpath:
@@ -46,9 +64,9 @@ if __name__ == "__main__":
                 else:
                     print line
 
-            # Run it
+            # Run the simulation.
             Culgi.MpiBarrier()
             sim.run()
 
-            # Change back to base directory
+            # Change back to base directory.
             os.chdir(basedir)
