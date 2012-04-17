@@ -5,8 +5,8 @@ from numpy import sqrt
 from pyculgi import *
 
 
-Nsnaps = 11000
-Nenerg = 110000
+Nsnaps = [11000]*10 + [1100]
+Nenerg = [110000]*10 + [11000]
 maxiters = 25000
 parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "kappa", "temperature", "expansion",
@@ -66,7 +66,13 @@ def getpath(sim):
 def getname(sim):
     """ Construct output file basename from simulation object. """
 
-    return "tt%i" %sim.totaltime  
+    # Until phase 11, this was just the total time, now it contains the time step also
+
+    name = "tt%i" %sim.totaltime
+    if sim.phase > 10:
+        name += "_ts%s" %str(sim.timestep)
+
+    return name
 
 def loadpath(path, setup=True, main=False):
     """ Create simulation object from an output file. """
@@ -115,12 +121,18 @@ def loadpath(path, setup=True, main=False):
         a = float(a[1:])
 
     outname = outfile[:-4]
-    totaltime = int(outname[2:])
+    if phase > 10:
+        totaltime, timestep = outname.split("_")
+        totalime = int(totaltime[2:])
+        timestep = float(timestep[2:])
+    else:
+        totaltime = int(outname[2:])
+        timestep = 0.01
 
     if phase < 10:
-        sim = simulation(phase,size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,0.01,totaltime)
+        sim = simulation(phase,size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,timestep,totaltime)
     else:
-        sim = simulation(phase,size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,0.01,totaltime,chmob=chmob)
+        sim = simulation(phase,size,pol,bv,temp,exp,den,pop,k,nchi,ca,cb,a,mob,timestep,totaltime,chmob=chmob)
     sim.outpath = outpath
     if not main:
         sim.gallerypath = sim.outpath.replace("phase%s/" %phase,"")
@@ -198,9 +210,10 @@ class simulation:
     def setup(self):
 
         # These follow from the time step
+        # Is there are not enough time steps, default to one
         self.nsteps = int(self.totaltime/self.timestep)
-        self.efreq = int(1.0*self.totaltime/Nenerg/self.timestep)
-        self.sfreq = int(1.0*self.totaltime/Nsnaps/self.timestep)
+        self.efreq = int(1.0*self.totaltime/Nenerg[self.phase-1]/self.timestep) or 1
+        self.sfreq = int(1.0*self.totaltime/Nsnaps[self.phase-1]/self.timestep) or 1
 
         # Initial distribution of nanoparticles inside the simulation box
         # For phase 5 and 6, use some ordered starting distribution

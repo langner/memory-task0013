@@ -40,6 +40,7 @@ PhaseFrames = {
     8 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
     9 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
    10 : ( [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001], 10 ),
+   11 : ( [1, 11, 21, 31, 41, 51, 101, 201, 301, 401, 501, 1001], 10 ),
 }
 
 # Order of ctf columns
@@ -136,8 +137,9 @@ class Analysis():
 
         # Number of points to keep
         # Note that npoints might be correct to within +/-1
+        # If npoints is larger than number of frames, default frequency to 1
         self.npoints = 1100
-        self.freq = self.ctf.shape[0]/self.npoints
+        self.freq = self.ctf.shape[0]/self.npoints or 1
         if self.pop > 0:
             self.freq_csa = self.csa.shape[0]/self.npoints
         self.indices = self.ctf[::self.freq,0]
@@ -161,8 +163,8 @@ class Analysis():
         # From phase 8, nanoparticles are colloids, so offsets can be calculated for both the core
         #   and shell beads separately (all shell beads combined, and stacked right after core offsets)
         funcs = [mean,var,skew,kurtosis]
-        self.offsets = (self.csa+0.5 - (self.csa+0.5).astype(int))[::self.freq_csa]
         if self.pop > 0:
+            self.offsets = (self.csa+0.5 - (self.csa+0.5).astype(int))[::self.freq_csa]
             self.offsets = [[f(o, axis=None) for o in self.offsets[:,bi]] for f in funcs for bi in self.bead_ind]
             self.offsets = [array(o) for o in self.offsets]
 

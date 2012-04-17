@@ -264,8 +264,9 @@ if __name__ == "__main__":
         pylab.plot(xrange, hist, label="frames 101-%i" %(101+nsamples))
         hist = factor * numpy.sum([data[frames.index(1001+i)] for i in range(nsamples)], axis=0) / nsamples
         pylab.plot(xrange, hist, label="frames 1001-%i" %(1001+nsamples))
-        hist = factor * numpy.sum([data[frames.index(10001+i)] for i in range(nsamples)], axis=0) / nsamples
-        pylab.plot(xrange, hist, label="frames 10001-%i" %(10001+nsamples))
+        if 10001 in frames:
+            hist = factor * numpy.sum([data[frames.index(10001+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 10001-%i" %(10001+nsamples))
         if 50001 in frames:
             hist = factor * numpy.sum([data[frames.index(50001+i)] for i in range(nsamples)], axis=0) / nsamples
             pylab.plot(xrange, hist, label="frames 50001-%i" %(50001+nsamples))

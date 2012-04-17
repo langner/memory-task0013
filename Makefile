@@ -153,6 +153,11 @@ report: $(NAME).pdf
 exp:
 	$(MAKE) -C exp
 
+# Cleanup old simulations files (must do manually)
+.PHONY: Cleanup
+cleanup:
+	"$(PYCULGI)" cleanup.py
+
 # #############################
 # Remote targets (run manually)
 # #############################

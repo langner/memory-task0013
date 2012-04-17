@@ -59,7 +59,8 @@ def printsummary(sim):
     if sim.population > 1:
         summary += " (a=%.1f)" %sim.a
 
-    summary += ", tt=%i" %sim.totaltime
+    if sim.phase > 10:
+        summary += ", tt=%i, ts=%s" %(sim.totaltime, str(sim.timestep))
 
     return summary
 
@@ -133,7 +134,7 @@ labels = {  "beadvolume"    : "Bead volume",
             "dcoupling"     : "Selectivity (c<sub>B</sub>-c<sub>A</sub>)"
 }
 
-phases = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] 
+phases = range(1,12)
 favorite = [
     # phase 1
     "phase1/64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
@@ -243,6 +244,7 @@ description = [ "Bare NPs moving in 3D (Z&ne;0), random starting ditribution",
                 "Same as phase 7, with larger nanoparticles (stiff colloids)",
                 "Same as phase 8, with colloid rotational diffusion",
                 "Same as phase 9, with altered BCP mobility",
+                "Same as phase 10, with alterable time step",
 ]
 
 

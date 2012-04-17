@@ -3,7 +3,7 @@ from systems import *
 
 
 # What we currently want to run
-phases = [ 9, 10 ]
+phases = [ 9, 10, 11 ]
 
 if __name__ == "__main__":
 
