@@ -43,13 +43,17 @@ if __name__ == "__main__":
         graphics.AddViewable(npi)
 
     cga = "%s/%s.cga" %(sim.outpath,sim.outname)
-    csa = "%s/%s.csa" %(sim.outpath,sim.outname)
+    if sim.population > 0:
+        csa = "%s/%s.csa" %(sim.outpath,sim.outname)
 
     archive = UtilitiesManager.CreateArchiveReader()
     if "xvfb" in sys.argv or "offscreen" in sys.argv:
         graphics.SetOffScreenRenderingOn()
 
-    archive.SetSystem(sim.box, cga, csa)
+    if sim.population > 0:
+        archive.SetSystem(sim.box, cga, csa)
+    else:
+        archive.SetSystem(sim.box, cga)
     archive.AddGraphics(graphics)
 
     graphics.SetDisplay3DAxesOff()

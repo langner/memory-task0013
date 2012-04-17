@@ -10,11 +10,16 @@ if __name__ == "__main__":
 
     t = time.time()
 
+    # Load the simulation object
     fout = sys.argv[1]
+    sim = loadpath(fout, setup=False)
+
+    # Construct the other file names
     fname = fout[:-4]
     fcga = fname + ".cga"
-    fcsa = fname + ".csa"
     fctf = fname + "_Inst.ctf"
+    if sim.population > 0:
+        fcsa = fname + ".csa"
 
     # Make sure that simulation has finished
     # Note that from phase 4, there are two runs for each simulation
@@ -22,21 +27,25 @@ if __name__ == "__main__":
         print "This simulation has not finished."
         sys.exit(1)
 
-    # Simulation and archive
-    sim = loadpath(fout, setup=False)
+    # Create the archive object
     archive = UtilitiesManager.CreateArchiveReader()
-    archive.SetSystem(sim.box, fcga, fcsa)
+    if sim.population > 0:
+        archive.SetSystem(sim.box, fcga, fcsa)
+    else:
+        archive.SetSystem(sim.box, fcga)
     nframes = archive.GetNumberOfFrames()
 
     # Bead command objects, sorted per bead index
     # Parameter Nbeads is number of beads per nanoparticle
-    Nbeads = sim.nanoparticles[0].GetNumberOfBeads()
-    beads = [[np.GetBeadCmds(i) for np in sim.nanoparticles] for i in range(Nbeads)]
+    if sim.population > 0:
+        Nbeads = sim.nanoparticles[0].GetNumberOfBeads()
+        beads = [[np.GetBeadCmds(i) for np in sim.nanoparticles] for i in range(Nbeads)]
 
     # Create the arrays beforehand, which should save memory
     # There are always two kinds of fields, but not number of beads
     cga = numpy.zeros((nframes,2,64,64))
-    csa = numpy.zeros((nframes,Nbeads,sim.population,3))
+    if sim.population > 0:
+        csa = numpy.zeros((nframes,Nbeads,sim.population,3))
 
     print "init:", time.time() - t
 
@@ -76,6 +85,7 @@ if __name__ == "__main__":
     # Save the arrays
     numpy.save(fname+".ctf.npy", ctf)
     numpy.save(fcga+".npy", cga)
-    numpy.save(fcsa+".npy", csa)
+    if sim.population > 0:
+        numpy.save(fcsa+".npy", csa)
 
     print "save:", time.time() - t

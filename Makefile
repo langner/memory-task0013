@@ -47,8 +47,8 @@ SIMS_HIST_ANGLES = $(foreach m,$(SIMS9) $(SIMS10),$(wildcard $(m)/*.hist-ang.npy
 PLOTS_ENERGY_TOTAL = $(subst .energy.npy.bz2,.energy-total.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_FIELD = $(subst .energy.npy.bz2,.energy-field.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_COUPL = $(subst .hist-residual.npy.bz2,.energy-coupl.png,$(SIMS_HIST_RESIDUAL))
-PLOTS_OFFSETS_RAD = $(subst .energy.npy.bz2,.offsets.png,$(SIMS_ENERGY8) $(SIMS_ENERGY9) $(SIMS_ENERGY10))
-PLOTS_OFFSETS_ANG = $(subst .energy.npy.bz2,.offsets-ang.png,$(SIMS_ENERGY9) $(SIMS_ENERGY10))
+PLOTS_OFFSETS_RAD = $(subst .hist-radial.npy.bz2,.offsets.png,$(SIMS_HIST_RADIAL8) $(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10))
+PLOTS_OFFSETS_ANG = $(subst .hist-radial.npy.bz2,.offsets-ang.png,$(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10))
 PLOTS_HIST_FIELD_TOTAL = $(subst .hist-field.npy.bz2,.hist-field-total.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_FIELD_ORDER = $(subst .hist-field.npy.bz2,.hist-field-order.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_RADIAL = $(subst .hist-radial.npy.bz2,.hist-radial.png,$(SIMS_HIST_RADIAL))
@@ -170,16 +170,17 @@ exp:
 # Generate movies and snapshots for simulations based on Culgi outputs
 .PHONY: avi
 avi: $(subst .out,.avi,$(SIMS_OUT_NEW))
-%.avi: %.csa %.cga
+%.avi: %.out %.cga
 	-"$(PYCULGI)" replay.py $@ save xvfb && mencoder "mf://*.jpg" -mf fps=10 -o $@ -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=1600 && cp `ls *.jpg | head -1` $(subst .avi,.first.jpg,$@) && cp `ls *.jpg | tail -1` $(subst .avi,.jpg,$@)
 	rm -rvf *.jpg
 
 # Convert Culgi output (cga/csa/ctf) to NumPy compressed archives (npz)
 # Also compress both targets and dependencies after the conversion
+# Do not use csa files as targets/prerequisites, but they are collateral targets
 .PHONY: convert
-convert: $(subst .out,.ctf.npy.gz,$(SIMS_OUT_NEW)) $(subst .out,.csa.npy.gz,$(SIMS_OUT_NEW)) $(subst .out,.cga.npy.gz,$(SIMS_OUT_NEW))
-%.ctf.npy.gz %.csa.npy.gz %.cga.npy.gz: %.out %_Inst.ctf %.csa %.cga
-	-"$(PYCULGI)" convert.py $< && gzip $*{_Inst.ctf,.csa,.cga} && gzip $*.{ctf,csa,cga}.npy
+convert: $(subst .out,.ctf.npy.gz,$(SIMS_OUT_NEW)) $(subst .out,.cga.npy.gz,$(SIMS_OUT_NEW))
+%.ctf.npy.gz %.cga.npy.gz: %.out %_Inst.ctf %.cga
+	-"$(PYCULGI)" convert.py $< && gzip $(foreach suf,_Inst.ctf .cga .csa .ctf.npy .cga.npy .csa.npy,$*$(suf))
 
 # Analyze the data (npy format, compressed)
 # The resulting archives should be much smaller than the raw data
