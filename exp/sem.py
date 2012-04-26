@@ -3,30 +3,19 @@ import sys
 from common import pylab, SEMAnalysis
 
 
-# The size of images in pixels
-# Note the the height is already the cropped value
-imagewidth = 645
-imageheight = 430
+# The cropping height should be identical in all images
+cropy = 430
 
-# Physical image size in nanometers (calculated from one image)
-imagesize = 10**6 * 124.03846153846154
-
-# Magnifications (for image scales)
-magnifications = {
-    100: 200 * 10**3,
-    200: 100 * 10**3,
-    500: 50 * 10**3,
-    1000: 25 * 10**3,
-    2000: 12.5 * 10**3,
-    5000: 3.125 * 10**3
-}
-
-# Pixel size calculation
-pixelsize = lambda s: imagesize / magnifications[s] / imagewidth
+# A position just before the scale bar
+# This needs to be the same for all images
+scalebarstart = (238,441)
 
 # Balance filters for images
+# The default for each resolution should be OK,
+#   with custom ones defined for chosen images
 balance_default = {
-    500 : [(2,25),(1,5)],
+    200 : [(2,25), (1,5)],
+    500 : [(2,25), (1,5)],
 }
 balance_custom = {
     "sem/5k/C3/0-Image5-1000.jpg":  [(1,3), (2,25)],
@@ -35,8 +24,11 @@ balance_custom = {
 }
 
 # Threshold values for images
+# Again, the default should yield acceptable nanoparticles
+#   in most cases, but this can be tuned as needed
 threshold_default = {
-    500 : 0.75
+    200 : 0.75,
+    500 : 0.75,
 }
 threshold_custom = {
     "sem/5k/C1/2-Image2-200.jpg":           1.0,
@@ -52,12 +44,11 @@ if __name__ == "__main__":
     # Create object and load image
     fn = sys.argv[1]
     analysis = SEMAnalysis()
-    analysis.loadimage(fn, cropy=(0,imageheight))
+    analysis.loadimage(fn, cropy=(0,430), scalebarstart=scalebarstart)
 
     # Do the analysis
-    # In hand picked cases, apply custom filter parameters
-    balance = balance_custom.get(fn) or balance_default[analysis.magnification]
-    threshold = threshold_custom.get(fn) or threshold_default[analysis.magnification]
+    balance = balance_custom.get(fn) or balance_default[analysis.scale]
+    threshold = threshold_custom.get(fn) or threshold_default[analysis.scale]
     analysis.filterimage(balance=balance)
     analysis.thresholdimage(factor=threshold)
     analysis.labelimage()
@@ -68,17 +59,18 @@ if __name__ == "__main__":
 
     # Print some data
     N = len(analysis.coms)
-    D = 10.0**6*N/(imageheight*imagewidth*analysis.ps**2)
+    D = 10.0**6*N/analysis.area
     print "**************************"
     print "Number of particles: %i" %N
     print "Particle concentration: %.1f/micron^2" %D
     print "First peak: %.1fnm" %analysis.popt[0]
+    print "Pixel size: %.2fnm" %analysis.ps
     print "**************************"
 
     # Do the plotting
-    ps = pixelsize(int(analysis.name.split('-')[-1]))
-    analysis.plot(rdfpixelsize=ps, rdfxunits="nm")
+    analysis.plot(xmax=150)
 
+    # Save or show
     if "save" in sys.argv:
         analysis.savearchives()
         analysis.savefigures()

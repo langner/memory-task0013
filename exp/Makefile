@@ -26,7 +26,7 @@ sem-analyzed/%-nps.png sem-analyzed/%-rdf.png: sem/%.jpg
 	rm -rvf $**.npy.bz2
 	-bzip2 sem-analyzed/$**.npy
 	rm -rvf $**.npy
-	sleep 2
+	sleep 1
 
 .PHONY: clean
 clean:

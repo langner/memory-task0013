@@ -5,7 +5,7 @@ from numpy import sqrt
 from pyculgi import *
 
 
-__all__ = ["Simulation", "loadpath"]
+__all__ = ["Simulation", "loadpath"] + ["UtilitiesManager"]
 
 # All parameters used for these simulations.
 parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
