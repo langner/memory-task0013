@@ -7,19 +7,40 @@ import pylab
 import scipy
 from scipy import misc
 from scipy import ndimage
+from scipy import optimize
 from scipy import spatial
 
 import mahotas
 import pymorph
 
 
+imagewidth = 645
+
+# Physical image size in nanometers
+imagesize = 10**6 * 124.03846153846154
+
+# Magnifications (for image scales)
+magnifications = {
+    100: 200 * 10**3,
+    200: 100 * 10**3,
+    500: 50 * 10**3,
+    1000: 25 * 10**3,
+    2000: 12.5 * 10**3,
+    5000: 3.125 * 10**3
+}
+
+# Pixel size calculation
+pixelsize = lambda s: imagesize / magnifications[s] / imagewidth
+
+
 def stretchimage(img):
-    """ Stretch out the contrast of an image. """
+    """Stretch out the contrast of an image"""
 
     stretched = img - img.min()
     stretched = 255.0 * stretched / float(stretched.ptp())
     stretched = stretched.astype(numpy.uint8)
     return stretched
+
 
 def balanceimage(img, r, R):
     """ Balance the brightness of an image by leveling. """
@@ -27,6 +48,7 @@ def balanceimage(img, r, R):
     img_min = ndimage.minimum_filter(img, r)
     img_uni = ndimage.uniform_filter(img, R)
     return img - numpy.minimum(img_min, img_uni)
+
 
 def rdfcorrection(X,Y,R):
     """ Correction to radial distribution function due to periodic
@@ -42,6 +64,7 @@ def rdfcorrection(X,Y,R):
     V4 = R**2
     ref = (V1+V2+V3+V4) * 2 * scipy.pi
     return (ang1*V1 + ang2*V2 + ang3*V3 + ang4*V4) / ref
+
 
 def radialdistribution(coords, img):
     """ Radial ditribution function for points in an image."""
@@ -60,14 +83,33 @@ def radialdistribution(coords, img):
     return hist, bins
 
 
+def rdfmodel(X, p, m, l, a, b, t, gd):
+    """Approximate Radial distribution function
+
+    Coded accoridng to Matteoli and Mansoori, JPC 1995
+    All parameters have same meaning, but the first peak position, p, is here additionally
+    """
+    Y = X/p
+    Ym1 = Y-1
+    left = gd*numpy.exp(-t*Ym1*Ym1)
+    right = 1 + numpy.power(Y,-m)*(gd-1.0-l) + numpy.exp(-a*Ym1)*numpy.cos(b*Ym1)*(Ym1+l)/Y
+    return (Y<1)*left + (Y>=1)*right
+
+
 class SEMAnalysis():
 
-    def __init__(self):
+    def __init__(self, fpath=None, cropx=None, cropy=None):
 
-        pass
+        if fpath != None:
+            self.loadimage(fpath, cropx=cropx, cropy=cropy)
     
-    def loadimage(self, fpath, cropx=(0,-1), cropy=(0,-1)):
+    def loadimage(self, fpath, cropx=None, cropy=None):
         """ Load image with cropping and set various filename serivatives. """
+
+        if cropx == None:
+            cropx = (0,-1)
+        if cropy == None:
+            cropy = (0,-1)
 
         self.fpath = fpath
 
@@ -90,7 +132,14 @@ class SEMAnalysis():
         self.fcoms = "%s-coms" %self.outname
         self.frdf = "%s-rdf" %self.outname
 
-    def filterimage(self, gaussian1=1, gaussian2=1, balance=[(5,75),(3,25)]):
+        # Pixelsize and time can be extracted (except for benchmark)
+        self.isbench = self.fpath[:5] == "bench"
+        if not self.isbench:
+            self.magnification = int(self.fname.split('-')[2][:-4])
+            self.ps = pixelsize(self.magnification)
+            self.time = int(self.fname.split('-')[0])
+
+    def filterimage(self, gaussian1=1, gaussian2=1, balance=[]):
         """ Try to balance brightness and smooth a bit. """
 
         if os.path.exists(self.ffiltered+".npy.bz2"):
@@ -98,7 +147,8 @@ class SEMAnalysis():
         else:
             self.filtered = ndimage.gaussian_filter(self.img, gaussian1)
             for b in balance:
-                self.filtered = balanceimage(self.filtered, b[0], b[1])
+                if b:
+                    self.filtered = balanceimage(self.filtered, b[0], b[1])
             self.filtered = ndimage.gaussian_filter(self.filtered, gaussian2)
             self.filtered = stretchimage(self.filtered)
 
@@ -167,46 +217,62 @@ class SEMAnalysis():
         else:
             self.rdf, self.bins = radialdistribution(self.coms, self.img)
 
-        # Find the location of the first (highest) peak in the RDF.
-        wlen = 3
-        self.window = numpy.array([1,3,1], dtype=float)
-        self.window /= sum(self.window)
-        self.rdfsmooth = numpy.convolve(self.window, self.rdf, mode='valid')
-        self.rdfsmoothmax = numpy.argmax(self.rdfsmooth)
-        self.binmax = self.rdfsmoothmax + wlen/2
-        self.fitX = self.bins[self.binmax-1:self.binmax+2]
-        self.fitY = self.rdf[self.binmax-1:self.binmax+2]
-        self.fit = scipy.poly1d(scipy.polyfit(self.fitX,self.fitY,deg=2))
-        self.rdfmax = -self.fit[1]/(2*self.fit[2])
+
+    def fitrdf(self):
+
+        self.X = self.bins*self.ps
+        self.Y = self.rdf
+
+        # We need to discard the zeros before the peak
+        istart = numpy.where(self.Y>0)[0][0]
+        self.X = self.X[istart:]
+        self.Y = self.Y[istart:]
+
+        # It is also nice to have an apprixmate peak position to start from
+        imax = numpy.argmax(self.Y)
+        P0 = [self.X[imax], 5, 0.5, 2, 5, 100, 2]
+        popt,pcov = optimize.curve_fit(rdfmodel, self.X, self.Y, p0=P0)
+        self.popt = popt
+        self.rdfmodel = lambda X: rdfmodel(X, *self.popt)
+        self.rdfmax = self.popt[0]
 
     def plot(self, rdfpixelsize=1.0, rdfxunits="pixels"):
         """ Helper routine for plotting in this task. """
 
         pylab.figure(1)
         pylab.imshow(self.filtered)
+        pylab.xticks([])
+        pylab.yticks([])
 
         pylab.figure(2)
         pylab.imshow(pymorph.overlay(self.threshold, self.seeds))
+        pylab.xticks([])
+        pylab.yticks([])
 
         pylab.figure(3)
         pylab.imshow((self.nps % 20 + 5)*(self.nps>0), cmap=pylab.cm.spectral)
+        pylab.xticks([])
+        pylab.yticks([])
 
         pylab.figure(4)
         pylab.imshow(pymorph.overlay(self.img, self.regcom))
+        pylab.xticks([])
+        pylab.yticks([])
 
         pylab.figure(5)
         pylab.plot(self.bins*rdfpixelsize, self.rdf)
-        ymax = max(3.0,max(self.rdf))
+        ymax = max(2.5,max(self.rdf))
         pylab.ylim([0.0, ymax])
-        pylab.xlim([0, 50*rdfpixelsize])
+        pylab.xlim([0, 100])
         pylab.xlabel("distance [%s]" %rdfxunits)
-        for peak,label in [(1,"$1$"), (numpy.sqrt(3),"$\sqrt{3}$"), (2,"$2$"), (numpy.sqrt(7),"$\sqrt{7}$")]:
-            x = peak*self.rdfmax*rdfpixelsize
+        for peak,label in [(1,1), (numpy.sqrt(3),"$\sqrt{3}$"), (2,"$2$"), (numpy.sqrt(7),"$\sqrt{7}$")]:
+            x = peak*self.rdfmax
             pylab.axvline(x=x, ymin=0, ymax=ymax, linestyle='--', color='gray')
             pylab.text(x, ymax*1.01, label, fontsize=15, horizontalalignment="center")
+        pylab.text(self.rdfmax-5, 0.5, "d=%.1fnm" %self.rdfmax, fontsize=12, rotation=90)
         pylab.grid()
         a = pylab.axes([0.60, 0.60, 0.25, 0.25], axisbg='y')
-        pylab.setp(a, xlim=(0,.2), xticks=map(int,[50*rdfpixelsize,100*rdfpixelsize,200*rdfpixelsize]), yticks=[1.0])
+        pylab.setp(a, xticks=map(int,[50*rdfpixelsize,100*rdfpixelsize,200*rdfpixelsize]), yticks=[1.0])
         pylab.xlim([0,256*rdfpixelsize])
         pylab.plot(self.bins*rdfpixelsize, self.rdf)
         pylab.grid()
@@ -230,14 +296,15 @@ class SEMAnalysis():
 
         if not os.path.exists(self.ffiltered+".png"):
             pylab.figure(1)
-            pylab.savefig(self.ffiltered+".png")
+            pylab.savefig(self.ffiltered+".png", bbox_inches="tight")
         if not os.path.exists(self.fthreshold+".png"):
             pylab.figure(2)
-            pylab.savefig(self.fthreshold+".png")
-        pylab.figure(3)
-        pylab.savefig(self.fnps+".png")
+            pylab.savefig(self.fthreshold+".png", bbox_inches="tight")
+        if not os.path.exists(self.fnps+".png"):
+            pylab.figure(3)
+            pylab.savefig(self.fnps+".png", bbox_inches="tight")
         if not os.path.exists(self.fcoms+".png"):
             pylab.figure(4)
-            pylab.savefig(self.fcoms+".png")
+            pylab.savefig(self.fcoms+".png", bbox_inches="tight")
         pylab.figure(5)
         pylab.savefig(self.frdf+".png")
