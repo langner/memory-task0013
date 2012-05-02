@@ -7,9 +7,10 @@ default: all
 all: benchmark sem sem-comp
 
 # A becnhmark
-BENCHMARK = benchmark/F20-atom_res.preview
-benchmark: $(BENCHMARK)-rdf.png
-$(BENCHMARK)-rdf.png: $(BENCHMARK).png benchmark.py common.py
+BENCHMARKS = benchmark/F20-atom_res.preview benchmark/a06fig02a benchmark/r6 benchmark/r7
+BENCHMARKS_RDF = $(foreach b,$(BENCHMARKS),$(b)-rdf.png)
+benchmark: $(BENCHMARKS_RDF)
+%-rdf.png: %.png benchmark.py common.py
 	rm -rvf $@
 	"$(PYTHON)" benchmark.py $< save
 	-bzip2 benchmark/$**.npy
@@ -26,7 +27,7 @@ sem-analyzed/%-nps.png sem-analyzed/%-rdf.png: sem/%.jpg
 	rm -rvf $**.npy.bz2
 	-bzip2 sem-analyzed/$**.npy
 	rm -rvf $**.npy
-	sleep 1
+	sleep 2
 
 .PHONY: clean
 clean:
