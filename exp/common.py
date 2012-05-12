@@ -63,7 +63,7 @@ def balanceimage(img, r, R):
     return img - numpy.minimum(img_min, img_uni)
 
 
-def rdfcorrection(X,Y,R):
+def rdfcorrection_old(X,Y,R):
     """Correction to radial distribution function due to periodic
     boundary conditions, without actually considering them"""
 
@@ -78,6 +78,12 @@ def rdfcorrection(X,Y,R):
     ref = (V1+V2+V3+V4) * 2 * scipy.pi
     return (ang1*V1 + ang2*V2 + ang3*V3 + ang4*V4) / ref
 
+def rdfcorrection(X, Y, R):
+    """Correction to radial distribution function due to periodic
+    boundary conditions, without actually considering them"""
+
+    pXY = numpy.pi * X * Y
+    return 1.0 - 2*R*(X+Y)/pXY + R*R*(4.0-numpy.pi)/pXY
 
 def radialdistribution(coords, img):
     """Radial ditribution function for points in an image"""
