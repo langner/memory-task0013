@@ -7,7 +7,7 @@ from systems import *
 
 
 # What we currently want to run
-phases_to_run = [ 9, 10, 11 ]
+phases_to_run = [ 11, 12 ]
 
 
 def printnow(fname, content, mode='a'):
@@ -35,7 +35,6 @@ if __name__ == "__main__":
 
             # Create the simulation object
             sim = Simulation(p, *s)
-            sim.setup()
 
             # Create the output directory if needed.
             outdir = "%s/%s" %(basedir, sim.path)
@@ -63,6 +62,9 @@ if __name__ == "__main__":
                     printnow(flogpath, line)
                 else:
                     print line
+
+            # Setup simulation only now (this stuff can take some time).
+            sim.setup()
 
             # Run the simulation.
             Culgi.MpiBarrier()

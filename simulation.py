@@ -1,11 +1,11 @@
 import os
 
-from numpy import sqrt
+from numpy import array, exp, pi, random, sqrt, sum, zeros
 
 from pyculgi import *
 
 
-__all__ = ["Simulation", "loadpath"] + ["UtilitiesManager"]
+__all__ = ["Simulation", "loadpath"]
 
 # All parameters used for these simulations.
 parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
@@ -24,12 +24,12 @@ GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy"
 maxiters = 25000
 
 # Number of equilibration step for nanoparticles and the field.
-Teq_np = 1000
-Teq_field = 100
+Teq_np = [1000]*11 + [1]*1
+Teq_field = [100]*12
 
 # Number of snapshots and energies to save, for each phase given separately.
-Nsnaps = [11000]*10 + [1100]
-Nenerg = [110000]*10 + [11000]
+Nsnaps = [11000]*10 + [1100]*2
+Nenerg = [110000]*10 + [11000]*2
 
 
 def getpath(sim):
@@ -163,9 +163,9 @@ def loadpath(path, setup=True, main=False):
     if setup:
         sim.setup()
 
-    # If main is set (referes to main gallery), modify the path for the gallery.
+    # If main is set (refers to main gallery), modify the path for the gallery
     if main:
-        sim.gallerypath = sim.outpath
+        sim.gallerypath = sim.path
 
     return sim
 
@@ -209,6 +209,7 @@ class Simulation:
         self.dcoupling = self.cb - self.ca
         self.npvolume = self.ca/(self.kappa*self.density+1)
         self.volume = size[0]*size[1]
+        self.area = self.volume
         if self.phase > 1:
             self.effective_density = self.density - self.pop*self.npvolume/self.volume
         else:
@@ -285,8 +286,25 @@ class Simulation:
         # Starting phase 7, use a random starting distribution again (equilibrate later).
         # Warning! Due to a mistake, phase 7 actually uses the same initial configuration as phase 6.
         # Since this is 2d, the Z coordinates is always equal to 0.5, though.
+        # In phase 12, use a sampled initial distribution, to get an experimental-like initial RDF.
         Z = 0.5
-        if self.phase in [5,6,7] and self.pop != 0:
+        if self.phase == 12 and self.pop != 0:
+            dh = 1.6
+            ds = 1.33*sqrt(0.9*self.area/self.pop/pi)
+            coords = zeros((self.pop, 3))
+            norms = lambda ni,r: sqrt(sum((coords[:ni,:2]-r)**2, axis=1))
+            hardwalls = lambda ni,r: sum(norms(ni,r) <= dh)
+            rdf = lambda n: 1/(1+exp(-(n-dh-ds))) + 1.0*exp(-(n-dh-ds)**2)
+            coords[:,2] = Z
+            coords[0,:2] = array(self.size[:2]) * random.random(2)
+            self.nanoparticles[0].SetCenterOfMass(*coords[0])
+            for ni in range(1,self.pop):
+                r = coords[ni-1,:2]
+                while hardwalls(ni,r) > 0 or random.random() <= exp(-1/rdf(min(norms(ni,r)))):
+                    r = array(self.size[:2]) * random.random(2)
+                coords[ni,:2] = r
+                self.nanoparticles[ni].SetCenterOfMass(*coords[ni])
+        elif self.phase in [5,6,7] and self.pop != 0:
             if self.phase == 5:
                 rfactor = 1.75
             else:
@@ -444,7 +462,7 @@ class Simulation:
                     self.params.SetBeadFieldCoupling("S", "A", 0.0)
                     self.params.SetBeadFieldCoupling("S", "B", 0.0)
                 self.calc.SetFieldDiffusionOff()
-                self.calc.Run(int(Teq_np/self.timestep))
+                self.calc.Run(int(Teq_np[self.phase-1]/self.timestep))
 
             # Now equilibrate fields with only base coupling,
             #   keeping the nanoparticle positions fixed.
@@ -461,7 +479,7 @@ class Simulation:
                 self.params.SetBeadFieldCoupling("S", "B", self.ca)
             self.calc.SetFieldDiffusionOn()
             self.calc.SetBeadDiffusionOff()
-            self.calc.Run(int(Teq_field/self.timestep))
+            self.calc.Run(int(Teq_field[self.phase-1]/self.timestep))
 
             # Set relevant parameters back to the original values
             self.params_GC.SetChi("A", "B", self.chi)
