@@ -259,12 +259,16 @@ if __name__ == "__main__":
             strips = correction(size[0],size[1],xrange) * 2 * numpy.pi * xrange * dx
             factor = size[0] * size[1] / strips / Npairs
             hist = factor * data[frames.index(0)]
-            pylab.plot(xrange, hist, label="frame 0")
+            #pylab.plot(xrange, hist, label="frame 0")
         else:
             factor = 1.0 / sum(data[0])
 
         hist = factor * numpy.sum([data[frames.index(1+i)] for i in range(nsamples)], axis=0) / nsamples
         pylab.plot(xrange, hist, label="frames 1-%i" %(1+nsamples))
+        hist = factor * numpy.sum([data[frames.index(11+i)] for i in range(nsamples)], axis=0) / nsamples
+        pylab.plot(xrange, hist, label="frames 11-%i" %(11+nsamples))
+        hist = factor * numpy.sum([data[frames.index(21+i)] for i in range(nsamples)], axis=0) / nsamples
+        pylab.plot(xrange, hist, label="frames 21-%i" %(21+nsamples))
         hist = factor * numpy.sum([data[frames.index(101+i)] for i in range(nsamples)], axis=0) / nsamples
         pylab.plot(xrange, hist, label="frames 101-%i" %(101+nsamples))
         hist = factor * numpy.sum([data[frames.index(1001+i)] for i in range(nsamples)], axis=0) / nsamples
