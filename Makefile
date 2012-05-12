@@ -5,6 +5,8 @@ all: copy default
 
 include $(wildcard ../common.mk)
 
+AVIDIR := $(shell mktemp -d -u)
+
 # ############
 # Output files
 # ############
@@ -74,8 +76,10 @@ SYNC_DATA = /home/kml/data/
 
 # Frame buffer parameters (xvfb)
 XVFBOPTS = "-screen 0 1280x1024x24"
-PYCULGI = "xvfb-run -n $(shell echo $$RANDOM) -s $(XVFBOPTS) python-culgi"
-PYTHON = "xvfb-run -n $(shell echo $$RANDOM) -s $(XVFBOPTS) python"
+PYCULGI = python-culgi-6.0.0-kml
+PYCULGI_FB = "xvfb-run -n $(shell echo $$RANDOM) -s $(XVFBOPTS) python-culgi-6.0.0-kml"
+PYTHON = python
+PYTHON_FB = "xvfb-run -n $(shell echo $$RANDOM) -s $(XVFBOPTS) python"
 
 # #############
 # Local targets
@@ -97,52 +101,52 @@ copy:
 plot: plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
 plot-energy: $(PLOTS_ENERGY)
 %.energy-total.png: %.energy.npy.bz2
-	"$(PYTHON)" plot.py $< total save
+	$(PYTHON) plot.py $< total save
 %.energy-field.png: %.energy.npy.bz2
-	"$(PYTHON)" plot.py $< field save
+	$(PYTHON) plot.py $< field save
 %.energy-coupl.png: %.energy.npy.bz2
-	"$(PYTHON)" plot.py $< coupl save
+	$(PYTHON) plot.py $< coupl save
 %.offsets.png: %.energy.npy.bz2
-	"$(PYTHON)" plot.py $< offsets save
+	$(PYTHON) plot.py $< offsets save
 plot-offsets: $(PLOTS_OFFSETS)
 %.offsets-ang.png: %.energy.npy.bz2
-	"$(PYTHON)" plot.py $< offsets angles save
+	$(PYTHON) plot.py $< offsets angles save
 plot-hist-field: $(PLOTS_HIST_FIELD)
 %.hist-field-total.png: %.hist-field.npy.bz2
-	"$(PYTHON)" plot.py $< total save
+	$(PYTHON) plot.py $< total save
 %.hist-field-order.png: %.hist-field.npy.bz2
-	"$(PYTHON)" plot.py $< order save
+	$(PYTHON) plot.py $< order save
 plot-hist-radial: $(PLOTS_HIST_RADIALS)
 %.hist-radial.png: %.hist-radial.npy.bz2
-	"$(PYTHON)" plot.py $< save
+	$(PYTHON) plot.py $< save
 %.hist-radial.zoom.png: %.hist-radial.npy.bz2
-	"$(PYTHON)" plot.py $< zoom save
+	$(PYTHON) plot.py $< zoom save
 %.hist-radial-shell.png: %.hist-radial.npy.bz2
-	"$(PYTHON)" plot.py $< shell save
+	$(PYTHON) plot.py $< shell save
 %.hist-radial-shell.zoom.png: %.hist-radial.npy.bz2
-	"$(PYTHON)" plot.py $< shell zoom save
+	$(PYTHON) plot.py $< shell zoom save
 plot-hist-residual: $(PLOTS_HIST_RES)
 %.hist-residual-total.png: %.hist-residual.npy.bz2
-	"$(PYTHON)" plot.py $< total save
+	$(PYTHON) plot.py $< total save
 %.hist-residual-total-shell.png: %.hist-residual.npy.bz2
-	"$(PYTHON)" plot.py $< total shell save
+	$(PYTHON) plot.py $< total shell save
 %.hist-residual-order.png: %.hist-residual.npy.bz2
-	"$(PYTHON)" plot.py $< order save
+	$(PYTHON) plot.py $< order save
 %.hist-residual-order-shell.png: %.hist-residual.npy.bz2
-	"$(PYTHON)" plot.py $< order shell save
+	$(PYTHON) plot.py $< order shell save
 plot-hist-angles: $(PLOTS_HIST_ANGLES)
 %.hist-ang.png: %.hist-ang.npy.bz2
-	"$(PYTHON)" plot.py $< angles save
+	$(PYTHON) plot.py $< angles save
 
 # Generate the galleries if any key output files changed
 .PHONY: gallery
 gallery: gallery.html $(foreach p,$(PHASES),$(p)/gallery.html) exp/gallery.html
 gallery.html: gallery.py
-	"$(PYCULGI)" gallery.py main > gallery.html && rm -rvf Culgi.log
+	$(PYCULGI) gallery.py main > gallery.html && rm -rvf Culgi.log
 phase%/gallery.html: phase%/*/*/*/*.out gallery.py
-	"$(PYCULGI)" gallery.py $* > phase$*/gallery.html && rm -rvf Culgi.log
+	$(PYCULGI) gallery.py $* > phase$*/gallery.html && rm -rvf Culgi.log
 exp/gallery.html: gallery.py exp/sem-analyzed/*/*/*.png
-	"$(PYCULGI)" gallery.py exp > $@ && rm -rvf Culgi.log
+	$(PYCULGI) gallery.py exp > $@ && rm -rvf Culgi.log
 
 # Generate report
 .PHONY: report
@@ -153,10 +157,10 @@ report: $(NAME).pdf
 exp:
 	$(MAKE) -C exp
 
-# Cleanup old simulations files (must do manually)
-.PHONY: Cleanup
+# Cleanup old simulations files (must run manually)
+.PHONY: cleanup
 cleanup:
-	"$(PYCULGI)" cleanup.py
+	"$(PYCULGI_FB)" cleanup.py
 
 # #############################
 # Remote targets (run manually)
@@ -173,24 +177,29 @@ cleanup:
 #  via sshfs, because no encoder is installed on poly
 
 # Generate movies and snapshots for simulations based on Culgi outputs
+# The touching is to signify for other processes this parameter set is busy
 .PHONY: avi
 avi: $(subst .out,.avi,$(SIMS_OUT_NEW))
 %.avi: %.out %.cga
-	-"$(PYCULGI)" replay.py $@ save xvfb && mencoder "mf://*.jpg" -mf fps=10 -o $@ -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=1600 && cp `ls *.jpg | head -1` $(subst .avi,.first.jpg,$@) && cp `ls *.jpg | tail -1` $(subst .avi,.jpg,$@)
-	rm -rvf *.jpg
+	mkdir -p $(AVIDIR)
+	touch $@
+	-"$(PYCULGI_FB)" replay.py $@ $(AVIDIR) save xvfb && mencoder "mf://$(AVIDIR)/*.jpg" -mf fps=10 -o $@ -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=1600 && cp `ls $(AVIDIR)/*.jpg | head -1` $(subst .avi,.first.jpg,$@) && cp `ls $(AVIDIR)/*.jpg | tail -1` $(subst .avi,.jpg,$@)
+	rm -rvf $(AVIDIR)
 
-# Convert Culgi output (cga/csa/ctf) to NumPy compressed archives (npz)
-# Also compress both targets and dependencies after the conversion
-# Do not use csa files as targets/prerequisites, but they are collateral targets
+# Convert Culgi output (cga/csa/ctf) to NumPy archives
+# Also compress targets and related files after conversion (but not the prerequisites)
+# Use only the ctf file as a target, but other files are also a result
 .PHONY: convert
-convert: $(subst .out,.ctf.npy.gz,$(SIMS_OUT_NEW)) $(subst .out,.cga.npy.gz,$(SIMS_OUT_NEW))
-%.ctf.npy.gz %.cga.npy.gz: %.out %_Inst.ctf %.cga
-	-"$(PYCULGI)" convert.py $< && gzip $(foreach suf,_Inst.ctf .cga .csa .ctf.npy .cga.npy .csa.npy,$*$(suf))
+convert: $(subst .out,.ctf.npy.gz,$(SIMS_OUT_NEW))
+%.ctf.npy.gz: %.out %_Inst.ctf
+	touch $@
+	-"$(PYCULGI_FB)" convert.py $< && gzip -f $(foreach suf,.ctf.npy .cga.npy .csa.npy,$*$(suf))
 
 # Analyze the data (npy format, compressed)
 # The resulting archives should be much smaller than the raw data
-# Do not depend explicitely on csa files, which are missing for neat systems (energy and fields should suffice)
+# Use only the energy file as a target, but other files are also a result
 .PHONY: analyze
-analyze: $(subst .out,.energy.npy.bz2,$(SIMS_OUT)) $(subst .out,.hist-field.npy.bz2,$(SIMS_OUT))
-%.energy.npy.bz2 %.hist-field.npy.bz2: %.out
-	-python-culgi analyze.py $< energy histograms && bzip2 $*.energy*.npy $*.hist*.npy
+analyze: $(subst .out,.energy.npy.bz2,$(SIMS_OUT))
+%.energy.npy.bz2: %.out %.ctf.npy.gz
+	touch $@
+	-$(PYCULGI) analyze.py $< energy histograms && bzip2 -f $*.energy*.npy $*.hist*.npy

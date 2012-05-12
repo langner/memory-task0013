@@ -8,6 +8,7 @@ from simulation import loadpath
 if __name__ == "__main__":
 
     sim = loadpath(sys.argv[1], setup=False)
+    tmpdir = sys.argv[2]
     tosave = "save" in sys.argv
 
     # Make sure that simulation has finished (if we want to save)
@@ -75,14 +76,14 @@ if __name__ == "__main__":
             archive.LoadFrame(iframe)
             num = ("%i" %inum).zfill(4)
             graphics.SetInputText("")
-            graphics.WriteJPEG("frame_%s" %num)
+            graphics.WriteJPEG("%s/frame_%s" %(tmpdir,num))
             iframe += 1
             inum += 1
         while iframe < N:
             archive.LoadFrame(iframe)
             num = ("%i" %inum).zfill(4)
             graphics.SetInputText("")
-            graphics.WriteJPEG("frame_%s" %num)
+            graphics.WriteJPEG("%s/frame_%s" %(tmpdir,num))
             iframe += ifreq
             inum += 1
 
