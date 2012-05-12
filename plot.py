@@ -2,7 +2,6 @@ import bz2
 import sys
 
 import numpy
-import pylab
 
 from analyze import PhaseFrames
 
@@ -21,6 +20,12 @@ def correction(X,Y,R):
 
 
 if __name__ == "__main__":
+
+    # Do not use X if saving
+    import matplotlib
+    if "save" in sys.argv:
+        matplotlib.use("Agg")
+    import pylab
 
     fpath = sys.argv[1].strip()
     phase,model,system,params,run = fpath.split('/')
