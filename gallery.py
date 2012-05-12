@@ -5,6 +5,7 @@ import os
 import sys
 
 from simulation import *
+from systems import *
 
 
 def controltree(sims, params):
@@ -134,82 +135,6 @@ labels = {  "beadvolume"    : "Bead volume",
             "dcoupling"     : "Selectivity (c<sub>B</sub>-c<sub>A</sub>)"
 }
 
-phases = range(1,12)
-favorite = [
-    # phase 1
-    "phase1/64x64x1_A20B16_bv1.00/temp0.05_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
-    "phase1/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob0.10_a25.0/tt11000.out",
-    "phase1/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
-    "phase1/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop100/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0/tt11000.out",
-    "phase1/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop200/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
-    "phase1/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
-    "phase1/64x64x1_A20B16_bv1.00/temp1.00_exp0.01_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob0.01_a25.0/tt11000.out",
-    # phase 2
-    "phase2/64x64x1_A20B16_bv1.00/temp0.01_exp1.00_den1.0_pop200/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
-    "phase2/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob0.01_a25.0/tt11000.out",
-    "phase2/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob0.10_a25.0/tt11000.out",
-    "phase2/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb24.0_mob0.10_a25.0/tt11000.out",
-    "phase2/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob1.00_a25.0/tt11000.out",
-    "phase2/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb24.0_mob1.00_a25.0/tt11000.out",
-    "phase2/64x64x1_A20B16_bv1.00/temp1.00_exp0.01_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob0.01_a25.0/tt11000.out",
-    "phase2/64x64x1_A20B16_bv1.00/temp1.00_exp0.01_den1.0_pop500/k15.0_nchi24.0_ca16.0_cb18.0_mob0.10_a25.0/tt11000.out",
-    # phase 3
-    "phase3/64x64x1_A15B12_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob0.01_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.01_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca7.0_cb14.0_mob0.10_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob0.10_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.10_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca10.0_cb18.0_mob0.10_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob1.00_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob1.00_a25.0/tt11000.out",
-    "phase3/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi48.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
-    # phase 4
-    "phase4/64x64x1_A15B12_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
-    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a25.0/tt11000.out",
-    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca7.0_cb14.0_mob0.01_a25.0/tt11000.out",
-    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob0.01_a25.0/tt11000.out",
-    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.01_a25.0/tt11000.out",
-    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
-    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca7.0_cb14.0_mob0.10_a25.0/tt11000.out",
-    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob0.10_a25.0/tt11000.out",
-    "phase4/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.10_a25.0/tt11000.out",
-    # phase 5
-    "phase5/64x64x1_A15B12_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
-    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a25.0/tt11000.out",
-    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca7.0_cb14.0_mob0.01_a25.0/tt11000.out",
-    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob0.01_a25.0/tt11000.out",
-    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.01_a25.0/tt11000.out",
-    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
-    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca7.0_cb14.0_mob0.10_a25.0/tt11000.out",
-    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca8.0_cb16.0_mob0.10_a25.0/tt11000.out",
-    "phase5/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.10_a25.0/tt11000.out",
-    # phase 6
-    "phase6/64x64x1_A15B12_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt55000.out",
-    "phase6/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a25.0/tt55000.out",
-    "phase6/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.01_a25.0/tt55000.out",
-    "phase6/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt55000.out",
-    "phase6/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1000/k15.0_nchi24.0_ca9.0_cb16.0_mob0.10_a25.0/tt55000.out",
-    # phase 7
-    "phase7/64x64x1_A20B16_bv1.00/temp0.04_exp0.25_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a10.0/tt11000.out",
-    "phase7/64x64x1_A20B16_bv1.00/temp0.06_exp0.17_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a10.0/tt11000.out",
-    "phase7/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.001_a10.0/tt11000.out",
-    "phase7/64x64x1_A15B12_bv1.00/temp0.10_exp0.10_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.01_a10.0/tt11000.out",
-    "phase7/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1024/k15.0_nchi24.0_ca6.0_cb12.0_mob0.10_a25.0/tt11000.out",
-    # phase 8
-    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop768/k15.0_nchi24.0_ca2.0_cb4.0_mob0.001_a5.0/tt11000.out",
-    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop1024/k15.0_nchi24.0_ca2.0_cb4.0_mob0.001_a5.0/tt11000.out",
-    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop512/k15.0_nchi24.0_ca2.0_cb4.0_mob0.001_a10.0/tt11000.out",
-    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop256/k15.0_nchi24.0_ca2.0_cb4.0_mob0.01_a5.0/tt11000.out",
-    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop512/k15.0_nchi24.0_ca3.0_cb6.0_mob0.01_a5.0/tt11000.out",
-    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop768/k15.0_nchi24.0_ca3.0_cb6.0_mob0.01_a5.0/tt11000.out",
-    "phase8/64x64x1_A20B16_bv1.00/temp0.10_exp0.10_den1.0_pop256/k15.0_nchi32.0_ca2.0_cb4.0_mob0.01_a10.0/tt11000.out",
-    "phase8/64x64x1_A20B16_bv1.00/temp0.20_exp0.01_den1.0_pop512/k15.0_nchi24.0_ca2.0_cb4.0_mob0.01_a20.0/tt11000.out",
-   # phase 9
-]
-favorite.sort()
 
 HEADER = """<head>
         <script type="text/javascript" src="simpletree/simpletreemenu.js">
@@ -241,19 +166,6 @@ def footer(names, above=False):
     text += "</script>\n"
     return text
 
-description = [ "Bare NPs moving in 3D (Z&ne;0), random starting ditribution",
-                "Same as phase 1, but NPs move in 2D (Z=0)",
-                "Same as phase 2, with initial density correction for high NP concentrations",
-                "Same as phase 3, with initial density equilibration",
-                "Same as phase 4, with somewhat ordered starting distribution",
-                "Same as phase 5, with more ordered starting distribution, and 5x longer run time",
-                "Same as phase 6, with initial nanoparticle equilibration",
-                "Same as phase 7, with larger nanoparticles (stiff colloids)",
-                "Same as phase 8, with colloid rotational diffusion",
-                "Same as phase 9, with altered BCP mobility",
-                "Same as phase 10, with alterable time step",
-]
-
 
 if __name__ == "__main__":
 
@@ -278,7 +190,7 @@ if __name__ == "__main__":
             print "<li>"
             outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*/t*.out" %phase
             outs = glob.glob(outpattern)
-            favorite_simulations = [loadpath(out, setup=False, main=True) for out in favorite if out.count("phase%i" %phase) > 0]
+            favorite_simulations = [loadpath(out, setup=False, main=True) for out in favorite if out.count(r"phase%i/" %phase) > 0]
             print "<h4>Phase %i (%i runs, %i favorite)</h3>" %(phase, len(outs), len(favorite_simulations))
             print printlist([
                     "%s" %description[phase-1],
