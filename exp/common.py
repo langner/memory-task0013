@@ -107,7 +107,6 @@ def radialdistribution(coords, img):
     hist /= 2 * scipy.pi * rdfcorrection(X,Y,bins) * bins * dr
     return hist, bins
 
-
 def rdfmodel(X, p, m, l, a, b, t, gd):
     """Approximate Radial distribution function
 

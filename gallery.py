@@ -50,6 +50,8 @@ def printsummary(sim):
     size = "%ix%ix%i" %(sim.size[0], sim.size[1], sim.size[2])
     summary = "Kappa %.1f" %sim.kappa
     if sim.population > 1:
+        if sim.phase > 12:
+            summary += ", c<sub>core</sub> %.1f" %(sim.cc)
         summary += ", c<sub>A</sub> %.1f, c<sub>B</sub> %.1f" %(sim.ca, sim.cb)
     summary += ", exp %.2f for %s (nchi=%.1f" %(sim.expansion, sim.polymer, sim.nchi)
     if sim.phase > 9:

@@ -18,6 +18,18 @@ def correction(X,Y,R):
     ref = (V1+V2+V3+V4) * 2 * numpy.pi
     return (ang1*V1 + ang2*V2 + ang3*V3 + ang4*V4) / ref
 
+def rdfmodel(X, p, m, l, a, b, t, gd):
+    """Approximate Radial distribution function
+
+    Coded according to Matteoli and Mansoori, JPC 1995
+    All parameters have same meaning, but the first peak position, p, is here additionally
+    """
+    Y = X/p
+    Ym1 = Y-1
+    left = gd*numpy.exp(-t*Ym1*Ym1)
+    right = 1.0 + numpy.power(Y,-m)*(gd-1.0-l) + numpy.exp(-a*Ym1)*numpy.cos(b*Ym1)*(Ym1+l)/Y
+    return (Y<1)*left + (Y>=1)*right
+
 
 if __name__ == "__main__":
 

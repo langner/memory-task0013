@@ -12,7 +12,7 @@ parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "kappa", "temperature", "expansion",
                 "ca", "cb", "a", "mobility", "population",
                 "timestep", "totaltime" ,
-                "chmob"]
+                "chmob", "cc" ]
 # All instant result types -- no spaces tolerated!
 instant_fields_all = "\
 SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,\
@@ -24,12 +24,16 @@ GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy"
 maxiters = 25000
 
 # Number of equilibration step for nanoparticles and the field.
-Teq_np = [1000]*11 + [1]*1
-Teq_field = [100]*12
+# The field equilibration is always short, for nanoparticles it needs to be
+#   a little longer, and only in phase 12 we change it to almost zero.
+Teq_np = [1000]*11 + [1]*1 + [1000]*1
+Teq_field = [100]*13
 
 # Number of snapshots and energies to save, for each phase given separately.
-Nsnaps = [11000]*10 + [1100]*2
-Nenerg = [110000]*10 + [11000]*2
+# I used to save over ten thousand snapshots, but a thousand is in fact more than enough.
+# Same is true for energies -- ten thousand instead of a hundred thousand is enough.
+Nsnaps = [11000]*10 + [1100]*3
+Nenerg = [110000]*10 + [11000]*3
 
 
 def getpath(sim):
@@ -59,15 +63,18 @@ def getpath(sim):
         mobilityformat = "mob%.3f"
     else:
         mobilityformat = "mob%.5f"
-    if sim.population == 0:
-        format = "k%.1f_nchi%.1f"
-        dir4 = format %(sim.kappa, sim.nchi)
-    elif sim.population == 1:
-        format = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_"+mobilityformat
-        dir4 = format %(sim.kappa, sim.nchi, sim.ca, sim.cb, sim.mobility)
-    else:
-        format = "k%.1f_nchi%.1f_ca%.1f_cb%.1f_"+mobilityformat+"_a%.1f"
-        dir4 = format %(sim.kappa, sim.nchi, sim.ca, sim.cb, sim.mobility, sim.a)
+    format = "k%.1f_nchi%.1f"
+    args = (sim.kappa, sim.nchi)
+    if sim.population > 0:
+        if sim.phase >= 13:
+            format += "_cc%.1f"
+            args += (sim.cc,)
+        format += "_ca%.1f_cb%.1f_"+mobilityformat
+        args += (sim.ca, sim.cb, sim.mobility)
+    if sim.population > 1:
+        format += "_a%.1f"
+        args += (sim.a,)
+    dir4 = format %args
 
     return "%s/%s/%s/%s" %(dir1, dir2, dir3, dir4)
 
@@ -118,12 +125,20 @@ def loadpath(path, setup=True, main=False):
     if pop == 0:
         k,nchi = dir4.split('_')
     elif pop == 1:
-        k,nchi,ca,cb,mob = dir4.split('_')
+        if phase >= 13:
+            k,nchi,cc,ca,cb,mob = dir4.split('_')
+        else:
+            k,nchi,ca,cb,mob = dir4.split('_')
     else:
-        k,nchi,ca,cb,mob,a = dir4.split('_')
+        if phase >= 13:
+            k,nchi,cc,ca,cb,mob,a = dir4.split('_')
+        else:
+            k,nchi,ca,cb,mob,a = dir4.split('_')
     k = float(k[1:])
     nchi = float(nchi[4:])
     if pop > 0:
+        if phase >= 13:
+            cc = float(cc[2:])
         ca = float(ca[2:])
         cb = float(cb[2:])
         mob = float(mob[3:])
@@ -157,6 +172,8 @@ def loadpath(path, setup=True, main=False):
     args += [timestep, totaltime]
     if phase > 9:
         args += [chmob]
+    if phase > 12:
+        args += [cc]
     sim = Simulation(*args)
 
     # Setup the simulation if requested
@@ -177,7 +194,7 @@ class Simulation:
                  temperature, expansion, density, population,
                  kappa, nchi, ca, cb, a, mobility,
                  timestep, totaltime,
-                 chmob=None):
+                 chmob=None, cc=0.0):
         """Initialize the simulation.
 
         This, along with initialization, does the following tasak:
@@ -205,15 +222,10 @@ class Simulation:
         self.efreq = int(1.0*self.tt / Nenerg[self.phase-1] / self.ts) or 1
         self.sfreq = int(1.0*self.tt / Nsnaps[self.phase-1] / self.ts) or 1
 
-        # Other derived parameters
+        # Other derived parameters.
         self.dcoupling = self.cb - self.ca
-        self.npvolume = self.ca/(self.kappa*self.density+1)
         self.volume = size[0]*size[1]
         self.area = self.volume
-        if self.phase > 1:
-            self.effective_density = self.density - self.pop*self.npvolume/self.volume
-        else:
-            self.effective_density = self.density
 
         # The nanoparticle prototype.
         # Until phase 7, the nanoparticle is a single bead soft core molecule, but
@@ -224,10 +236,17 @@ class Simulation:
             self.np = Palette.LoadSoftCoreColloid("phase%i/np.cof" %self.phase)
         self.beads_per_np = self.np.GetNumberOfBeads()
 
-        # We must correct the effective density from phase 8, because nanoparticles
-        # are now colloids with more than one bead.
+        # Estimate nanoparticle volume.
+        self.kd1 = self.kappa*self.density + 1
+        self.npvolume = self.ca / self.kd1
         if self.phase > 7:
-            self.npvolume = self.beads_per_np*self.ca / (self.kappa*self.density + 1)
+            self.npvolume = self.beads_per_np * self.ca / self.kd1
+        if self.phase > 12:
+            self.npvolume = self.cc/self.kd1 + (self.beads_per_np-1)*self.ca/self.kd1
+
+        # Estimate the effective density of the polymer field.
+        self.effective_density = self.density
+        if self.phase > 1:
             self.effective_density = self.density - self.pop*self.npvolume/self.volume
         self.effden = self.effective_density
 
@@ -263,6 +282,13 @@ class Simulation:
             get_np_cmds = self.box.GetSoftCoreColloidCmds
         self.nanoparticles = [get_np_cmds("np", i) for i in range(self.pop)]
         self.NPs = self.nanoparticles
+
+        # Coupling parameters for the core beads.
+        self.cca = self.ca
+        self.ccb = self.cb
+        if self.phase > 12:
+            self.cca = self.cc
+            self.ccb = self.cc
 
         # Output path and name
         self.path = getpath(self)
@@ -397,9 +423,9 @@ class Simulation:
             self.params.SetBeadFieldCoupling("P", "B", self.cb)
             self.params_SC.SetA("P", "P", self.a)
         else:
-            self.params.SetBeadFieldCoupling("C", "A", self.ca)
-            self.params.SetBeadFieldCoupling("C", "A", self.ca)
-            self.params.SetBeadFieldCoupling("S", "B", self.cb)
+            self.params.SetBeadFieldCoupling("C", "A", self.cca)
+            self.params.SetBeadFieldCoupling("C", "B", self.ccb)
+            self.params.SetBeadFieldCoupling("S", "A", self.ca)
             self.params.SetBeadFieldCoupling("S", "B", self.cb)
             self.params_SC.SetA("C", "C", self.a)
             self.params_SC.SetA("C", "S", self.a)
@@ -473,8 +499,8 @@ class Simulation:
             else:
                 for i in range(self.pop):
                     self.nanoparticles[i].SetDiffusionFactor(0.0)
-                self.params.SetBeadFieldCoupling("C", "A", self.ca)
-                self.params.SetBeadFieldCoupling("C", "B", self.ca)
+                self.params.SetBeadFieldCoupling("C", "A", self.cca)
+                self.params.SetBeadFieldCoupling("C", "B", self.cca)
                 self.params.SetBeadFieldCoupling("S", "A", self.ca)
                 self.params.SetBeadFieldCoupling("S", "B", self.ca)
             self.calc.SetFieldDiffusionOn()
@@ -490,8 +516,8 @@ class Simulation:
             else:
                 for i in range(self.pop):
                     self.nanoparticles[i].SetDiffusionFactor(self.mobility)
-                self.params.SetBeadFieldCoupling("C", "A", self.ca)
-                self.params.SetBeadFieldCoupling("C", "B", self.cb)               
+                self.params.SetBeadFieldCoupling("C", "A", self.cca)
+                self.params.SetBeadFieldCoupling("C", "B", self.ccb)               
                 self.params.SetBeadFieldCoupling("S", "A", self.ca)
                 self.params.SetBeadFieldCoupling("S", "B", self.cb)               
             self.calc.SetBeadDiffusionOn()
