@@ -275,30 +275,41 @@ if __name__ == "__main__":
         else:
             factor = 1.0 / sum(data[0])
 
-        hist = factor * numpy.sum([data[frames.index(1+i)] for i in range(nsamples)], axis=0) / nsamples
-        pylab.plot(xrange, hist, label="frames 1-%i" %(1+nsamples))
-        hist = factor * numpy.sum([data[frames.index(11+i)] for i in range(nsamples)], axis=0) / nsamples
-        pylab.plot(xrange, hist, label="frames 11-%i" %(11+nsamples))
-        hist = factor * numpy.sum([data[frames.index(21+i)] for i in range(nsamples)], axis=0) / nsamples
-        pylab.plot(xrange, hist, label="frames 21-%i" %(21+nsamples))
-        hist = factor * numpy.sum([data[frames.index(101+i)] for i in range(nsamples)], axis=0) / nsamples
-        pylab.plot(xrange, hist, label="frames 101-%i" %(101+nsamples))
-        hist = factor * numpy.sum([data[frames.index(1001+i)] for i in range(nsamples)], axis=0) / nsamples
-        pylab.plot(xrange, hist, label="frames 1001-%i" %(1001+nsamples))
-        if 10001 in frames:
-            hist = factor * numpy.sum([data[frames.index(10001+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 10001-%i" %(10001+nsamples))
-        if 50001 in frames:
-            hist = factor * numpy.sum([data[frames.index(50001+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 50001-%i" %(50001+nsamples))
-        pylab.xlabel(xlabel)
-        pylab.ylabel("probability density")
+        if "trend" in sys.argv:
+
+            D = xrange[numpy.argmax(data[:,:250], axis=1)]
+            d = []
+            for fi,f in enumerate(PhaseFrames[13][0]):
+                i = PhaseFrames[13][1]
+                d.append(numpy.average(D[fi*i:(fi+1)*i]))
+            pylab.plot(PhaseFrames[13][0], d)
+
+        else:
+
+            hist = factor * numpy.sum([data[frames.index(1+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 1-%i" %(1+nsamples))
+            hist = factor * numpy.sum([data[frames.index(11+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 11-%i" %(11+nsamples))
+            hist = factor * numpy.sum([data[frames.index(21+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 21-%i" %(21+nsamples))
+            hist = factor * numpy.sum([data[frames.index(101+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 101-%i" %(101+nsamples))
+            hist = factor * numpy.sum([data[frames.index(1001+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 1001-%i" %(1001+nsamples))
+            if 10001 in frames:
+                hist = factor * numpy.sum([data[frames.index(10001+i)] for i in range(nsamples)], axis=0) / nsamples
+                pylab.plot(xrange, hist, label="frames 10001-%i" %(10001+nsamples))
+            if 50001 in frames:
+                hist = factor * numpy.sum([data[frames.index(50001+i)] for i in range(nsamples)], axis=0) / nsamples
+                pylab.plot(xrange, hist, label="frames 50001-%i" %(50001+nsamples))
+            pylab.xlabel(xlabel)
+            pylab.ylabel("probability density")
 
         pylab.grid()
         pylab.legend()
 
         # We are most interested in small radial distances
-        if "hist-radial.npy" in fpath:
+        if "hist-radial.npy" in fpath and "trend" not in sys.argv:
             xmin = 0.0
             if "zoom" in sys.argv:
                 if phase > 7:
