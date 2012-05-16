@@ -1,0 +1,32 @@
+@CulgiVersion: 6.0.0
+# Culgi Object File
+
+softcorecolloidkeys
+    name
+    id
+end_softcorecolloidkeys
+
+scbeadkeys
+    name
+    element_type
+    charge
+    x
+    y
+    z
+    velocity_x
+    velocity_y
+    velocity_z
+    velocity_const
+end_scbeadkeys
+
+softcorecolloid np 0
+scbead C1   C   0   0.0     0.0     0.0     0 0 0 0
+scbead S1   S   0   0.8     0.0     0.0     0 0 0 0
+scbead S2   S   0  -0.8     0.0     0.0     0 0 0 0
+scbead S3   S   0   0.0     0.8     0.0     0 0 0 0
+scbead S4   S   0   0.0    -0.8     0.0     0 0 0 0
+scbead S5   S   0   0.5657  0.5657  0.0     0 0 0 0
+scbead S6   S   0   0.5657 -0.5657  0.0     0 0 0 0
+scbead S7   S   0  -0.5657  0.5657  0.0     0 0 0 0
+scbead S8   S   0  -0.5657 -0.5657  0.0     0 0 0 0
+end_softcorecolloid

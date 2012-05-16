@@ -190,7 +190,7 @@ if __name__ == "__main__":
         print """<ul id="simutree_gallery" class="treeview">"""
         for phase in phases:
             print "<li>"
-            outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*/t*.out" %phase
+            outpattern = "phase%i/*x*x*_A*B*_bv*/temp?.??_exp?.??_den?.?_pop*/k*_nchi*/t*.out" %phase
             outs = glob.glob(outpattern)
             favorite_simulations = [loadpath(out, setup=False, main=True) for out in favorite if out.count(r"phase%i/" %phase) > 0]
             print "<h4>Phase %i (%i runs, %i favorite)</h3>" %(phase, len(outs), len(favorite_simulations))
@@ -281,7 +281,7 @@ if __name__ == "__main__":
         phase = int(sys.argv[1])
 
         # Get all simulations.
-        outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*/*.out" %phase
+        outpattern = "phase%i/*x*x*_A*B*_bv*/temp?.??_exp?.??_den?.?_pop*/k*_nchi*/*.out" %phase
         outs = glob.glob(outpattern)
         outs.sort()
         simulations = [loadpath(out, setup=False) for out in outs]

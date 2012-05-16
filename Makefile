@@ -13,10 +13,10 @@ AVIDIR := $(shell mktemp -d -u)
 
 # Simulation output files
 PHASES = $(wildcard phase?) $(wildcard phase??)
-SYSTEMS = $(foreach p,$(PHASES),$(wildcard $(p)/*x*x*_A*B*_bv?.??))
+SYSTEMS = $(foreach p,$(PHASES),$(wildcard $(p)/*x*x*_A*B*_bv*))
 SYSTEMS8 = $(wildcard phase8/*x*x*_A*B*_bv?.??)
 SYSTEMS9 = $(wildcard phase9/*x*x*_A*B*_bv?.??)
-SYSTEMS10 = $(wildcard phase1?/*x*x*_A*B*_bv?.??)
+SYSTEMS10 = $(wildcard phase1?/*x*x*_A*B*_bv*)
 MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
 MODELS8 = $(foreach s,$(SYSTEMS8),$(wildcard $(s)/temp*_exp*_den*_pop*))
 MODELS9 = $(foreach s,$(SYSTEMS9),$(wildcard $(s)/temp*_exp*_den*_pop*))

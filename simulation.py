@@ -12,7 +12,7 @@ parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "kappa", "temperature", "expansion",
                 "ca", "cb", "a", "mobility", "population",
                 "timestep", "totaltime" ,
-                "chmob", "cc", "np" ]
+                "chmob", "cc", "npname", "sigma" ]
 # All instant result types -- no spaces tolerated!
 instant_fields_all = "\
 SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,\
@@ -26,14 +26,14 @@ maxiters = 25000
 # Number of equilibration step for nanoparticles and the field.
 # The field equilibration is always short, for nanoparticles it needs to be
 #   a little longer, and only in phase 12 we change it to almost zero.
-Teq_np = [1000]*11 + [1]*1 + [1000]*2
-Teq_field = [100]*14
+Teq_np = [1000]*11 + [1]*1 + [1000]*3
+Teq_field = [100]*15
 
 # Number of snapshots and energies to save, for each phase given separately.
 # I used to save over ten thousand snapshots, but a thousand is in fact more than enough.
 # Same is true for energies -- ten thousand instead of a hundred thousand is enough.
-Nsnaps = [11000]*10 + [1100]*4
-Nenerg = [110000]*10 + [11000]*4
+Nsnaps = [11000]*10 + [1100]*5
+Nenerg = [110000]*10 + [11000]*5
 
 
 def getpath(sim):
@@ -45,7 +45,10 @@ def getpath(sim):
 
     # Second directory: system size, polymer architecture, bead size.
     X,Y,Z = sim.size
-    dir2 = "%ix%ix%i_%s_bv%.2f" %(X, Y, Z, sim.polymer, sim.beadvolume)
+    if sim.phase > 14:
+        dir2 = "%ix%ix%i_%s_bv%.2f_sigma%.2f" %(X, Y, Z, sim.polymer, sim.beadvolume, sim.sigma)
+    else:
+        dir2 = "%ix%ix%i_%s_bv%.2f" %(X, Y, Z, sim.polymer, sim.beadvolume)
 
     # Third directory: system temperature, noise, density, population.
     # From phase 10, add the chain mobility here as a parameter.
@@ -106,9 +109,14 @@ def loadpath(path, setup=True, main=False):
     phase = int(dir1[5:])
 
     # The second contain systems size, polymer architecture and bead volume.
-    size,pol,bv = dir2.split('_')
+    if phase > 14:
+        size,pol,bv,sigma = dir2.split("_")
+    else:
+        size,pol,bv = dir2.split('_')
     size = map(int,size.split('x'))
     bv = float(bv[2:])
+    if phase > 14:
+        sigma = float(sigma[5:])
 
     # The third has temperature, exp. factor, density and population.
     # Starting phase 10, this also contains the chain mobility (chmob).
@@ -163,7 +171,7 @@ def loadpath(path, setup=True, main=False):
         totaltime = int(totaltime[2:])
         timestep = float(timestep[2:])
         npname = npname
-    if phase > 10:
+    elif phase > 10:
         totaltime, timestep = outname.split("_")
         totaltime = int(totaltime[2:])
         timestep = float(timestep[2:])
@@ -184,6 +192,8 @@ def loadpath(path, setup=True, main=False):
         args += [cc]
     if phase > 13:
         args += [npname]
+    if phase > 14:
+        args += [sigma]
     sim = Simulation(*args)
 
     # Setup the simulation if requested
@@ -204,7 +214,7 @@ class Simulation:
                  temperature, expansion, density, population,
                  kappa, nchi, ca, cb, a, mobility,
                  timestep, totaltime,
-                 chmob=None, cc=0.0, npname=None):
+                 chmob=None, cc=0.0, npname=None, sigma=0.8):
         """Initialize the simulation.
 
         This, along with initialization, does the following tasak:
@@ -445,6 +455,9 @@ class Simulation:
             self.params_SC.SetA("C", "C", self.a)
             self.params_SC.SetA("C", "S", self.a)
             self.params_SC.SetA("S", "S", self.a)
+        if self.phase > 14:
+            self.params_SC.SetSigma("C", self.sigma)
+            self.params_SC.SetSigma("S", self.sigma)
 
         # Output path and file name
         self.calc.SetOutputFileName(self.name)
