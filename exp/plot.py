@@ -5,8 +5,9 @@ import string
 import sys
 
 import numpy
+import pylab
 
-from common import pylab, SEMAnalysis, getscalefromname
+from common import SEMAnalysis, getscalefromname
 from sem import cropy, scalebarstart
 
 

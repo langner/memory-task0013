@@ -12,7 +12,7 @@ parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "kappa", "temperature", "expansion",
                 "ca", "cb", "a", "mobility", "population",
                 "timestep", "totaltime" ,
-                "chmob", "cc" ]
+                "chmob", "cc", "np" ]
 # All instant result types -- no spaces tolerated!
 instant_fields_all = "\
 SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,\
@@ -26,14 +26,14 @@ maxiters = 25000
 # Number of equilibration step for nanoparticles and the field.
 # The field equilibration is always short, for nanoparticles it needs to be
 #   a little longer, and only in phase 12 we change it to almost zero.
-Teq_np = [1000]*11 + [1]*1 + [1000]*1
-Teq_field = [100]*13
+Teq_np = [1000]*11 + [1]*1 + [1000]*2
+Teq_field = [100]*14
 
 # Number of snapshots and energies to save, for each phase given separately.
 # I used to save over ten thousand snapshots, but a thousand is in fact more than enough.
 # Same is true for energies -- ten thousand instead of a hundred thousand is enough.
-Nsnaps = [11000]*10 + [1100]*3
-Nenerg = [110000]*10 + [11000]*3
+Nsnaps = [11000]*10 + [1100]*4
+Nenerg = [110000]*10 + [11000]*4
 
 
 def getpath(sim):
@@ -83,9 +83,12 @@ def getname(sim):
     """Construct output file basename from simulation object."""
 
     # Until phase 11, this was just the total time, now it contains the time step also.
+    # From phase 14, also add the nanoparticle model name.
     name = "tt%i" %sim.totaltime
     if sim.phase > 10:
         name += "_ts%s" %str(sim.timestep)
+    if sim.phase > 13:
+        name += "_%s" %sim.npname
 
     return name
 
@@ -155,6 +158,11 @@ def loadpath(path, setup=True, main=False):
     #  and the time step after phase 10.
     # Before phase 10, the time step is always 0.01
     outname = outfile[:-4]
+    if phase > 13:
+        totaltime, timestep, npname = outname.split("_")
+        totaltime = int(totaltime[2:])
+        timestep = float(timestep[2:])
+        npname = npname
     if phase > 10:
         totaltime, timestep = outname.split("_")
         totaltime = int(totaltime[2:])
@@ -174,6 +182,8 @@ def loadpath(path, setup=True, main=False):
         args += [chmob]
     if phase > 12:
         args += [cc]
+    if phase > 13:
+        args += [npname]
     sim = Simulation(*args)
 
     # Setup the simulation if requested
@@ -194,7 +204,7 @@ class Simulation:
                  temperature, expansion, density, population,
                  kappa, nchi, ca, cb, a, mobility,
                  timestep, totaltime,
-                 chmob=None, cc=0.0):
+                 chmob=None, cc=0.0, npname=None):
         """Initialize the simulation.
 
         This, along with initialization, does the following tasak:
@@ -230,10 +240,15 @@ class Simulation:
         # The nanoparticle prototype.
         # Until phase 7, the nanoparticle is a single bead soft core molecule, but
         #   from phase 8, it is a soft core colloid loaded from a Culgi object file
+        # After phase 13, the model name is variable, and determines the file to load.
         if self.phase <= 7:
             self.np = Palette.CreateSoftCoreMolecule("np", "P")
         else:
-            self.np = Palette.LoadSoftCoreColloid("phase%i/np.cof" %self.phase)
+            if self.phase > 13:
+                self.npname = npname
+            else:
+                self.npname = "np"
+            self.np = Palette.LoadSoftCoreColloid("phase%i/%s.cof" %(self.phase,self.npname))
         self.beads_per_np = self.np.GetNumberOfBeads()
 
         # Estimate nanoparticle volume.

@@ -7,7 +7,7 @@ from systems import *
 
 
 # What we currently want to run
-phases_to_run = [ 11, 12, 13 ]
+phases_to_run = [ 11, 12, 13, 14 ]
 
 
 def printnow(fname, content, mode='a'):
