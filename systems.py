@@ -1,7 +1,6 @@
-__all__ = ["phases", "phases_data", "phases_to_run", "Teq_np", "Teq_field", "Nsnaps", "Nenerg", "PhaseFrames", "descriptions", "systems", "favorite"]
-
-# All phases past and present.
-phases = range(1,16)
+__all__ = [ "phases_data", "phases",
+            "phases_to_run", "Teq_np", "Teq_field", "Nsnaps", "Nenerg", "PhaseFrames",
+            "descriptions", "systems", "favorite" ]
 
 # Things that need to be defined for each phase separately.
 #   1) currently running
@@ -16,22 +15,27 @@ frames_2 = [1, 11, 51, 101, 501, 1001, 5001, 10001, 50001]
 frames_3 = [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001]
 frames_4 = [1, 11, 21, 31, 41, 51, 101, 201, 301, 401, 501, 1001]
 phases_data = {
-1  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Bare NPs moving in 3D (Z&ne;0), random starting ditribution"),
-2  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Same as phase 1, but NPs move in 2D (Z=0)"),
-3  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Same as phase 2, with initial density correction for high NP concentrations"),
-4  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Same as phase 3, with initial density equilibration"),
-5  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Same as phase 4, with somewhat ordered starting distribution"),
-6  : (False, 1000, 100, 11000, 110000, frames_2, 16, "Same as phase 5, with more ordered starting distribution, and 5x longer run time"),
-7  : (False, 1000, 100, 11000, 110000, frames_3, 10, "Same as phase 6, with initial nanoparticle equilibration"),
-8  : (False, 1000, 100, 11000, 110000, frames_3, 10, "Same as phase 7, with larger nanoparticles (stiff colloids)"),
-9  : (False, 1000, 100, 11000, 110000, frames_3, 10, "Same as phase 8, with colloid rotational diffusion"),
-10 : (False, 1000, 100, 11000, 110000, frames_3, 10, "Same as phase 9, with altered BCP mobility"),
-11 : (True,  1000, 100, 1100,  11000,  frames_4, 10,  "Same as phase 10, with alterable time step"),
-12 : (True,  1,    100, 1100,  11000,  frames_4, 10,  "Same as phase 11, with more realistic initial distribution"),
-13 : (True,  1000, 100, 1100,  11000,  frames_4, 10,  "Same as phase 12, with independent coupling on core beads"),
-14 : (True,  1000, 100, 1100,  11000,  frames_4, 10,  "Same as phase 13, with a variable nanoparticle"),
-15 : (True,  1000, 100, 1100,  11000,  frames_4, 10,  "Same as phase 14, with variable sigma"),
+#      run    eq_np eq_f snaps  energ   frames        description 
+ 1  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Bare NPs moving in 3D (Z&ne;0), random starting ditribution"),
+ 2  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Same as phase 1, but NPs move in 2D (Z=0)"),
+ 3  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Same as phase 2, with initial density correction for high NP concentrations"),
+ 4  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Same as phase 3, with initial density equilibration"),
+ 5  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Same as phase 4, with somewhat ordered starting distribution"),
+ 6  : (False, 1000, 100, 11000, 110000, frames_2, 16, "Same as phase 5, with more ordered starting distribution, and 5x longer run time"),
+ 7  : (False, 1000, 100, 11000, 110000, frames_3, 10, "Same as phase 6, with initial nanoparticle equilibration"),
+ 8  : (False, 1000, 100, 11000, 110000, frames_3, 10, "Same as phase 7, with larger nanoparticles (stiff colloids)"),
+ 9  : (False, 1000, 100, 11000, 110000, frames_3, 10, "Same as phase 8, with colloid rotational diffusion"),
+ 10 : (False, 1000, 100, 11000, 110000, frames_3, 10, "Same as phase 9, with altered BCP mobility"),
+ 11 : (True,  1000, 100, 1100,  11000,  frames_4, 10, "Same as phase 10, with alterable time step"),
+ 12 : (True,  1,    100, 1100,  11000,  frames_4, 10, "Same as phase 11, with more realistic initial distribution"),
+ 13 : (True,  1000, 100, 1100,  11000,  frames_4, 10, "Same as phase 12, with independent coupling on core beads"),
+ 14 : (True,  1000, 100, 1100,  11000,  frames_4, 10, "Same as phase 13, with a variable nanoparticle"),
+ 15 : (True,  1000, 100, 1100,  11000,  frames_4, 10, "Same as phase 14, with variable sigma"),
+ 16 : (True,  1000, 100, 1100,  11000,  frames_4, 10, "Same as phase 15, with randomized nanoparticle orientations"),
+#      run    eq_np eq_f snaps  energ   frames        description 
 }
+phases = phases_data.keys()
+phases.sort()
 
 # These are convenience definition that guarranty backwards compatability.
 phases_to_run = [i for i in phases if phases_data[i][0]]
@@ -1218,6 +1222,17 @@ systems = {
 ((64,64,1),     "A20B16",   1.00,   0.01,   0.1,    1.0,    256,    15.0,   24.0,   4.0,    8.0,    10,     0.001,      0.01,       1100,       1.0,    10.0,   "np8",  1.9),
 ((64,64,1),     "A20B16",   1.00,   0.01,   0.1,    1.0,    256,    15.0,   24.0,   4.0,    8.0,    10,     0.001,      0.01,       1100,       1.0,    10.0,   "np8",  2.0),
 ],
+#
+#size           polymer     volume  temp.   exp.    dens.   popul.  kappa   nchi    ca      cb      a       mobility    timestep    totaltime,  chmob   cc      np      sigma
+#
+16:
+[
+((64,64,1),     "A20B16",   1.00,   0.01,   0.1,    1.0,    256,    15.0,   24.0,   4.0,    8.0,    10,     0.001,      0.01,       1100,       1.0,    10.0,   "np4",  0.8),
+((64,64,1),     "A20B16",   1.00,   0.01,   0.1,    1.0,    256,    15.0,   24.0,   4.0,    8.0,    10,     0.001,      0.01,       1100,       1.0,    10.0,   "np4",  1.0),
+#
+((64,64,1),     "A20B16",   1.00,   0.01,   0.1,    1.0,    256,    15.0,   24.0,   4.0,    8.0,    10,     0.001,      0.01,       1100,       1.0,    10.0,   "np8",  0.8),
+((64,64,1),     "A20B16",   1.00,   0.01,   0.1,    1.0,    256,    15.0,   24.0,   4.0,    8.0,    10,     0.001,      0.01,       1100,       1.0,    10.0,   "np8",  1.0),
+]
 #
 #size           polymer     volume  temp.   exp.    dens.   popul.  kappa   nchi    ca      cb      a       mobility    timestep    totaltime,  chmob   cc      np      sigma
 #

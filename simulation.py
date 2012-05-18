@@ -371,6 +371,11 @@ class Simulation:
                 Y = self.nanoparticles[i].GetCenterOfMass().GetY()
                 self.nanoparticles[i].SetCenterOfMass(X, Y, Z)
 
+        # From phase 16, also orient the nanoparticle randomly.
+        if self.phase > 15 and self.pop != 0:
+            for i in range(self.pop):
+                self.nanoparticles[i].Rotate(0, 0, 1, 180*random.random())
+
         # The calculator object is a MBF (meso bead-field) hybrid.
         # We will always be using the external potential (entropy field) dynamic scheme.
         self.calc = CalculatorsManager.CreateMBFHybridCalculator()
