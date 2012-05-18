@@ -4,6 +4,8 @@ from numpy import array, exp, pi, random, sqrt, sum, zeros
 
 from pyculgi import *
 
+from systems import *
+
 
 __all__ = ["Simulation", "loadpath"]
 
@@ -22,18 +24,6 @@ GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy"
 
 # Maximum number of iterations when solving nonlinear equations.
 maxiters = 25000
-
-# Number of equilibration step for nanoparticles and the field.
-# The field equilibration is always short, for nanoparticles it needs to be
-#   a little longer, and only in phase 12 we change it to almost zero.
-Teq_np = [1000]*11 + [1]*1 + [1000]*3
-Teq_field = [100]*15
-
-# Number of snapshots and energies to save, for each phase given separately.
-# I used to save over ten thousand snapshots, but a thousand is in fact more than enough.
-# Same is true for energies -- ten thousand instead of a hundred thousand is enough.
-Nsnaps = [11000]*10 + [1100]*5
-Nenerg = [110000]*10 + [11000]*5
 
 
 def getpath(sim):

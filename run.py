@@ -6,10 +6,6 @@ from simulation import *
 from systems import *
 
 
-# What we currently want to run
-phases_to_run = [ 11, 12, 13, 14, 15 ]
-
-
 def printnow(fname, content, mode='a'):
     """Print to a file without delay, so make sure to flush and close."""
 
