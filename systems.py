@@ -43,7 +43,7 @@ Teq_np = [phases_data[i][1] for i in phases]
 Teq_field = [phases_data[i][2] for i in phases]
 Nsnaps = [phases_data[i][3] for i in phases]
 Nenerg = [phases_data[i][4] for i in phases]
-PhaseFrames = [(phases_data[i][5],phases_data[i][6]) for i in phases]
+PhaseFrames = dict(zip(phases,[(phases_data[i][5],phases_data[i][6]) for i in phases]))
 descriptions = [phases_data[i][6] for i in phases]
 
 # Parameter sets of systems to be calculated for each phase.

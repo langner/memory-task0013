@@ -47,23 +47,32 @@ def printsummary(sim):
     Contents depend on whether are nanoparticles in the system.
     """
 
-    size = "%ix%ix%i" %(sim.size[0], sim.size[1], sim.size[2])
-    summary = "Kappa %.1f" %sim.kappa
+    # Population and box size.
     if sim.population > 1:
-        if sim.phase > 12:
-            summary += ", c<sub>core</sub> %.1f" %(sim.cc)
-        summary += ", c<sub>A</sub> %.1f, c<sub>B</sub> %.1f" %(sim.ca, sim.cb)
-    summary += ", exp %.2f for %s (nchi=%.1f" %(sim.expansion, sim.polymer, sim.nchi)
-    if sim.phase > 9:
-        summary += ", chmob=%.2f" %sim.chmob
-    summary += ") in a %s box" %size
-    if sim.population > 0:
-        summary += " with <b>%i</b> NP(s)" %sim.population
+        summary = "<b>%i</b> NPs" %sim.population
+    elif sim.population == 1:
+        summary = "1 NP"
+    else:
+        summary = "Neat BCP"
+    summary += " in %ix%ix%i" %(sim.size[0], sim.size[1], sim.size[2])
     if sim.population > 1:
         summary += " (a=%.1f)" %sim.a
 
+    # NP-related parameters.
+    summary += " -- "
+    if sim.population > 0:
+        if sim.phase > 12:
+            summary += "c<sub>core</sub> %.1f, " %(sim.cc)
+        summary += "c<sub>A</sub> %.1f, c<sub>B</sub> %.1f" %(sim.ca, sim.cb)
+    if sim.phase > 14:
+        summary += ", &sigma;=%.2f" %sim.sigma
+
+    # BCP-related parameters.
+    summary += " -- bv=%.2f, nchi=%.1f, exp %.2f"%(sim.bv, sim.nchi, sim.expansion)
+    if sim.phase > 9:
+        summary += ", chmob=%.2f" %sim.chmob
     if sim.phase > 10:
-        summary += ", tt=%i, ts=%s" %(sim.totaltime, str(sim.timestep))
+        summary += " -- tt=%i, ts=%s" %(sim.totaltime, str(sim.timestep))
 
     return summary
 
@@ -129,12 +138,12 @@ def printinfo(sim):
 
     return text
 
-control = [ "beadvolume", "temperature", "mobility", "dexcluded" ]
-labels = {  "beadvolume"    : "Bead volume",
+control = [ "npname", "polymer", "kappa", "temperature", "mobility" ]
+labels = {  "npname"        : "NP model",
+            "polymer"       : "BCP model",
+            "kappa"         : "Compressibility",
             "temperature"   : "Temperature",
             "mobility"      : "NP mobility",
-            "dexcluded"     : "Demixing c<sub>A</sub>/(&rho;&kappa;+1)",
-            "dcoupling"     : "Selectivity (c<sub>B</sub>-c<sub>A</sub>)"
 }
 
 

@@ -222,6 +222,8 @@ class Simulation:
                 setattr(self, parameter, eval(parameter))
 
         # Aliases.
+        self.arch = self.polymer
+        self.bv = self.beadvolume
         self.mob = self.mobility
         self.pop = self.population
         self.ts = self.timestep
