@@ -12,9 +12,11 @@ if __name__ == "__main__":
 
     t = time.time()
 
-    # Load the simulation object
+    # First argument must be the output path to load as simulation.
     fout = sys.argv[1]
-    sim = loadpath(fout, setup=False)
+
+    # Load the simulation object, and do the setup step too.
+    sim = loadpath(fout, setup=True)
 
     # Construct the other file names
     fname = fout[:-4]

@@ -301,6 +301,14 @@ if __name__ == "__main__":
             pylab.plot(xrange, hist, label="frames 21-%i" %(21+nsamples))
             hist = factor * numpy.sum([data[frames.index(101+i)] for i in range(nsamples)], axis=0) / nsamples
             pylab.plot(xrange, hist, label="frames 101-%i" %(101+nsamples))
+            hist = factor * numpy.sum([data[frames.index(201+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 201-%i" %(201+nsamples))
+            hist = factor * numpy.sum([data[frames.index(301+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 301-%i" %(301+nsamples))
+            hist = factor * numpy.sum([data[frames.index(501+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 401-%i" %(501+nsamples))
+            hist = factor * numpy.sum([data[frames.index(501+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 501-%i" %(501+nsamples))
             hist = factor * numpy.sum([data[frames.index(1001+i)] for i in range(nsamples)], axis=0) / nsamples
             pylab.plot(xrange, hist, label="frames 1001-%i" %(1001+nsamples))
             if 10001 in frames:

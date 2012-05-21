@@ -42,7 +42,13 @@ def getpath(sim):
 
     # Third directory: system temperature, noise, density, population.
     # From phase 10, add the chain mobility here as a parameter.
-    dir3 = "temp%.2f_exp%.2f_den%.1f_pop%i" %(sim.temperature, sim.expansion, sim.density, sim.population)
+    # From phase 17 we want to consider very low temperatures, so adjust the format accordingly.
+    if (sim.temperature == 0.00) or (sim.temperature >= 0.01):
+        tempformat = "temp%.2f"
+    else:
+        tempformat = "temp%.4f"
+    format = tempformat + "_exp%.2f_den%.1f_pop%i"
+    dir3 = format %(sim.temperature, sim.expansion, sim.density, sim.population)
     if sim.phase > 9:
         dir3 += "_chmob%.2f" %sim.chmob
 
@@ -186,7 +192,7 @@ def loadpath(path, setup=True, main=False):
         args += [sigma]
     sim = Simulation(*args)
 
-    # Setup the simulation if requested
+    # Setup the simulation if requested.
     if setup:
         sim.setup()
 
@@ -195,6 +201,11 @@ def loadpath(path, setup=True, main=False):
         sim.gallerypath = sim.path
 
     return sim
+
+def restrict_colloid_z(colloid):
+    colloid.SetConstVelocity("Z", 0.0)
+    colloid.SetConstAngularVelocity("X", 0.0)
+    colloid.SetConstAngularVelocity("Y", 0.0)
 
 
 class Simulation:
@@ -437,6 +448,7 @@ class Simulation:
             for i in range(self.pop):
                 self.nanoparticles[i].SetConstVelocity('Z', 0.0)
                 self.nanoparticles[i].SetDiffusionFactor(self.mobility)
+                restrict_colloid_z(self.nanoparticles[i])
                 if self.phase == 8:
                     self.nanoparticles[i].SetConstAngularVelocity(0.0, 0.0, 0.0)
                 else:
@@ -500,7 +512,15 @@ class Simulation:
             - the simulation proper
         """
 
-        # Equilibrations stat from phase 4
+        # Equilibrations start from phase 4, and consists of two phases,
+        #   one where the particles are equilibrated without any interactions
+        #   with the field, and another where the density field is equilibrated with
+        #   static nanoparticles and base interactions (the lower ones).
+        # From phase 17, we do something more special, namely equilibrate
+        #   the nanoparticles in a boc small for the interactions to be independent,
+        #   that is the DPD cutoff is comparable to the average distance between
+        #   nanoparticles. The temperature is arbitrarily chosen to be 0.25, which
+        #   gave reasonably ordered, but noisy distribution for test runs.
         if self.phase >= 4:
 
             # Turn off all archives
@@ -514,9 +534,12 @@ class Simulation:
             # No phase separation at all during equilibration
             self.params_GC.SetChi("A", "B", 0.0)
 
-            # From phase 7, equilibrate the nanoparticles first,
-            #   without them fealing the field at all.
+            # From phase 7, first equilibrate nanoparticles not interacting with the field.
             if self.phase >= 7:
+
+                # Set all coupling parameters to zero.
+                # For phase 7, nanoparticles are still molecules, but
+                #   afterwards they are colloids, and so the bead names differ.
                 if self.phase == 7:
                     self.params.SetBeadFieldCoupling("P", "A", 0.0)
                     self.params.SetBeadFieldCoupling("P", "B", 0.0)
@@ -525,8 +548,86 @@ class Simulation:
                     self.params.SetBeadFieldCoupling("C", "B", 0.0)
                     self.params.SetBeadFieldCoupling("S", "A", 0.0)
                     self.params.SetBeadFieldCoupling("S", "B", 0.0)
+
+                # No field diffusion in this part of the simulation.
                 self.calc.SetFieldDiffusionOff()
-                self.calc.Run(int(Teq_np[self.phase-1]/self.timestep))
+
+                # From phase 17, we will create a temporary, smaller box to euqilibrate
+                #   the particles at a higher density, in order to induce some degree
+                #   of order. The size of the temporary box can be estimated by
+                #   assuming an interparticle distance of 1.0 (counting from the shell)
+                #   and calculating the appropriate area needed.
+                if self.phase > 16:
+
+                    # Packing fraction for maximal circles in two dimensions.
+                    packing = 0.91
+
+                    # Distance between touching maximal circles in this box.
+                    dmax = 2*sqrt(packing*self.area/(self.pop*pi))
+
+                    # Approximate observed distance between nanoparticles at 0h.
+                    # This is totally phenomenological, and calibrated in order
+                    #   not to go much above 3.0, which is the practical limit
+                    #   of depletion interactions in the simulations, and to
+                    #   approach the optimum 1.5 rather slowly (for higher concentrations).
+                    dobs = 4.0*(1 - exp(-dmax/4.0))
+
+                    # Distance between core and shell beads in the nanoparticle model.
+                    b0 = self.np.GetBeadCmds(0).GetCoordinates()
+                    b1 = self.np.GetBeadCmds(1).GetCoordinates()
+                    dx = b0.GetX() - b1.GetX()
+                    dy = b0.GetY() - b1.GetY()
+                    rnp = sqrt(dx**2 + dy**2)
+
+                    # Now, we want a temporary box that will scale dobs to 2*rnp+1,
+                    #   because that is always the approximate final distance since
+                    #   the DPD cutoff is 1. Add one to dimension for excess space.
+                    f = (2*rnp+1) / dobs
+                    X = int(f*self.size[0])+1
+                    Y = int(f*self.size[1])+1
+                    box = Palette.CreateMesoBox("tmp", X, Y, 1)
+
+                    # Add some nanoparticle to this box, too.
+                    box.CopySoftCoreColloids(self.np, self.pop)
+
+                    # Make this box the system of the simulation calculator, temporarily.
+                    self.calc.SetSystem(box)
+
+                    # These settings were tested for simpler DPD/Brownian systems.
+                    self.calc.SetTemperature(0.1)
+                    self.calc.SetTimeStep(0.01)
+                    self.params_SC.SetA("C", "C", 10)
+                    self.params_SC.SetA("C", "S", 10)
+                    self.params_SC.SetA("S", "S", 10)
+                    for i in range(self.pop):
+                        np = box.GetSoftCoreColloidCmds(i)
+                        np.SetCenterOfMass(X*random.random(), Y*random.random(), 0.5)
+                        np.SetDiffusionFactor(0.01)
+                        np.SetRotationalFactors(0.0, 0.0, 0.01)
+                        restrict_colloid_z(np)
+
+                nsteps = int(Teq_np[self.phase-1]/self.timestep)
+                self.calc.Run(nsteps)
+
+                # We need to revert some of the simualtion parameters and transfer coordinates
+                #   after equilibrating in phases after 16. The temporary box should be deleted.
+                # Not that the NP coordinates need to be scaled back to the simulation box size.
+                if self.phase > 16:
+
+                    self.calc.SetSystem(self.box)
+                    self.calc.SetTemperature(self.temperature)
+                    self.calc.SetTimeStep(self.timestep)
+                    self.params_SC.SetA("C", "C", self.a)
+                    self.params_SC.SetA("C", "S", self.a)
+                    self.params_SC.SetA("S", "S", self.a)
+
+                    for i in range(self.pop):
+                        com = box.GetSoftCoreColloidCmds(i).GetCenterOfMass()
+                        x = com.GetX() * self.size[0] / X
+                        y = com.GetY() * self.size[1] / Y
+                        self.nanoparticles[i].SetCenterOfMass(x, y, 0.5)
+
+                    Palette.DeleteObject(box)
 
             # Now equilibrate fields with only base coupling,
             #   keeping the nanoparticle positions fixed.

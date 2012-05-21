@@ -301,6 +301,7 @@ if __name__ == "__main__":
         print HEADERabove
         print "<body>"
         print "<h2>Gallery for task0013 - phase %i</h2>" %phase
+        print "<h3>Description: %s</h3>" %description[phase-1]
         print "<h4>Favorite runs</h4>"
         print """<a href="javascript:ddtreemenu.flatten('simutree_favorite', 'expand')">Expand All</a> |
                  <a href="javascript:ddtreemenu.flatten('simutree_favorite', 'contact')">Collapse All</a>"""

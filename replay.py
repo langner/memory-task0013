@@ -7,7 +7,10 @@ from simulation import loadpath
 
 if __name__ == "__main__":
 
-    sim = loadpath(sys.argv[1], setup=False)
+    # First argument must be path to load into a simulation,
+    # The simulation needs to do setup in order to have a proper box.
+    sim = loadpath(sys.argv[1], setup=True)
+
     tmpdir = sys.argv[2]
     tosave = "save" in sys.argv
 
