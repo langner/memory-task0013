@@ -38,6 +38,7 @@ balance_default = {
 }
 balance_custom = {
     "sem/20k/C3/0-Image38-500.jpg": [(25,25), (2,20)],
+    "sem/5k/C6/2-Image3-1000.jpg" : [(25,26), (1,4)],
     "sem/20k/C5/48-Image23-500.jpg": [(25,25), (2,10), (1,4)],
     "sem/20k/C5/48-Image24-500.jpg": [(25,25), (2,10), (1,4)],
     "sem/20k/C5/48-Image25-200.jpg": [(50,50), (4,20), (2,10)],
@@ -56,6 +57,8 @@ threshold_default = {
 threshold_custom = {
     "sem/5k/C3/14-Image3-200.jpg" : 0.7,
     "sem/5k/C3/14-Image6-500.jpg" : 0.9,
+    "sem/5k/C6/2-Image3-1000.jpg" : 0.9,
+    "sem/5k/C6/48-Image40-200.jpg" : 1.0,
     "sem/5k/C8/14-Image56-500.jpg" : 0.9,
     "sem/20k/C1/14-Image22-500.jpg" : 0.8,
     "sem/20k/C3/0-Image38-500.jpg" : 1.4,
