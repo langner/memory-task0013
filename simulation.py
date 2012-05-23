@@ -209,17 +209,19 @@ class Simulation:
 
         This, along with initialization, does the following tasak:
             - sets all relevant parameters passed to the constructor as attributes
-            - calculated most importnat derived parameters
-            - builds the nanoparticle model, block copolymer field and simulation box
+            - calculates most importnat derived parameters
             - corrects the effective density for the presence of NPs
-            - creates convenience hooks to the nanoparticles
             - sets some paths and names
+
+        Everything that takes more than a second or needs some memory should be in setup.
         """
 
-        # Set all the parameters
+        # Set all the parameters passed.
         for parameter in parameters:
             if parameter != None:
                 setattr(self, parameter, eval(parameter))
+
+        # Aliases.
         self.mob = self.mobility
         self.pop = self.population
         self.ts = self.timestep
@@ -232,57 +234,92 @@ class Simulation:
         self.efreq = int(1.0*self.tt / Nenerg[self.phase-1] / self.ts) or 1
         self.sfreq = int(1.0*self.tt / Nsnaps[self.phase-1] / self.ts) or 1
 
+        # Coupling parameters for the core beads to simplify code later on.
+        self.cca = self.ca
+        self.ccb = self.cb
+        if self.phase > 12:
+            self.cca = self.cc
+            self.ccb = self.cc
+
         # Other derived parameters.
         self.dcoupling = self.cb - self.ca
         self.volume = size[0]*size[1]
         self.area = self.volume
 
         # The nanoparticle prototype.
-        # Until phase 7, the nanoparticle is a single bead soft core molecule, but
-        #   from phase 8, it is a soft core colloid loaded from a Culgi object file
-        # After phase 13, the model name is variable, and determines the file to load.
+        # The prototype does not need much memory, so leave it here, but the
+        #   box and block copolymer both need significant memory, so create them
+        #   in the setup() method, which should be called when we are sure this
+        #   simulation is the one we want to run.
+        # Until phase 7, the nanoparticle is a single bead, soft core molecule, but
+        #   from phase 8 it is a soft core colloid, loaded from a Culgi object file.
+        # After phase 13, the model name is variable, determining which file to load
+        #   from an assumed, fixed location (and that's the final approach).
         if self.phase <= 7:
             self.np = Palette.CreateSoftCoreMolecule("np", "P")
         else:
-            if self.phase > 13:
-                self.npname = npname
-            else:
+            if self.phase <= 13:
                 self.npname = "np"
+            else:
+                self.npname = npname
             self.np = Palette.LoadSoftCoreColloid("phase%i/%s.cof" %(self.phase,self.npname))
+
+        # Number of beads per nanoparticle.
         self.beads_per_np = self.np.GetNumberOfBeads()
 
-        # Estimate nanoparticle volume.
+        # Estimate nanoparticle volume given the NP model and simulation parameters.
+        # Again, until phase 7 things are easy (NPs are single beads), but afterwards
+        #   they are made up of a number of beads. At first all those beads have the
+        #   the same coupling parameter, but after phase 12, the central bead
+        #   can have a different coupling parameter than the shell beads, but that's
+        #   still quite simple since there is always only one core bead (for now).
+        # In all cases, assume the particle will be in the A domain in the end,
+        #   so use the corresponding A-coupling parameter here.
         self.kd1 = self.kappa*self.density + 1
         self.npvolume = self.ca / self.kd1
         if self.phase > 7:
             self.npvolume = self.beads_per_np * self.ca / self.kd1
         if self.phase > 12:
             self.npvolume = self.cc/self.kd1 + (self.beads_per_np-1)*self.ca/self.kd1
+        self.dexcluded = self.npvolume
 
-        # Estimate the effective density of the polymer field.
+        # Estimate the effective density of the polymer field, with correction as of phase 2.
         self.effective_density = self.density
         if self.phase > 1:
             self.effective_density = self.density - self.pop*self.npvolume/self.volume
         self.effden = self.effective_density
 
-        # Use this for organizing results (not necessary for actual simulation).
-        # The difference cb-ca is not representative, so use the excluded volume.
-        self.dexcluded = self.npvolume
+        # Output paths and names used for this run.
+        self.path = getpath(self)
+        self.name = getname(self)
+        self.outname = "%s.out" %self.name
+        self.outpath = "%s/%s" %(self.path, self.outname)
+        self.gallerypath = self.path.replace("phase%s/" %phase,"")
 
-        # The diblock copolymer
+    def setup(self):
+        """Setup the simulation before running.
+
+        This sets up the simulation box and calculator before actually running,
+        and generally does things that are too long for the cosntructor.
+        """
+
+        # The diblock copolymer model, which we always want to have the same reference density.
+        # Use the effective density, which for phase 1 default to the reference density.
         self.bcp = Palette.CreateGaussianChain("bcp", self.polymer, *self.size)
         self.bcp.CreateHomogeneousRelativeDensity(self.effective_density)
+
+        # Pointer to the total density and block densities.
         self.bcp_total = self.bcp.GetRelativeDensityFieldCmds()
         self.bcp_A = self.bcp.GetBeadTypeRelativeDensityFieldCmds("A")
         self.bcp_A.SetDisplayClampLevels(0.0, self.density)
         self.bcp_B = self.bcp.GetBeadTypeRelativeDensityFieldCmds("B")
         self.bcp_B.SetDisplayClampLevels(0.0, self.density)
 
-        # The effective chi can now be derived.
+        # The absolute chi can now be derived based on the BCP model.
         self.chi = self.nchi / self.bcp.GetNumBeads()
 
-        # The simulation box
-        # Note again that the nanoparticles are colloids starting from phase 8
+        # The simulation box, with BCP and nanoparticles.
+        # Note that the nanoparticles are colloids starting from phase 8.
         self.box = Palette.CreateMesoBox("box", *self.size)
         self.box.AddGaussianChain(self.bcp)
         if self.phase <= 7:
@@ -297,30 +334,6 @@ class Simulation:
             get_np_cmds = self.box.GetSoftCoreColloidCmds
         self.nanoparticles = [get_np_cmds("np", i) for i in range(self.pop)]
         self.NPs = self.nanoparticles
-
-        # Coupling parameters for the core beads.
-        self.cca = self.ca
-        self.ccb = self.cb
-        if self.phase > 12:
-            self.cca = self.cc
-            self.ccb = self.cc
-
-        # Output path and name
-        self.path = getpath(self)
-        self.name = getname(self)
-        self.outname = "%s.out" %self.name
-        self.outpath = "%s/%s" %(self.path, self.outname)
-
-        # Path from the gallery
-        self.gallerypath = self.path.replace("phase%s/" %phase,"")
-
-    def setup(self):
-        """Setup the simulation before running.
-
-        This sets up the simulation as necessary before actually running,
-        building the calculator and performing things that are too long for
-        the cosntructor.
-        """
 
         # Initial distribution of nanoparticles inside the simulation box.
         # For phase 5 and 6, use some ordered starting distribution.
