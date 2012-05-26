@@ -44,8 +44,7 @@ if __name__ == "__main__":
     phase = int(phase[5:])
     size = map(int,model.split("_")[0].split('x'))
     population = int(system.split('_')[3][3:])
-    if phase in [8,9] and "shell" in sys.argv:
-        population *= 8
+    npname = run.split("_")[-1].split('.')[0]
     data = numpy.load(bz2.BZ2File(fpath))
 
     if "energy.npy.bz2" in fpath:
@@ -233,7 +232,7 @@ if __name__ == "__main__":
 
         froot = fpath.replace(".hist-ang.npy.bz2", "")
         plotfname = froot + ".hist-ang.png"
-        xlabel = "rotation angle relative to start"
+        xlabel = "absolute rotation angle [rad]"
         xmin = 0.0
         xmax = 3.3
 
@@ -252,8 +251,11 @@ if __name__ == "__main__":
             # Cut out the strong peaks due to internal structure
             # Must also adjust the effective normalization factor
             # This very specific hack works for phase 8 (and phase 9)
-            if (phase in [8,9]) and ("shell" in sys.argv):
-                a, b = 0.2828, 0.4
+            if (phase > 7) and ("shell" in sys.argv):
+                if npname == "np4":
+                    a, b = 0.2828, 0.4
+                if npname == "np8":
+                    a, b = 0.5657, 0.8
                 r1 = numpy.sqrt( (b-a)**2 + a**2 )
                 r2 = numpy.sqrt(2.0)*b
                 r3 = numpy.sqrt( (b+a)**2 + a**2 )
@@ -262,18 +264,23 @@ if __name__ == "__main__":
                 b2 = int(r2//dx)
                 b3 = int(r3//dx)
                 b4 = int(r4//dx)
-                data[:,b1] -= population
-                data[:,b2] -= population
-                data[:,b3] -= population
-                data[:,b4] -= population/2
-                Npairs -= population*25 # <<----- I think this is wrong!?!?!?!
+                data[:,b1] -= 8*population
+                data[:,b2] -= 8*population
+                data[:,b3] -= 8*population
+                data[:,b4] -= 8*population/2
+                Npairs = 8*population*(8*population-1) / 2
+                # This is still approximate for some reason, and left overs are there.
 
             strips = correction(size[0],size[1],xrange) * 2 * numpy.pi * xrange * dx
             factor = size[0] * size[1] / strips / Npairs
             hist = factor * data[frames.index(0)]
             #pylab.plot(xrange, hist, label="frame 0")
+        elif "hist-ang.npy" in fpath:
+            factor = numpy.pi / (dx * sum(data[0]))
+        elif "hist-residual.npy" in fpath and "order" in sys.argv:
+            factor = 2.0 / (dx * sum(data[0]))
         else:
-            factor = 1.0 / sum(data[0])
+            factor = 1.0 / (dx * sum(data[0]))
 
         if "trend" in sys.argv:
 

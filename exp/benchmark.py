@@ -1,6 +1,6 @@
 import sys
 
-from common import pylab, SEMAnalysis
+from common import SEMAnalysis
 
 
 # There are more of these than for the batch SEM jobs,
@@ -60,7 +60,13 @@ erode_custom = {
 
 if __name__ == "__main__":
 
-    # Create object and load image
+    # Import pylab appropriately.
+    import matplotlib
+    if "save" in sys.argv:
+        matplotlib.use("Agg")
+    import pylab
+
+    # Create object and load image.
     fn = sys.argv[1]
     analysis = SEMAnalysis()
     cropy = benchmarks_cropy[fn]
@@ -68,7 +74,7 @@ if __name__ == "__main__":
     scale = benchmarks_scale[fn]
     analysis.loadimage(sys.argv[1], cropy=cropy, scalebarstart=start, scale=scale)
 
-    # Do the analysis
+    # Do the analysis.
     gaussian = gaussian_custom.get(fn) or gaussian_default
     balance = balance_custom.get(fn) or balance_default
     threshold = threshold_custom.get(fn) or threshold_default
@@ -81,22 +87,23 @@ if __name__ == "__main__":
     analysis.radialdistribution()
     analysis.fitrdf()
 
-    # Print some data
+    # Print some data.
     print "**************************"
     print "Number of particles: %i" %analysis.npcount
     print "Particle concentration: %.1f/micron^2" %analysis.npconc
     print "First peak: %.1fnm" %analysis.popt[0]
     print "Pixel size: %.2fnm" %analysis.ps
+    print "RDF bin size: %.2fnm" %analysis.dbin
     print "**************************"
 
-    # Do the plotting
+    # Do the plotting.
     xmax = benchmarks_xmax[fn]
     units = benchmarks_areaunits[fn]
-    analysis.plot(xmax=xmax, areaunit=units)
+    analysis.plot(pylab, xmax=xmax, areaunit=units)
 
-    # Save or show
+    # Save or show.
     if "save" in sys.argv:
         analysis.savearchives()
-        analysis.savefigures()
+        analysis.savefigures(pylab)
     else:
         pylab.show()

@@ -32,10 +32,10 @@ sem-analyzed/%-nps.png sem-analyzed/%-rdf.png: sem/%.jpg
 # Plots for article0015.
 .PHONY: article0015
 article0015: article0015-fig2.png article0015-fig3.png article0015-fig4-single.png article0015-fig4.png
-article0015-fig4-single: article0015.py
-	python article0015.py fig4 single
+article0015-fig4-single.png: article0015.py
+	"$(PYTHON)" article0015.py fig4 single
 article0015-%.png: article0015.py
-	python article0015.py $*
+	"$(PYTHON)" article0015.py $*
 
 .PHONY: clean
 clean:

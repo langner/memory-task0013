@@ -237,14 +237,15 @@ if __name__ == "__main__":
         labels = ["5k PEG, %i$\pm$%i/$\mathrm{\mu m^2}$" %(la,ls) for la,ls in zip(label_avg,label_std)]
         peaks_avg = array([[avg([st.rdfmax for st in s], weights=[st.scale for st in s]) for s in sems] for sems in sem_5k])
         # add weights to std!
+        # binning does no contribute, since we are taking the fit result
         err_std = array([[std([st.rdfmax for st in s], ddof=1) for s in sems] for sems in sem_5k])
         err_fit = array([[avg([f.pcov[0,0] for f in pp], weights=[f.scale for f in pp]) for pp in p] for p in sem_5k])
         err_bin = array([[avg([f.dbin/2.0 for f in pp], weights=[f.scale for f in pp]) for pp in p] for p in sem_5k])
-        err_total =  sqrt(err_std**2 + err_fit**2 + err_bin**2)
+        err_total =  sqrt(err_std**2 + err_fit**2)
         print "Error for 5k case..."
         print "Standard deviations:\n", err_std
         print "Errors from fitting\n", err_fit
-        print "Errors from binning\n", err_bin
+        print "Total errors\n", err_total
         for i in range(3):
             pylab.plot(times+d[i], peaks_avg[i], styles[i], label=labels[i], **kwargs)
             kwargs2 = { "color": "black" }
@@ -262,14 +263,15 @@ if __name__ == "__main__":
         labels = [lformat %(la,ls) for la,ls in zip(label_avg,label_std)]
         peaks_avg = array([[avg([st.rdfmax for st in s], weights=[st.scale for st in s]) for s in sems] for sems in sem_20k])
         # add weights to std!
+        # binning does no contribute, since we are taking the fit result
         err_std = array([[std([st.rdfmax for st in s], ddof=1) for s in sems] for sems in sem_20k])
         err_fit = array([[avg([f.pcov[0,0] for f in pp], weights=[f.scale for f in pp]) for pp in p] for p in sem_20k])
         err_bin = array([[avg([f.dbin/2.0 for f in pp], weights=[f.scale for f in pp]) for pp in p] for p in sem_20k])
-        err_total =  sqrt(err_std**2 + err_fit**2 + err_bin**2)
+        err_total =  sqrt(err_std**2 + err_fit**2)
         print "Error for 20k case..."
         print "Standard deviations:\n", err_std
         print "Errors from fitting\n", err_fit
-        print "Errors from binning\n", err_bin
+        print "Total errors\n", err_total
         for i in range(3):
             pylab.plot(times+d[i], peaks_avg[i], styles[i], label=labels[i], **kwargs)
             kwargs2 = { "color": "black" }

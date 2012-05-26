@@ -1,6 +1,6 @@
 import sys
 
-from common import pylab, SEMAnalysis, getscalefromname
+from common import SEMAnalysis, getscalefromname
 
 
 # The cropping height should be identical in all images
@@ -82,12 +82,18 @@ erode_custom = {
 
 if __name__ == "__main__":
 
-    # Create object and load image
+    # Import pylab appropriately.
+    import matplotlib
+    if "save" in sys.argv:
+        matplotlib.use("Agg")
+    import pylab
+
+    # Create object and load image.
     fn = sys.argv[1]
     sbstart = scalebarstart[getscalefromname(fn)]
     analysis = SEMAnalysis(fn, cropy=(0,430), scalebarstart=sbstart)
 
-    # Do the analysis
+    # Do the analysis.
     gaussian = gaussian_custom.get(fn) or gaussian_default[analysis.scale]
     balance = balance_custom.get(fn) or balance_default[analysis.scale]
     threshold = threshold_custom.get(fn) or threshold_default[analysis.scale]
@@ -98,22 +104,26 @@ if __name__ == "__main__":
     analysis.distimage()
     analysis.watershedimage()
     analysis.radialdistribution()
-    analysis.fitrdf()
+    try:
+        analysis.fitrdf()
+    except:
+        "Error fitting to RDF"
 
-    # Print some data
+    # Print some data.
     print "**************************"
     print "Number of particles: %i" %analysis.npcount
     print "Particle concentration: %.1f/micron^2" %analysis.npconc
     print "First peak: %.1fnm" %analysis.popt[0]
     print "Pixel size: %.2fnm" %analysis.ps
+    print "RDF bin size: %.2fnm" %analysis.dbin
     print "**************************"
 
-    # Do the plotting
-    analysis.plot(xmax=150)
+    # Do the plotting.
+    analysis.plot(pylab, xmax=150)
 
-    # Save or show
+    # Save or show.
     if "save" in sys.argv:
         analysis.savearchives()
-        analysis.savefigures()
+        analysis.savefigures(pylab)
     else:
         pylab.show()

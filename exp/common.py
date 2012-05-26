@@ -1,9 +1,9 @@
 import bz2
 import os
+import random
 import sys
 
 import numpy
-import pylab
 import scipy
 from scipy import misc
 from scipy import ndimage
@@ -85,21 +85,22 @@ def rdfcorrection(X, Y, R):
     pXY = numpy.pi * X * Y
     return 1.0 - 2*R*(X+Y)/pXY + R*R*(4.0-numpy.pi)/pXY
 
-def radialdistribution(coords, img):
+def radialdistribution(coords, img, ps):
     """Radial ditribution function for points in an image"""
 
     # Number of coordinates and image shape.
     # Now, the RDF correction is effective to no more than about a half of the
     #   smallest dimension, so limit the histogram range to that,
     #   or 256 pixels, whichever is smaller.
-    # The width of a bin should be maximum half a pixel.
+    # The width of a bin should always be at most 1nm, so the number of bin will vary.
     N = len(coords)
     X = img.shape[0]
     Y = img.shape[1]
     maxr = min(256,min(X,Y)/2)
 
     pds = spatial.distance.pdist(coords)
-    hist,bins = scipy.histogram(pds, bins=maxr*2, range=[0,maxr])
+    nbins = max(maxr,int(maxr*ps))
+    hist,bins = scipy.histogram(pds, bins=nbins, range=[0,maxr])
     dr = bins[1] - bins[0]
     bins = bins[:-1] + dr/2.0
     hist = 1.0 * hist
@@ -267,13 +268,13 @@ class SEMAnalysis():
         if not hasattr(self, "coms"):
             self.watershedimage()
 
-        # Load RDFs if available
+        # Load RDFs if available.
         if os.path.exists(self.frdf+".npy.bz2"):
             self.bins, self.rdf = numpy.load(bz2.BZ2File(self.frdf+".npy.bz2"))
         else:
-            self.rdf, self.bins = radialdistribution(self.coms, self.img)
+            self.rdf, self.bins = radialdistribution(self.coms, self.img, self.ps)
 
-        # Estimate the bin width
+        # Estimate the bin width.
         self.dbin = self.ps*(self.bins[1] - self.bins[0])
 
     def fitrdf(self):
@@ -299,7 +300,7 @@ class SEMAnalysis():
         self.rdfmodel = lambda X: rdfmodel(X, *self.popt)
         self.rdfmax = self.popt[0]
 
-    def plot(self, xmax=100, areaunit="micron"):
+    def plot(self, pylab, xmax=100, areaunit="micron"):
         """Helper routine for plotting in this task"""
 
         # Various stages of the image analysis are straightforward
@@ -330,11 +331,12 @@ class SEMAnalysis():
         expconc = self.npconc*(areaunit=="micron") or self.npconc / 10.0**6
         explabel = "experimental %.1f/micron$^2$"*(areaunit=="micron") or "experiment (%.1f/nm$^2$)"
         pylab.plot(self.bins*self.ps, self.rdf, label=explabel %expconc)
-        pylab.plot(self.bins*self.ps, self.rdfmodel(self.bins*self.ps), label="hard sphere liquid model")
-        for peak,label in [(1,"$d=%.1f\mathrm{nm}$" %self.rdfmax), (numpy.sqrt(3),"$\sqrt{3}$"), (2,"$2$"), (numpy.sqrt(7),"$\sqrt{7}$")]:
-            x = peak*self.rdfmax
-            pylab.axvline(x=x, ymin=0, ymax=ymax, linestyle='--', color='gray')
-            pylab.text(x, ymax*1.02, label, fontsize=15, horizontalalignment="center")
+        if hasattr(self, "rdfmodel"):
+            pylab.plot(self.bins*self.ps, self.rdfmodel(self.bins*self.ps), label="hard sphere liquid model")
+            for peak,label in [(1,"$d=%.1f\mathrm{nm}$" %self.rdfmax), (numpy.sqrt(3),"$\sqrt{3}$"), (2,"$2$"), (numpy.sqrt(7),"$\sqrt{7}$")]:
+                x = peak*self.rdfmax
+                pylab.axvline(x=x, ymin=0, ymax=ymax, linestyle='--', color='gray')
+                pylab.text(x, ymax*1.02, label, fontsize=15, horizontalalignment="center")
         pylab.xlabel("distance [%s]" %rdfxunits)
         pylab.ylabel("g(r)")
         pylab.xlim([0, xmax])
@@ -361,8 +363,11 @@ class SEMAnalysis():
         if not os.path.exists(self.frdf+".npy.bz2"):
             numpy.save(self.frdf+".npy", [self.bins, self.rdf])
 
-    def savefigures(self):
+    def savefigures(self, pylab):
         """Helper routine for saving figures from pylab in this task"""
+
+        if pylab.get_fignums() == []:
+            self.plot(pylab)
 
         if not os.path.exists(self.ffiltered+".png"):
             pylab.figure(1)
