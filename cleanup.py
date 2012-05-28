@@ -20,7 +20,7 @@ if __name__ == "__main__":
         sims_to_keep = [Simulation(p, *s) for s in systems[p]]
         outs_to_keep = [s.outpath for s in sims_to_keep]
 
-        outpattern = "phase%i/*x*x*_A*B*_bv?.??/temp?.??_exp?.??_den?.?_pop*/k*_nchi*/t*.out" %p
+        outpattern = "phase%i/*x*x*_A*B*_bv*/temp*_exp?.??_den?.?_pop*/k*_nchi*/t*.out" %p
         outs = glob.glob(outpattern)
         sims_ondisk = [loadpath(out) for out in outs]
         for sim in sims_ondisk:
