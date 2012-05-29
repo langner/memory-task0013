@@ -4,9 +4,9 @@ PYTHON = "xvfb-run -s $(XVFBOPTS) python-culgi"
 
 .PHONY: default all benchmark sem sem-comp
 default: all
-all: benchmark sem sem-comp article0015
+all: benchmark sem sem-comp
 
-# A becnhmark.
+# A few benchmarks
 BENCHMARKS = benchmark/F20-atom_res.preview benchmark/a06fig02a benchmark/r6 benchmark/r7
 BENCHMARKS_RDF = $(foreach b,$(BENCHMARKS),$(b)-rdf.png)
 benchmark: $(BENCHMARKS_RDF)
@@ -17,7 +17,7 @@ benchmark: $(BENCHMARKS_RDF)
 	rm -rvf benchmark/$**.npy
 	sleep 2
 
-# SEM images.
+# SEM images
 SEM_JPGS = $(wildcard sem/*/C*/*.jpg)
 SEM_NPS = $(subst sem/,sem-analyzed/,$(subst .jpg,-nps.png,$(SEM_JPGS)))
 SEM_RDF = $(subst sem/,sem-analyzed/,$(subst .jpg,-rdf.png,$(SEM_JPGS)))
@@ -28,14 +28,6 @@ sem-analyzed/%-nps.png sem-analyzed/%-rdf.png: sem/%.jpg
 	-bzip2 sem-analyzed/$**.npy
 	rm -rvf $**.npy
 	sleep 2
-
-# Plots for article0015.
-.PHONY: article0015
-article0015: article0015-fig2.png article0015-fig3.png article0015-fig4-single.png article0015-fig4.png
-article0015-fig4-single.png: article0015.py
-	"$(PYTHON)" article0015.py fig4 single
-article0015-%.png: article0015.py
-	"$(PYTHON)" article0015.py $*
 
 .PHONY: clean
 clean:

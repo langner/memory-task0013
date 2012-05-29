@@ -305,8 +305,8 @@ if __name__ == "__main__":
             pylab.plot(xrange, hist, label="frames 201-%i" %(201+nsamples))
             hist = factor * numpy.sum([data[frames.index(301+i)] for i in range(nsamples)], axis=0) / nsamples
             pylab.plot(xrange, hist, label="frames 301-%i" %(301+nsamples))
-            hist = factor * numpy.sum([data[frames.index(501+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 401-%i" %(501+nsamples))
+            hist = factor * numpy.sum([data[frames.index(401+i)] for i in range(nsamples)], axis=0) / nsamples
+            pylab.plot(xrange, hist, label="frames 401-%i" %(401+nsamples))
             hist = factor * numpy.sum([data[frames.index(501+i)] for i in range(nsamples)], axis=0) / nsamples
             pylab.plot(xrange, hist, label="frames 501-%i" %(501+nsamples))
             hist = factor * numpy.sum([data[frames.index(1001+i)] for i in range(nsamples)], axis=0) / nsamples

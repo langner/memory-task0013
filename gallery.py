@@ -8,6 +8,14 @@ from simulation import *
 from systems import *
 
 
+def try_float(s):
+    try:
+        return float(s)
+    except ValueError:
+        return s
+    except TypeError:
+        return s
+
 def controltree(sims, params):
     tree = {}
     for value in set([getattr(s,params[0]) for s in sims]):
@@ -290,7 +298,7 @@ if __name__ == "__main__":
         phase = int(sys.argv[1])
 
         # Get all simulations.
-        outpattern = "phase%i/*x*x*_A*B*_bv*/temp?.??_exp?.??_den?.?_pop*/k*_nchi*/*.out" %phase
+        outpattern = "phase%i/*x*x*_A*B*_bv*/temp*_exp?.??_den?.?_pop*/k*_nchi*/*.out" %phase
         outs = glob.glob(outpattern)
         outs.sort()
         simulations = [loadpath(out, setup=False) for out in outs]

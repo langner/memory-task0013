@@ -86,7 +86,7 @@ def getname(sim):
     name = "tt%i" %sim.totaltime
     if sim.phase > 10:
         name += "_ts%s" %str(sim.timestep)
-    if sim.phase > 13:
+    if sim.phase > 13 and sim.pop > 0:
         name += "_%s" %sim.npname
 
     return name
@@ -163,17 +163,23 @@ def loadpath(path, setup=True, main=False):
     # Before phase 10, the time step is always 0.01
     outname = outfile[:-4]
     if phase > 13:
-        totaltime, timestep, npname = outname.split("_")
+        if pop > 0:
+            totaltime, timestep, npname = outname.split("_")
+        else:
+            totaltime, timestep = outname.split("_")
         totaltime = int(totaltime[2:])
         timestep = float(timestep[2:])
-        npname = npname
     elif phase > 10:
         totaltime, timestep = outname.split("_")
         totaltime = int(totaltime[2:])
         timestep = float(timestep[2:])
+        npname = "np"
     else:
         totaltime = int(outname[2:])
         timestep = 0.01
+        npname = "np"
+    if pop == 0:
+        npname = None
 
     # Create the simulation object
     # Since chmob appears from phase 10, the call has more arguments
@@ -270,12 +276,17 @@ class Simulation:
         #   from an assumed, fixed location (and that's the final approach).
         if self.phase <= 7:
             self.np = Palette.CreateSoftCoreMolecule("np", "P")
+            self.npname = "np"
         else:
             if self.phase <= 13:
                 self.npname = "np"
             else:
                 self.npname = npname
             self.np = Palette.LoadSoftCoreColloid("phase%i/%s.cof" %(self.phase,self.npname))
+
+        # If there are no nanoparticle, set the NP model name to None (orders the gallery nicely).
+        if self.pop == 0:
+            self.npname = None
 
         # Number of beads per nanoparticle.
         self.beads_per_np = self.np.GetNumberOfBeads()

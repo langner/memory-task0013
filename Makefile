@@ -1,6 +1,6 @@
-# Normally do plots and gallery, perhaps copy.
+# By default do plots and gallery, perhaps copy.
 .PHONY: default all
-default: plot gallery report exp
+default: plot gallery report exp article0015
 all: copy default
 
 include $(wildcard ../common.mk)
@@ -27,6 +27,7 @@ SIMS9 = $(foreach m,$(MODELS9),$(wildcard $(m)/k*_nchi*))
 SIMS10 = $(foreach m,$(MODELS10),$(wildcard $(m)/k*_nchi*))
 SIMS_OUT = $(foreach s,$(SIMS),$(wildcard $(s)/*.out))
 
+# More output files
 SIMS_OUT_NEW = $(subst .cga,.out,$(foreach s,$(SIMS),$(wildcard $(s)/*.cga)))
 SIMS_JPG = $(foreach m,$(SIMS),$(wildcard $(m)/*.jpg))
 SIMS_AVI = $(foreach m,$(SIMS),$(wildcard $(m)/*.avi))
@@ -45,7 +46,7 @@ SIMS_HIST_RESIDUAL9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.hist-residual.npy.b
 SIMS_HIST_RESIDUAL10 = $(foreach m,$(SIMS10),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_ANGLES = $(foreach m,$(SIMS9) $(SIMS10),$(wildcard $(m)/*.hist-ang.npy.bz2))
 
-# Plots to be generated.
+# Plots to be generated
 PLOTS_ENERGY_TOTAL = $(subst .energy.npy.bz2,.energy-total.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_FIELD = $(subst .energy.npy.bz2,.energy-field.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_COUPL = $(subst .hist-residual.npy.bz2,.energy-coupl.png,$(SIMS_HIST_RESIDUAL))
@@ -68,13 +69,13 @@ PLOTS_HIST_RADIALS = $(PLOTS_HIST_RADIAL) $(PLOTS_HIST_RADIAL_ZOOM) $(PLOTS_HIST
 PLOTS_HIST_RES = $(PLOTS_HIST_RES_TOTAL) $(PLOTS_HIST_RES_TOTAL_SHELL) $(PLOTS_HIST_RES_ORDER) $(PLOTS_HIST_RES_ORDER_SHELL)
 PLOTS_HIST_ANGLES = $(subst .hist-ang.npy.bz2,.hist-ang.png,$(SIMS_HIST_ANGLES))
 
-# Synchronization parameters (rsync)
+# Synchronization parameters (for rsync)
 SYNC_REMOTE = poly:scratch/
 SYNC_OPTIONS = --verbose --progress --stats --human-readable --archive --compress --update
 SYNC_EXCLUDES = --exclude *.ctf* --exclude *.cga* --exclude *.csa*
 SYNC_DATA = /home/kml/data/
 
-# Frame buffer parameters (xvfb)
+# Frame buffer parameters (for xvfb)
 XVFBOPTS = "-screen 0 1280x1024x24"
 PYCULGI = python-culgi-6.0.0-kml
 PYCULGI_FB = "xvfb-run -n $(shell echo $$RANDOM) -s $(XVFBOPTS) python-culgi-6.0.0-kml"
@@ -85,7 +86,7 @@ PYTHON_FB = "xvfb-run -n $(shell echo $$RANDOM) -s $(XVFBOPTS) python"
 # Local targets
 # #############
 
-# Data is analyzed on cluster, so synchronize local files with that
+# Synchronize local files with remote location.
 .PHONY: copy
 copy:
 	rsync $(SYNC_OPTIONS) $(SYNC_EXCLUDES) $(SYNC_REMOTE)$(subst $(SYNC_DATA),,$(CURDIR))/phase* .
@@ -95,8 +96,8 @@ copy:
 	chmod 755 phase*/*x*x*_A*B*/*/*
 	chmod 644 phase*/*x*x*_A*B*/*/*/*
 
-# Generate the plots based on analyzed data
-# Don't depend on coupling and offset plots, since neat systems don't get those
+# Generate plots based on analyzed data, but don't depend on
+#   coupling and offset plots, since neat systems don't get those.
 .PHONY: plot plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
 plot: plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
 plot-energy: $(PLOTS_ENERGY)
@@ -138,7 +139,7 @@ plot-hist-angles: $(PLOTS_HIST_ANGLES)
 %.hist-ang.png: %.hist-ang.npy.bz2
 	$(PYTHON) plot.py $< angles save
 
-# Generate the galleries if any key output files changed
+# Generate galleries
 .PHONY: gallery
 gallery: gallery.html $(foreach p,$(PHASES),$(p)/gallery.html) exp/gallery.html
 gallery.html: gallery.py
@@ -157,7 +158,15 @@ report: $(NAME).pdf
 exp:
 	$(MAKE) -C exp
 
-# Cleanup old simulations files (must run manually)
+# Plots for article0015
+.PHONY: article0015
+article0015: article0015-fig2.png article0015-fig3.png article0015-fig4-single.png article0015-fig4.png
+article0015-fig4-single.png: article0015.py
+	"$(PYTHON)" article0015.py fig4 single
+article0015-%.png: article0015.py
+	"$(PYTHON)" article0015.py $*
+
+# Cleanup old files (run manually)
 .PHONY: cleanup
 cleanup:
 	"$(PYCULGI_FB)" cleanup.py
@@ -166,18 +175,8 @@ cleanup:
 # Remote targets (run manually)
 # #############################
 
-# A safe sequence of operations on the remote target would be:
-#  1. avi
-#  2. convert
-#  3. analyze
-# The snapshot/movie target comes first, because after convert
-#  the archives will be compressed to save space, which is not
-#  a problem for analysis, but for Culgi yes
-# Note that currently I need to do avi on a different machine
-#  via sshfs, because no encoder is installed on poly
-
-# Generate movies and snapshots for simulations based on Culgi outputs
-# The touching is to signify for other processes this parameter set is busy
+# Generate movies and snapshots for simulations based on Culgi outputs.
+# The touching is to signify for other processes this parameter set is busy.
 .PHONY: avi
 avi: $(subst .out,.avi,$(SIMS_OUT_NEW))
 %.avi: %.out %.cga
@@ -186,18 +185,18 @@ avi: $(subst .out,.avi,$(SIMS_OUT_NEW))
 	-"$(PYCULGI_FB)" replay.py $@ $(AVIDIR) save xvfb && mencoder "mf://$(AVIDIR)/*.jpg" -mf fps=10 -o $@ -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=1600 && cp `ls $(AVIDIR)/*.jpg | head -1` $(subst .avi,.first.jpg,$@) && cp `ls $(AVIDIR)/*.jpg | tail -1` $(subst .avi,.jpg,$@)
 	rm -rvf $(AVIDIR)
 
-# Convert Culgi output (cga/csa/ctf) to NumPy archives
-# Also compress targets and related files after conversion (but not the prerequisites)
-# Use only the ctf file as a target, but other files are also a result
+# Convert Culgi output (cga/csa/ctf) to NumPy archives, and then compress
+#   the targets and related files (but not the prerequisites).
+# Use only the ctf file as a target, but other files also result.
 .PHONY: convert
 convert: $(subst .out,.ctf.npy.gz,$(SIMS_OUT_NEW))
 %.ctf.npy.gz: %.out %_Inst.ctf
 	touch $@
 	-"$(PYCULGI_FB)" convert.py $< && gzip -f $(foreach suf,.ctf.npy .cga.npy .csa.npy,$*$(suf))
 
-# Analyze the data (npy format, compressed)
-# The resulting archives should be much smaller than the raw data
-# Use only the energy file as a target, but other files are also a result
+# Analyze the data (npy format, compressed). The resulting archives
+#   should be much smaller than the raw data.
+# Use only the energy file as a target, but other files also result.
 .PHONY: analyze
 analyze: $(subst .out,.energy.npy.bz2,$(SIMS_OUT))
 %.energy.npy.bz2: %.out %.ctf.npy.gz
