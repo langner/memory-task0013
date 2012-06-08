@@ -102,42 +102,42 @@ copy:
 plot: plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
 plot-energy: $(PLOTS_ENERGY)
 %.energy-total.png: %.energy.npy.bz2
-	$(PYTHON) plot.py $< total save
+	$(PYCULGI) plot.py $< total save
 %.energy-field.png: %.energy.npy.bz2
-	$(PYTHON) plot.py $< field save
+	$(PYCULGI) plot.py $< field save
 %.energy-coupl.png: %.energy.npy.bz2
-	$(PYTHON) plot.py $< coupl save
+	$(PYCULGI) plot.py $< coupl save
 %.offsets.png: %.energy.npy.bz2
-	$(PYTHON) plot.py $< offsets save
+	$(PYCULGI) plot.py $< offsets save
 plot-offsets: $(PLOTS_OFFSETS)
 %.offsets-ang.png: %.energy.npy.bz2
-	$(PYTHON) plot.py $< offsets angles save
+	$(PYCULGI) plot.py $< offsets angles save
 plot-hist-field: $(PLOTS_HIST_FIELD)
 %.hist-field-total.png: %.hist-field.npy.bz2
-	$(PYTHON) plot.py $< total save
+	$(PYCULGI) plot.py $< total save
 %.hist-field-order.png: %.hist-field.npy.bz2
-	$(PYTHON) plot.py $< order save
+	$(PYCULGI) plot.py $< order save
 plot-hist-radial: $(PLOTS_HIST_RADIALS)
 %.hist-radial.png: %.hist-radial.npy.bz2
-	$(PYTHON) plot.py $< save
+	$(PYCULGI) plot.py $< save
 %.hist-radial.zoom.png: %.hist-radial.npy.bz2
-	$(PYTHON) plot.py $< zoom save
+	$(PYCULGI) plot.py $< zoom save
 %.hist-radial-shell.png: %.hist-radial.npy.bz2
-	$(PYTHON) plot.py $< shell save
+	$(PYCULGI) plot.py $< shell save
 %.hist-radial-shell.zoom.png: %.hist-radial.npy.bz2
-	$(PYTHON) plot.py $< shell zoom save
+	$(PYCULGI) plot.py $< shell zoom save
 plot-hist-residual: $(PLOTS_HIST_RES)
 %.hist-residual-total.png: %.hist-residual.npy.bz2
-	$(PYTHON) plot.py $< total save
+	$(PYCULGI) plot.py $< total save
 %.hist-residual-total-shell.png: %.hist-residual.npy.bz2
-	$(PYTHON) plot.py $< total shell save
+	$(PYCULGI) plot.py $< total shell save
 %.hist-residual-order.png: %.hist-residual.npy.bz2
-	$(PYTHON) plot.py $< order save
+	$(PYCULGI) plot.py $< order save
 %.hist-residual-order-shell.png: %.hist-residual.npy.bz2
-	$(PYTHON) plot.py $< order shell save
+	$(PYCULGI) plot.py $< order shell save
 plot-hist-angles: $(PLOTS_HIST_ANGLES)
 %.hist-ang.png: %.hist-ang.npy.bz2
-	$(PYTHON) plot.py $< angles save
+	$(PYCULGI) plot.py $< angles save
 
 # Generate galleries
 .PHONY: gallery
@@ -160,11 +160,8 @@ exp:
 
 # Plots for article0015
 .PHONY: article0015
-article0015: article0015-fig2.png article0015-fig3.png article0015-fig4-single.png article0015-fig4.png article0015-fig5.png article0015-fig6.png
-article0015-fig4-single.png: article0015.py
-	"$(PYCULGI)" article0015.py fig4 single
-article0015-%.png: article0015.py
-	"$(PYCULGI)" article0015.py $*
+article0015:
+	$(MAKE) -C article0015
 
 # Cleanup old files (run manually)
 .PHONY: cleanup

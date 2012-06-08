@@ -1,6 +1,6 @@
 import sys
 
-from common import SEMAnalysis, getscalefromname
+from common import SEMAnalysis
 
 
 # The cropping height should be identical in all images
@@ -97,6 +97,15 @@ erode_default = {
 }
 erode_custom = {
 }
+
+def getscalefromname(fn):
+    """Get task-specific scale from file name."""
+
+    return int(fn.split('-')[2].split('.')[0])
+
+def loadsem(fn, scalebarstart=scalebarstart):
+    sbs = scalebarstart[getscalefromname(fn)]
+    return SEMAnalysis(fpath=fn, cropy=(0,430), scalebarstart=sbs)
 
 
 if __name__ == "__main__":

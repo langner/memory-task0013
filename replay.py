@@ -1,28 +1,39 @@
+"""Replay and save visualization for task0013."""
+
+
 import os
 import sys
 
 from pyculgi import *
 
-from simulation import loadpath
+from task0013 import loadpath
 
 
 if __name__ == "__main__":
 
-    # First argument must be path to load into a simulation,
-    # The simulation needs to do setup in order to have a proper box.
-    sim = loadpath(sys.argv[1], setup=True)
+    # First argument must be a path to load into a simulation.
+    # Load the simulation, but don't do the setup yet.
+    sim = loadpath(sys.argv[1], setup=False)
 
+    # Second argument must be a temporary directory that we can use to store lots of files.
     tmpdir = sys.argv[2]
+
+    # Some flags.
     tosave = "save" in sys.argv
     issnapshots = "snapshots" in sys.argv
+    isoffscreen = "xvfb" in sys.argv or "offscreen" in sys.argv
 
-    # Make sure that simulation has finished (if we want to save)
-    # Note that from phase 4, there are two runs for each simulation
+    # Make sure that simulation has finished (if we want to save).
+    # Note that from phase 4, there are two runs for each simulation.
     isfinished = "Time used" in open(sim.outpath).read().strip().split('\n')[-1]
     if (issnapshots or tosave) and not isfinished:
         print "This simulation has not finished."
         sys.exit(1)
 
+    # Since we are serious about this run, do the setup now.
+    sim.setup()
+
+    # Tweak colors and display configuration.
     sim.bcp_A.ClearColorMap()
     sim.bcp_B.ClearColorMap()
     sim.bcp_A.AddVolumeDisplayRGBPoint(0.0, 0, 0, 256)
@@ -34,11 +45,13 @@ if __name__ == "__main__":
     sim.bcp_A.SetRayCastingSampleDistance(0.1)
     sim.bcp_B.SetRayCastingSampleDistance(0.1)
 
+    # Create and load graphics object.
     graphics = GraphicsManager.CreateGraphics()
     graphics.AddViewable(sim.box)
     graphics.AddViewable(sim.bcp_A)
     graphics.AddViewable(sim.bcp_B)
 
+    # Set bead dispay radii and add them to the graphics object.
     # Remember that after phase 7 the nanoparticles are colloids
     for i in GPERange(0, sim.population, 1, "<"):
         if sim.phase <= 7:
@@ -50,30 +63,41 @@ if __name__ == "__main__":
             npi.SetBeadDisplayRadius("S", 0.0)
         graphics.AddViewable(npi)
 
+    # Paths to cga and csa archive files.
     cga = "%s/%s.cga" %(sim.path,sim.name)
     if sim.population > 0:
         csa = "%s/%s.csa" %(sim.path,sim.name)
 
+    # Create and configure that archive reader.
     archive = UtilitiesManager.CreateArchiveReader()
-    if "xvfb" in sys.argv or "offscreen" in sys.argv:
-        graphics.SetOffScreenRenderingOn()
-
     if sim.population > 0:
         archive.SetSystem(sim.box, cga, csa)
     else:
         archive.SetSystem(sim.box, cga)
     archive.AddGraphics(graphics)
 
+    # Final configuration actions for the graphics object.
+    if isoffscreen:
+        graphics.SetOffScreenRenderingOn()
     graphics.SetDisplay3DAxesOff()
     graphics.SetSize(500,500)
     graphics.SetPosition(100,100)
     graphics.Zoom(1.3)
 
+    # Nuber of frames in the archive.
+    N = archive.GetNumberOfFrames()
+
+    # If we want snaphots, save just four analogously to experimental images.
+    # Notice how the frames are scaled by 2, 14 and 48, which are the experimemntal
+    #   annealing times for which the SEM images were created.
+    # The little dance with temporary files is needed, because the first snapshot
+    #   is touched in a makefile for logistic purposes.
     if issnapshots:
 
         print "Saving snapshots..."
-        N = archive.GetNumberOfFrames()
+
         for i in 1, 2*N/48, 14*N/48, N:
+
             archive.LoadFrame(i)
             fname = "%s/%s.frame%s" %(sim.path, sim.name, str(i).zfill(4))
             graphics.WriteJPEG(fname+"_tmp")
@@ -81,9 +105,12 @@ if __name__ == "__main__":
                 os.remove(fname+".jpg")
             os.rename(fname+"_tmp.jpg", fname+".jpg")
 
+    # If we want to save the movie, we need to figure out the FPS and such.
+    # The movie will have to parts, a slow part (10s) that uses each frame,
+    #   and a second part (20s) that uses all remaining frames, sampling them
+    #   with the corresponding frequency at the same FPS.
     elif tosave:
 
-        N = archive.GetNumberOfFrames()
         fps = 10.0
         tslow = 10.0
         tnormal = 20.0
@@ -105,6 +132,7 @@ if __name__ == "__main__":
             iframe += ifreq
             inum += 1
 
+    # Otherwise, just play the movie.
     else:
     
         archive.Play()

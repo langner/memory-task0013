@@ -1,3 +1,9 @@
+"""
+These are quite general tools for to analyzing these types of SEM images.
+In particular, they are used here for both benchmarking and real analysis.
+"""
+
+
 import bz2
 import os
 import random
@@ -14,29 +20,24 @@ import mahotas
 import pymorph
 
 
-def getscalefromname(fn):
-    """Get task-specific scale from file name."""
-
-    return int(fn.split('-')[2].split('.')[0])
-
-
 def getscalebarlength(im, xstart, ystart):
-    """Get the length of a scale bar in a an image
+    """Get the length of a scale bar in an image.
 
     This function will measure a scale bar that is placed on the right
-    hand side of the position `start`, assuming the background is black (<100)
-    and the scale bar is white (>200) in the first channel."""
+    hand side of the position (xstart,ystart), assuming the background is
+    close to black (<100) and that the scale bar is close to white (>200)
+    at laest in the first channel."""
 
-    # Start at the given coordinates
-    # Their order should be reversed before this function call, if needed
+    # Start at the given coordinates. Their order should be reversed before
+    #   this function call, if needed.
     i = xstart
     j = ystart
 
-    # Increase second index until white encountered
+    # Increase second index until something not dark is encountered.
     while im[i,j] < 100:
         j += 1
 
-    # Now increase the measure until white ends
+    # Now increase the measure until something quite bright is encountered.
     length = 0
     while im[i,j] > 200:
         length += 1
@@ -46,43 +47,46 @@ def getscalebarlength(im, xstart, ystart):
 
 
 def stretchimage(img):
-    """Stretch out the contrast of an image"""
+    """Stretch out the contrast of an image."""
 
     stretched = img - img.min()
     stretched = 255.0 * stretched / float(stretched.ptp())
-    stretched = stretched.astype(numpy.uint8)
-    return stretched
+    return stretched.astype(numpy.uint8)
 
 
 def balanceimage(img, r, R):
-    """Balance the brightness of an image by leveling"""
+    """Balance the brightness of an image by leveling.
+
+    This is achieved here by applying a minimum filter over radius r,
+    and then a uniform filter over radius R, and substracting the result
+    from the original image."""
 
     img_min = ndimage.minimum_filter(img, r)
     img_uni = ndimage.uniform_filter(img, R)
     return img - numpy.minimum(img_min, img_uni)
 
 
-def rdfcorrection_old(X,Y,R):
-    """Correction to radial distribution function due to periodic
-    boundary conditions, without actually considering them"""
-
-    ang1 = 2 * scipy.pi
-    ang2 = 2 * scipy.pi - 2.0
-    ang3 = 2 * scipy.pi - 2.0
-    ang4 = 3 * scipy.pi / 2.0 - 2.0
-    V1 = (0.5*X - R)*(0.5*Y - R)
-    V2 = R*(0.5*X - R)
-    V3 = R*(0.5*Y - R)
-    V4 = R**2
-    ref = (V1+V2+V3+V4) * 2 * scipy.pi
-    return (ang1*V1 + ang2*V2 + ang3*V3 + ang4*V4) / ref
-
 def rdfcorrection(X, Y, R):
     """Correction to radial distribution function due to periodic
-    boundary conditions, without actually considering them"""
+    boundary conditions, without actually considering them."""
 
     pXY = numpy.pi * X * Y
     return 1.0 - 2*R*(X+Y)/pXY + R*R*(4.0-numpy.pi)/pXY
+
+
+def normalize_rdf(hist, X, Y, bins, N, npairs=None):
+    """Normalize a radial distribution function."""
+    
+    # Area of strips at all distances (assume constant spacing).
+    dx = bins[1] - bins[0]
+    strips = 2 * numpy.pi * bins * rdfcorrection(X, Y, bins) * dx
+
+    # The radial scaling factor.
+    npairs = npairs or N*(N-1)/2
+    factor = X*Y / (strips * npairs)
+
+    return factor * hist
+
 
 def radialdistribution(coords, img, ps):
     """Radial ditribution function for points in an image"""
@@ -100,12 +104,8 @@ def radialdistribution(coords, img, ps):
     pds = spatial.distance.pdist(coords)
     nbins = max(maxr,int(maxr*ps))
     hist,bins = scipy.histogram(pds, bins=nbins, range=[0,maxr])
-    dr = bins[1] - bins[0]
-    bins = bins[:-1] + dr/2.0
-    hist = 1.0 * hist
-    hist *= X*Y * 2.0 / (N*(N-1))
-    hist /= 2 * scipy.pi * rdfcorrection(X,Y,bins) * bins * dr
-    return hist, bins
+    bins = bins[:-1] + (bins[1]-bins[0])/2.0
+    return normalize_rdf(hist, X, Y, bins, N), bins
 
 def rdfmodel(X, p, m, l, a, b, t, gd):
     """Approximate Radial distribution function

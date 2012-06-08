@@ -1,28 +1,24 @@
+"""Plot results of task0013 simulations."""
+
+
 import bz2
+import os
 import sys
 
 import numpy
 
-from analyze import PhaseFrames
+from systems import phases_frames
+from task0013 import loadpath
 
+sys.path.append("exp/")
+from common import rdfcorrection
 
-def correction(X,Y,R):
-    ang1 = 2 * numpy.pi
-    ang2 = 2 * numpy.pi - 2.0
-    ang3 = 2 * numpy.pi - 2.0
-    ang4 = 3 * numpy.pi / 2.0 - 2.0
-    V1 = (0.5*X - R)*(0.5*Y - R)
-    V2 = R*(0.5*X - R)
-    V3 = R*(0.5*Y - R)
-    V4 = R**2
-    ref = (V1+V2+V3+V4) * 2 * numpy.pi
-    return (ang1*V1 + ang2*V2 + ang3*V3 + ang4*V4) / ref
 
 def rdfmodel(X, p, m, l, a, b, t, gd):
-    """Approximate Radial distribution function
+    """Approximate radial distribution function for a hard sphere liquid.
 
-    Coded according to Matteoli and Mansoori, JPC 1995
-    All parameters have same meaning, but the first peak position, p, is here additionally
+    Coded according to Matteoli and Mansoori, JPC 1995.
+    All parameters have same meaning, but I also added the first peak position, p.
     """
     Y = X/p
     Ym1 = Y-1
@@ -33,231 +29,320 @@ def rdfmodel(X, p, m, l, a, b, t, gd):
 
 if __name__ == "__main__":
 
-    # Do not use X if saving
+    # Do not use X backend in matplotlib if saving.
+    # Backend must be changed before pylab is imported.
     import matplotlib
     if "save" in sys.argv:
         matplotlib.use("Agg")
     import pylab
 
+    # Makefile passes the path to some archive file, from which we should
+    #   know what kind of plot to make. But we don't know beforehand what
+    #   type of file this will be exactly, or its full name. In hindsight,
+    #   that was not a good idea! In any case, it will be a bziped npy archive,
+    #   so we can load the data right away.
     fpath = sys.argv[1].strip()
-    phase,model,system,params,run = fpath.split('/')
-    phase = int(phase[5:])
-    size = map(int,model.split("_")[0].split('x'))
-    population = int(system.split('_')[3][3:])
-    if phase > 13 and population > 0:
-        npname = run.split("_")[2]
-    if phase > 17 and population > 0:
-        disp = float(run.split("_")[3][4:].split('.')[0])
     data = numpy.load(bz2.BZ2File(fpath))
 
-    if "energy.npy.bz2" in fpath:
+    # Change the path passed to the output file of the simulation,
+    #   and load a simulation object from that. This is a lot easier
+    #   than writing all the code to decrypt the path over again.
+    out = ".".join(fpath.split('.')[:-3]) + ".out"
+    sim = loadpath(out)
 
-        froot = fpath.replace(".energy.npy.bz2","")
-        E = data
+    # Archives with energy data are used to produce energy plots (three different types),
+    #   or grid offset plots. The energy plots are quite similar, so we can treat them
+    #   ina a single clause, but the offsets option has many additional details.
+    # Grid offsets plots can additionally be for angles.
+    isenergy = "energy.npy.bz2" in fpath
+    if isenergy:
+        istotal = "total" in sys.argv
+        isfield = "field" in sys.argv
+        iscoupling = "coupl" in sys.argv
+        isoffsets = "offsets" in sys.argv
+        if isoffsets:
+            isangles = "angles" in sys.argv
 
-        if "total" in sys.argv:
+    # Histogram plots can be of several kinds. Field histograms can show the distribution
+    #   of total field values or the distirbution of order parameters. Radial histograms
+    #   are essentialy RDFs, for core or shell beads, full range or zoomed. Residual histograms
+    #   show the values of the field or the order parameter at bead coordinates, for cores
+    #   or shells. Angular histogram plot the distriubtion of rotation angles for nanoparticles.
+    ishist = "hist" in fpath
+    if ishist:
+        isfield = "hist-field" in fpath
+        isradial = "hist-radial" in fpath
+        isresidual = "hist-residual" in fpath
+        isangles = "hist-ang" in fpath
+        if isfield or isresidual:
+            istotal = "total" in sys.argv
+            isorder = "order" in sys.argv
+        if isradial:
+            iszoom = "zoom" in sys.argv
+        if not isangles:
+            isshell = "shell" in sys.argv
+
+    # Flag to save depending on whether appropriate argument is passed.
+    issave = "save" in sys.argv
+
+    # ############
+    # ENERGY PLOTS
+    # ############
+    if isenergy and not isoffsets:
+
+        # Things that are specific to each type. Remember that coupling requires
+        #   there to be at least one nanoparticle. If no type, then bail out here.
+        if istotal:
             instant = data[:,1] + data[:,3] + data[:,4]  + data[:,5]  + data[:,6]
             average = data[:,7] + data[:,9] + data[:,10] + data[:,11] + data[:,12]
-            datas = [ "instant.", "average" ]
-            dataset = { "instant.": instant, "average": average }
-            plotfname = "%s.energy-total.png" %froot
+            plotfname = "%s.energy-total.png" %sim.outroot
             ylabel = "total free energy"
-        elif "field" in sys.argv:
+        elif isfield:
             instant = data[:,3] + data[:,4]  + data[:,5]
             average = data[:,9] + data[:,10] + data[:,11]
-            datas = [ "instant.", "average" ]
-            dataset = { "instant.": instant, "average": average }
-            plotfname = "%s.energy-field.png" %froot
+            plotfname = "%s.energy-field.png" %sim.outroot
             ylabel = "field free energy"
-        elif "coupl" in sys.argv and population > 0:
+        elif iscoupling and sim.pop > 0:
             instant = data[:,6]
             average = data[:,12]
-            datas = [ "instant.", "average" ]
-            dataset = { "instant.": instant, "average": average }
-            plotfname = "%s.energy-coupl.png" %froot
+            plotfname = "%s.energy-coupl.png" %sim.outroot
             ylabel = "coupling free energy"
-        elif "offsets" in sys.argv and phase >= 7 and population > 0:
-            if "angles" in sys.argv:
-                mean = data[:,27]
-                var = data[:,28]
-                skew = data[:,29]
-                kurtosis = data[:,30]
-                datas = [ "mean", "variance", "skewness", "kurtosis" ]
-                dataset = { "mean": mean, "variance": var, "skewness": skew, "kurtosis": kurtosis }
-                plotfname = "%s.offsets-ang.png" %froot
-                ylabel = "offset zero rotation"
-            else:
-                if phase == 7:
-                    mean = data[:,19]
-                    var = data[:,20]
-                    skew = data[:,21]
-                    kurtosis = data[:,22]
-                    datas = [ "mean", "variance", "skewness", "kurtosis" ]
-                    dataset = { "mean": mean, "variance": var, "skewness": skew, "kurtosis": kurtosis }
-                else:
-                    mean = data[:,19]
-                    mean_shell = data[:,20]
-                    var = data[:,21]
-                    var_shell = data[:,22]
-                    skew = data[:,23]
-                    skew_shell = data[:,24]
-                    kurtosis = data[:,25]
-                    kurtosis_shell = data[:,26]
-                    datas = [ "mean", "mean (shell)", "variance", "variance (shell)", "skewness", "skewness (shell)", "kurtosis", "kurtosis (shell)" ]
-                    dataset = { "mean": mean, "mean (shell)": mean_shell, "variance": var, "variance (shell)": var_shell,
-                                "skewness": skew, "skewness (shell)": skew_shell, "kurtosis": kurtosis, "kurtosis (shell)": kurtosis_shell }
-                plotfname = "%s.offsets.png" %froot
-                ylabel = "offset relative to grid midpoint"
         else:
+            print "Energy plots must specify total, field or coupling."
             sys.exit(0)
 
+        # Things all types have in common.
+        datas = [ "instant.", "average" ]
+        dataset = { "instant.": instant, "average": average }
+
+    # ############
+    # OFFSET PLOTS
+    # ############
+    if isenergy and isoffsets:
+
+        # These are possible after phase 6 and when there are nanoparticles.
+        if sim.phase < 7 or sim.pop == 0:
+            print "Offsets plots available after phase 6 and with at aleast one NP."
+            sys.exit(0)
+
+        # Angles are quite the same as the initial grid offset plots, but the latter
+        #   have more intricacies , since shell beads are involved.
+        if isangles:
+            mean = data[:,27]
+            var = data[:,28]
+            skew = data[:,29]
+            kurtosis = data[:,30]
+            datas = [ "mean", "variance", "skewness", "kurtosis" ]
+            dataset = { "mean": mean, "variance": var, "skewness": skew, "kurtosis": kurtosis }
+            plotfname = "%s.offsets-ang.png" %sim.outroot
+            ylabel = "offset from zero rotation"
+        elif sim.phase == 7:
+            mean = data[:,19]
+            var = data[:,20]
+            skew = data[:,21]
+            kurtosis = data[:,22]
+            datas = [ "mean", "variance", "skewness", "kurtosis" ]
+            dataset = { "mean": mean, "variance": var, "skewness": skew, "kurtosis": kurtosis }
+            plotfname = "%s.offsets.png" %sim.outroot
+            ylabel = "offset relative to grid midpoint"
+        else:
+            mean = data[:,19]
+            mean_shell = data[:,20]
+            var = data[:,21]
+            var_shell = data[:,22]
+            skew = data[:,23]
+            skew_shell = data[:,24]
+            kurtosis = data[:,25]
+            kurtosis_shell = data[:,26]
+            datas = [ "mean", "mean (shell)", "variance", "variance (shell)", "skewness", "skewness (shell)", "kurtosis", "kurtosis (shell)" ]
+            dataset = { "mean": mean, "mean (shell)": mean_shell, "variance": var, "variance (shell)": var_shell,
+                        "skewness": skew, "skewness (shell)": skew_shell, "kurtosis": kurtosis, "kurtosis (shell)": kurtosis_shell }
+            plotfname = "%s.offsets.png" %sim.outroot
+            ylabel = "offset relative to grid midpoint"
+
+        # With the above set, plotting is now straightforward.
         for ds in datas:
             pylab.plot(data[:,0], dataset[ds], label=ds)
+        pylab.xlabel("time step")
+        pylab.ylabel(ylabel)
 
+        # Set the X axis range a bit further than the last point.
+        xmin = data[0,0]
+        xmax = data[-1,0]*1.1
+
+        # Now play around with the range for the Y axis.
         ymin = min([min(dataset[ds][100:]) for ds in dataset])
         ymax = max([max(dataset[ds][100:]) for ds in dataset])
         dy = ymax - ymin
-        if "field" in sys.argv:
+        if isfield:
             ymin = ymax - dy/1.05
             ymax = ymax + dy/100
         else:
             ymin = ymin - dy/100
             ymax = ymin + dy/1.05
-        if "offsets" in sys.argv:
+        if isoffsets:
             ymin = -1.3
             ymax = 0.6
-            if "angles" in sys.argv:
+            if isangles:
                 ymin = -2.0
                 ymax = 4.0
 
-        pylab.xlabel("time step")
-        pylab.ylabel(ylabel)
-
-        xmin = data[0,0]
-        xmax = data[-1,0]*1.1
+        # Finally set the ranges for axes.
         pylab.xlim(xmin,xmax)
         pylab.ylim(ymin,ymax)
+
+        # Let pylab place the legend on its own.
         pylab.legend(loc="best")
 
-        if "offsets" in sys.argv:
+        # For offset plots, we want to add a number of extra eye candy.
+        if isoffsets:
+
             y_mean = 0.5
-            y_var = 1.0/12
+            y_var = 1.0 / 12
+            y_skew = 0.0
+            y_kurt = - 6.0 / 5
             str_mean = r"$\frac{1}{2}$"
             str_var = r"$\frac{1}{12}$"
-            if "angles" in sys.argv:
-                y_mean = numpy.pi/2.0
-                y_var = numpy.pi**2/12.0
+            str_skew = r"$0.0$"
+            str_kurt = r"-$\frac{6}{5}$"
+            if isangles:
+                y_mean = numpy.pi / 2
+                y_var = numpy.pi**2 / 12
                 str_mean = r"$\frac{\pi}{2}$"
-                str_var = r"$\frac{\pi}{12}$"
-            pylab.axhline(y=y_mean, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
-            pylab.axhline(y=y_var, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
-            pylab.axhline(y=0.0, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
-            pylab.axhline(y=-1.2, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
-            pylab.text(xmax*1.01, y_mean, str_mean, fontsize=12, horizontalalignment="left", verticalalignment="center")
-            pylab.text(xmax*1.01, y_var, str_var, fontsize=12, horizontalalignment="left", verticalalignment="center")
-            pylab.text(xmax*1.01, 0.0, r"$0.0$", fontsize=12, horizontalalignment="left", verticalalignment="center")
-            pylab.text(xmax*1.01, -1.2, r"$-\frac{6}{5}$", fontsize=12, horizontalalignment="left", verticalalignment="center")
+                str_var = r"$\frac{\pi^2}{12}$"
 
-    if "hist-field.npy.bz2" in fpath:
-        froot = fpath.replace(".hist-field.npy.bz2","")
+            y_values = (y_mean, y_var, y_skew, y_kurt)
+            y_strings = (str_mean, str_var, str_skew, str_kurt)
+            for y in y_values:
+                pylab.axhline(y=y, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
+            for y,s in zip(y_values,y_strings):
+                pylab.text(xmax*1.01, y, s, fontsize=12, horizontalalignment="left", verticalalignment="center")
 
-        if "total" in sys.argv:
-            plotfname = froot+".hist-field-total.png"
+    # ######################
+    # SETUP FIELD HISTOGRAMS
+    # ######################
+    if ishist and isfield:
+
+        if istotal:
+            plotfname = "%s.hist-field-total.png" %sim.outroot
             xlabel = "overall field density"
             xmin, xmax = 0.0, 1.5
             data = data[:,0]
-
-        if "order" in sys.argv:
-            plotfname = froot+".hist-field-order.png"
+        if isorder:
+            plotfname = "%s.hist-field-order.png" %sim.outroot
             xlabel = "overall order parameter"
             xmin, xmax = -1.5, 1.5
             data = data[:,1]
 
-    if "hist-radial.npy.bz2" in fpath:
+    # #######################
+    # SETUP RADIAL HISTOGRAMS
+    # #######################
+    if ishist and isradial:
 
-        froot = fpath.replace(".hist-radial.npy.bz2","")
-
-        if phase > 7:
-            if "shell" in sys.argv:
+        # Generate the plot file name.
+        # RDFs for shell beads are available after phase 7.
+        if isshell:
+            if sim.phase > 7:
                 data = data[:,1,:]
-                plotfname = froot+".hist-radial-shell"
+                plotfname = "%s.hist-radial-shell" %sim.outroot
             else:
-                data = data[:,0,:]
-                plotfname = froot+".hist-radial"
+                print "RDFs for shell beads are available after phase 7."
+                sys.exit(0)
         else:
-            plotfname = froot+".hist-radial"
-
-        # There were no shells before phase 8
-        if phase <= 7 and "shell" in sys.argv:
-            print "No shells before phase 8"
-            exit(0);
-
-        if "zoom" in sys.argv:
+            data = data[:,0,:]
+            plotfname = "%s.hist-radial" %sim.outroot
+        if iszoom:
             plotfname += ".zoom.png"
         else:
             plotfname += ".png"
 
-        # The X axis is fixed from analysis, but we change the plotted scale later
+        # The X axis is fixed from analysis, but we will change the plotted scale later.
         xlabel = "NP-NP distance"
         xmin = 0.0
         xmax = 16.0
 
-    if "hist-residual.npy.bz2" in fpath:
+    # #########################
+    # SETUP RESIDUAL HISTOGRAMS
+    # #########################
+    if ishist and isresidual:
 
-        froot = fpath.replace(".hist-residual.npy.bz2", "")
+        if isshell and sim.phase < 8:
+            print "Shell beads available only after phase 7."
+            sys.exit(0)
 
-        if "total" in sys.argv:
-            plotfname = froot+".hist-residual-total.png"
-            if "shell" in sys.argv:
-                plotfname = froot+".hist-residual-total-shell.png"
-            xlabel = "residual field density"
-            xmin, xmax = 0.0, 1.5
-            if phase > 7 and "shell" in sys.argv:
+        if not (istotal or isorder):
+            print "Must specify total or order residual histogram type."
+            sys.exit(0)
+
+        # Set the plot file name tersely.
+        s1 = "total"*istotal + "order"*isorder
+        s2 = "-shell"*isshell
+        plotfname = "%s.hist-residual-%s%s.png" %(sim.outroot, s1, s2)
+
+        # X axis label and limits. Set the limits to 1.5 for clarity.
+        xlabel = "residual field density"*istotal + "residual order parameter"*isorder
+        xmin = 0.0*istotal + -1.5*isorder
+        xmax = 1.5
+
+        # Data to plot. This is tricky for the order parameter, since there are
+        #   additional rows in the array after phase 7 when shell beads are involved.
+        if istotal:
+            if isshell:
                 data = data[:,1]
             else:
                 data = data[:,0]
-
-        if "order" in sys.argv:
-            plotfname = froot+".hist-residual-order.png"
-            if "shell" in sys.argv:
-                plotfname = froot+".hist-residual-order-shell.png"
-            xlabel = "residual order parameter"
-            xmin, xmax = -1.5, 1.5
-            if phase > 7:
-                if "shell" in sys.argv:
+        if isorder:
+            if sim.phase > 7:
+                if isshell:
                     data = data[:,3]
                 else:
                     data = data[:,2]
             else:
                 data = data[:,1]
 
-    if "hist-ang.npy.bz2" in fpath:
+    # ########################
+    # SETUP ANGULAR HISTOGRAMS
+    # ########################
 
-        froot = fpath.replace(".hist-ang.npy.bz2", "")
-        plotfname = froot + ".hist-ang.png"
+    if ishist and isangles:
+
+        plotfname = "%s.hist-ang.png" %sim.outroot
         xlabel = "absolute rotation angle [rad]"
         xmin = 0.0
         xmax = 3.3
 
-    if "hist" in fpath:
+    # ###############
+    # PLOT HISTOGRAMS
+    # ###############
+    if ishist:
 
-        nsamples = PhaseFrames[phase][1]
-        frames = numpy.load(bz2.BZ2File(froot+".hist-frames.npy.bz2")).tolist()
+        # Frames are stored in a separate archive file.
+        frames = numpy.load(bz2.BZ2File("%s.hist-frames.npy.bz2" %sim.outroot)).tolist()
+
+        # All histograms are averages over some number of samples.
+        nsamples = phases_frames[sim.phase][1]
+
+        # The number of bins is implicit.
         nbins = data.shape[1]
 
+        # Bin width and list of bin center points.
         dx = (xmax-xmin)/nbins
         xrange = numpy.arange(xmin+dx/2.0,xmax+dx/2.0,dx)
 
-        Npairs = population*(population-1)/2
-        if "hist-radial.npy" in fpath:
+        # Number of pair interactions in this simulation.
+        Npairs = sim.pop*(sim.pop-1)/2
 
-            # Cut out the strong peaks due to internal structure
-            # Must also adjust the effective normalization factor
-            # This very specific hack works for phase 8 (and phase 9)
-            if (phase > 7) and ("shell" in sys.argv):
-                if npname == "np4":
+        # Calculate the normalization factors for histograms.
+        if isradial:
+
+            # Cut out the strong peaks due to the internal structure of nanoparticles.
+            # Must also adjust the number of pair interactions.
+            # This very specific hack works for nanoparticle models np4 and np8.
+            # Unfortunately, this is still somewhat approximate (but good enough).
+            if isshell:
+                if sim.npname == "np4":
                     a, b = 0.2828, 0.4
-                if npname == "np8":
+                if sim.npname == "np8":
                     a, b = 0.5657, 0.8
                 r1 = numpy.sqrt( (b-a)**2 + a**2 )
                 r2 = numpy.sqrt(2.0)*b
@@ -267,71 +352,56 @@ if __name__ == "__main__":
                 b2 = int(r2//dx)
                 b3 = int(r3//dx)
                 b4 = int(r4//dx)
-                data[:,b1] -= 8*population
-                data[:,b2] -= 8*population
-                data[:,b3] -= 8*population
-                data[:,b4] -= 8*population/2
-                Npairs = 8*population*(8*population-1) / 2
-                # This is still approximate for some reason, and left overs are there.
+                data[:,b1] -= 8*sim.pop
+                data[:,b2] -= 8*sim.pop
+                data[:,b3] -= 8*sim.pop
+                data[:,b4] -= 8*sim.pop/2
+                Npairs = 8*sim.pop*(8*sim.pop-1) / 2
 
-            strips = correction(size[0],size[1],xrange) * 2 * numpy.pi * xrange * dx
-            factor = size[0] * size[1] / strips / Npairs
-            hist = factor * data[frames.index(0)]
-            #pylab.plot(xrange, hist, label="frame 0")
-        elif "hist-ang.npy" in fpath:
-            factor = numpy.pi / (dx * sum(data[0]))
-        elif "hist-residual.npy" in fpath and "order" in sys.argv:
-            factor = 2.0 / (dx * sum(data[0]))
-        else:
+            
+            strips = rdfcorrection(sim.size[0],sim.size[1],xrange) * 2 * numpy.pi * xrange * dx
+            factor = sim.size[0] * sim.size[1] / strips / Npairs
+
+        elif isfield or (isresidual and istotal):
             factor = 1.0 / (dx * sum(data[0]))
 
+        elif isresidual and isorder:
+            factor = 2.0 / (dx * sum(data[0]))
+
+        elif isangles:
+            factor = numpy.pi / (dx * sum(data[0]))
+
+        # This is a quick hack to plot the trend in the position of the largest histogram peak.
+        # Should be turned into a proper plot in the future.
         if "trend" in sys.argv:
 
             D = xrange[numpy.argmax(data[:,:250], axis=1)]
             d = []
-            for fi,f in enumerate(PhaseFrames[13][0]):
-                i = PhaseFrames[13][1]
+            for fi,f in enumerate(phases_frames[13][0]):
+                i = phases_frames[13][1]
                 d.append(numpy.average(D[fi*i:(fi+1)*i]))
-            pylab.plot(PhaseFrames[13][0], d)
+            pylab.plot(phases_frames[13][0], d)
 
         else:
 
-            hist = factor * numpy.sum([data[frames.index(1+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 1-%i" %(1+nsamples))
-            hist = factor * numpy.sum([data[frames.index(11+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 11-%i" %(11+nsamples))
-            hist = factor * numpy.sum([data[frames.index(21+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 21-%i" %(21+nsamples))
-            hist = factor * numpy.sum([data[frames.index(101+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 101-%i" %(101+nsamples))
-            hist = factor * numpy.sum([data[frames.index(201+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 201-%i" %(201+nsamples))
-            hist = factor * numpy.sum([data[frames.index(301+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 301-%i" %(301+nsamples))
-            hist = factor * numpy.sum([data[frames.index(401+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 401-%i" %(401+nsamples))
-            hist = factor * numpy.sum([data[frames.index(501+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 501-%i" %(501+nsamples))
-            hist = factor * numpy.sum([data[frames.index(1001+i)] for i in range(nsamples)], axis=0) / nsamples
-            pylab.plot(xrange, hist, label="frames 1001-%i" %(1001+nsamples))
-            if 10001 in frames:
-                hist = factor * numpy.sum([data[frames.index(10001+i)] for i in range(nsamples)], axis=0) / nsamples
-                pylab.plot(xrange, hist, label="frames 10001-%i" %(10001+nsamples))
-            if 50001 in frames:
-                hist = factor * numpy.sum([data[frames.index(50001+i)] for i in range(nsamples)], axis=0) / nsamples
-                pylab.plot(xrange, hist, label="frames 50001-%i" %(50001+nsamples))
+            frames_to_plot = [1, 11, 21, 101, 201, 1001]
+            for f in frames_to_plot:
+                hist = factor * numpy.sum([data[frames.index(f+i)] for i in range(nsamples)], axis=0) / nsamples
+                pylab.plot(xrange, hist, label="frames %i-%i" %(f,f+nsamples))
+
             pylab.xlabel(xlabel)
             pylab.ylabel("probability density")
 
+        # Turn on grid and legend.
         pylab.grid()
         pylab.legend()
 
-        # We are most interested in small radial distances
-        if "hist-radial.npy" in fpath and "trend" not in sys.argv:
+        # We are most interested in small radial distances for histograms.
+        if isradial and not "trend" in sys.argv:
             xmin = 0.0
-            if "zoom" in sys.argv:
-                if phase > 7:
-                    xmin = 1.35
+            if iszoom:
+                xmin = 1.35
+                if sim.phase > 7:
                     xmax = 3.7
                 else:
                     xmax = 2.2
@@ -339,7 +409,8 @@ if __name__ == "__main__":
                 xmax = 16.0
             pylab.xlim(xmin,xmax)
 
-    if "save" in sys.argv:
+    # Finally, save or show the plot.
+    if issave:
         pylab.savefig(plotfname)
     else:
         pylab.show()

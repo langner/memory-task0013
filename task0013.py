@@ -1,3 +1,6 @@
+"""Contains main functions and class for task0013."""
+
+
 import os
 
 from numpy import array, exp, pi, random, sqrt, sum, zeros
@@ -9,6 +12,7 @@ from systems import *
 
 __all__ = ["Simulation", "loadpath"]
 
+
 # All parameters used for these simulations.
 parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "kappa", "temperature", "expansion",
@@ -16,6 +20,7 @@ parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "timestep", "totaltime" ,
                 "chmob", "cc", "npname", "sigma",
                 "disp" ]
+
 # All instant result types -- no spaces tolerated!
 instant_fields_all = "\
 SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,\
@@ -24,6 +29,7 @@ GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,\
 GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy"
 
 # Maximum number of iterations when solving nonlinear equations.
+# This used to be 25k, but that turned out to be to small occasionally.
 maxiters = 50000
 
 
@@ -31,15 +37,13 @@ def getpath(sim):
     """Construct output path for a given simulation object."""
 
     # First directory just differentiates between phases.
-    phase = sim.phase
-    dir1 = "phase%i" %phase
+    dir1 = "phase%i" %sim.phase
 
     # Second directory: system size, polymer architecture, bead size.
-    X,Y,Z = sim.size
+    # After phase 14, the sigma parameter is appended to this directory name.
+    dir2 = "%ix%ix%i_%s_bv%.2f" %(sim.size[0], sim.size[1], sim.size[2], sim.polymer, sim.beadvolume)
     if sim.phase > 14:
-        dir2 = "%ix%ix%i_%s_bv%.2f_sigma%.2f" %(X, Y, Z, sim.polymer, sim.beadvolume, sim.sigma)
-    else:
-        dir2 = "%ix%ix%i_%s_bv%.2f" %(X, Y, Z, sim.polymer, sim.beadvolume)
+        dir2 += "_sigma%.2f" %sim.sigma
 
     # Third directory: system temperature, noise, density, population.
     # From phase 10, add the chain mobility here as a parameter.
@@ -48,33 +52,30 @@ def getpath(sim):
         tempformat = "temp%.2f"
     else:
         tempformat = "temp%.4f"
-    format = tempformat + "_exp%.2f_den%.1f_pop%i"
-    dir3 = format %(sim.temperature, sim.expansion, sim.density, sim.population)
+    dir3 = (tempformat + "_exp%.2f_den%.1f_pop%i") %(sim.temperature, sim.expansion, sim.density, sim.population)
     if sim.phase > 9:
         dir3 += "_chmob%.2f" %sim.chmob
 
     # Fourth directory: compressibility, interactions, mobilities.
-    # Previously 2 significant digits were used for mobility, now
-    #  three or even four or five are needed sometimes,
-    #  but we still need to support all the possbilities to be backwards compatible.
-    if sim.mobility >= 0.01:
-        mobilityformat = "mob%.2f"
-    elif sim.mobility >= 0.001:
-        mobilityformat = "mob%.3f"
-    else:
-        mobilityformat = "mob%.5f"
-    format = "k%.1f_nchi%.1f"
-    args = (sim.kappa, sim.nchi)
+    # The NP mobility and coupling parameters are added only if the population is larger than zero,
+    #   and interparticle interaction parameters are added when the population is larger than one.
+    # At first, two significant digits were used for mobility, now three to five digits
+    #   are needed, but we still need to support just two for backwards compatibility.
+    # After phase 13, this directory also hold the coupling parameter for core beads, which
+    #   were differentiated from the coupling parameters of shell beads from phase 14.
+    dir4 = "k%.1f_nchi%.1f" %(sim.kappa, sim.nchi)
     if sim.population > 0:
         if sim.phase >= 13:
-            format += "_cc%.1f"
-            args += (sim.cc,)
-        format += "_ca%.1f_cb%.1f_"+mobilityformat
-        args += (sim.ca, sim.cb, sim.mobility)
+            dir4 += "_cc%.1f" %sim.cc
+        if sim.mobility >= 0.01:
+            mobilityformat = "mob%.2f"
+        elif sim.mobility >= 0.001:
+            mobilityformat = "mob%.3f"
+        else:
+            mobilityformat = "mob%.5f"
+        dir4 += ("_ca%.1f_cb%.1f_"+mobilityformat) %(sim.ca, sim.cb, sim.mobility)
     if sim.population > 1:
-        format += "_a%.1f"
-        args += (sim.a,)
-    dir4 = format %args
+        dir4 += "_a%.1f" %sim.a
 
     return "%s/%s/%s/%s" %(dir1, dir2, dir3, dir4)
 
@@ -82,9 +83,9 @@ def getpath(sim):
 def getname(sim):
     """Construct output file basename from simulation object."""
 
-    # Until phase 11, this was just the total time, now it contains the time step also.
-    # From phase 14, also add the nanoparticle model name.
-    # From phase 18, also add the dispersion factor.
+    # Up to phase 10, this was just the total time, afterwards it also contains the time step.
+    # After phase 13, also add the nanoparticle model name.
+    # After phase 17, also add the initial dispersion factor.
     name = "tt%i" %sim.totaltime
     if sim.phase > 10:
         name += "_ts%s" %str(sim.timestep)
@@ -108,7 +109,8 @@ def loadpath(path, setup=True, main=False):
     # The first is just the simulation phase.
     phase = int(dir1[5:])
 
-    # The second contain systems size, polymer architecture and bead volume.
+    # The second contains the systems size, polymer architecture and bead volume.
+    # After phase 14, the sigma parameter is in this directory name, too.
     if phase > 14:
         size,pol,bv,sigma = dir2.split("_")
     else:
@@ -119,7 +121,7 @@ def loadpath(path, setup=True, main=False):
         sigma = float(sigma[5:])
 
     # The third has temperature, exp. factor, density and population.
-    # Starting phase 10, this also contains the chain mobility (chmob).
+    # After phase 9, this also contains the chain mobility (chmob).
     if phase > 9:
         temp,exp,den,pop,chmob = dir3.split('_')
     else:
@@ -131,17 +133,18 @@ def loadpath(path, setup=True, main=False):
     if phase > 9:
         chmob = float(chmob[5:])
 
-    # The fourth has kappa, nchi and other things depending on the population.
-    # Three cases -- no NPs, one, more than one -- have different path structures
+    # The fourth has kappa, nchi and other things, depending on the population.
+    # The three cases -- no NPs, one, more than one -- have different path structures.
+    # And after phase 12, this directory name can also contain the core bead coupling parameter.
     if pop == 0:
         k,nchi = dir4.split('_')
     elif pop == 1:
-        if phase >= 13:
+        if phase > 12:
             k,nchi,cc,ca,cb,mob = dir4.split('_')
         else:
             k,nchi,ca,cb,mob = dir4.split('_')
     else:
-        if phase >= 13:
+        if phase > 12:
             k,nchi,cc,ca,cb,mob,a = dir4.split('_')
         else:
             k,nchi,ca,cb,mob,a = dir4.split('_')
@@ -164,43 +167,31 @@ def loadpath(path, setup=True, main=False):
 
     # The output file name contains just the total time, and the time step
     #   after phase 10 (before that the time step is always 0.01).
-    # After phase 14, the name also contains the NP model name (if there are NPs).
-    # After phase 17, the name can also contain the dispersion factor.
+    # After phase 13, the name also contains the NP model name (if there are any NPs).
+    # After phase 17, the name can also contain the dispersion factor (if there are any NPs).
     outname = outfile[:-4]
-    if phase > 17:
-        if pop > 0:
-            totaltime, timestep, npname, disp = outname.split("_")
-            disp = float(disp[4:])
-        else:
-            totaltime, timestep = outname.split("_")
-            disp = 0.4
-        totaltime = int(totaltime[2:])
-        timestep = float(timestep[2:])
-    elif phase > 13:
-        if pop > 0:
-            totaltime, timestep, npname = outname.split("_")
-        else:
-            totaltime, timestep = outname.split("_")
-        totaltime = int(totaltime[2:])
-        timestep = float(timestep[2:])
-    elif phase > 10:
-        totaltime, timestep = outname.split("_")
-        totaltime = int(totaltime[2:])
-        timestep = float(timestep[2:])
-        npname = "np"
-    else:
+    if phase < 11:
         totaltime = int(outname[2:])
         timestep = 0.01
-        npname = "np"
-    if pop == 0:
-        npname = None
+    else:
+        if pop == 0 or phase < 14:
+            totaltime, timestep = outname.split("_")
+            npname = None
+            disp = 0.0
+        elif phase < 18:
+            totaltime, timestep, npname = outname.split("_")
+        else:
+            totaltime, timestep, npname, disp = outname.split("_")
+            disp = float(disp[4:])
+        totaltime = int(totaltime[2:])
+        timestep = float(timestep[2:])
 
-    # Create the simulation object
-    # Since chmob appears from phase 10, the call has more arguments
+    # Create the simulation object now.
+    # After phase 9, the parameter list starts to grow.
     args = [phase]
-    args += [size, pol, bv]
-    args += [temp, exp, den, pop]
-    args += [k, nchi, ca, cb, a, mob]
+    args += [temp, mob, a, ca, cb]
+    args += [pol, bv, den, exp, k, nchi]
+    args += [size, pop]
     args += [timestep, totaltime]
     if phase > 9:
         args += [chmob]
@@ -218,13 +209,16 @@ def loadpath(path, setup=True, main=False):
     if setup:
         sim.setup()
 
-    # If main is set (refers to main gallery), modify the path for the gallery
+    # If main is set (refers to main gallery), modify the path to the gallery.
     if main:
         sim.gallerypath = sim.path
 
     return sim
 
+
 def restrict_colloid_z(colloid):
+    """Restrict all movements of a colloids to the XY plane."""
+
     colloid.SetConstVelocity("Z", 0.0)
     colloid.SetConstAngularVelocity("X", 0.0)
     colloid.SetConstAngularVelocity("Y", 0.0)
@@ -233,12 +227,12 @@ def restrict_colloid_z(colloid):
 class Simulation:
 
     def __init__(self, phase,
-                 size, polymer, beadvolume,
-                 temperature, expansion, density, population,
-                 kappa, nchi, ca, cb, a, mobility,
-                 timestep, totaltime,
-                 chmob=None, cc=0.0, npname=None, sigma=0.8,
-                 disp=4.0):
+                temperature, mobility, a, ca, cb,
+                polymer, beadvolume, density, expansion, kappa, nchi,
+                size, population,
+                timestep, totaltime,
+                chmob=None, cc=0.0, npname=None, sigma=0.8,
+                disp=4.0):
         """Initialize the simulation.
 
         This, along with initialization, does the following tasak:
@@ -255,7 +249,7 @@ class Simulation:
             if parameter != None:
                 setattr(self, parameter, eval(parameter))
 
-        # Aliases.
+        # Aliases
         self.arch = self.polymer
         self.bv = self.beadvolume
         self.mob = self.mobility
@@ -265,10 +259,10 @@ class Simulation:
 
         # Number of time steps to run, as well as the frequency of
         #   snapshots and energy saves all follow from the time step and total time.
-        # If there are not enough time steps, default frequencies to one.
+        # If there are not enough time steps, default frequencies are one (every time step).
         self.nsteps = int(self.tt / self.ts)
-        self.efreq = int(1.0*self.tt / Nenerg[self.phase-1] / self.ts) or 1
-        self.sfreq = int(1.0*self.tt / Nsnaps[self.phase-1] / self.ts) or 1
+        self.efreq = int(1.0*self.tt / phases_energs[self.phase-1] / self.ts) or 1
+        self.sfreq = int(1.0*self.tt / phases_snaps[self.phase-1] / self.ts) or 1
 
         # Coupling parameters for the core beads to simplify code later on.
         self.cca = self.ca
@@ -291,17 +285,17 @@ class Simulation:
         #   from phase 8 it is a soft core colloid, loaded from a Culgi object file.
         # After phase 13, the model name is variable, determining which file to load
         #   from an assumed, fixed location (and that's the final approach).
-        if self.phase <= 7:
+        if self.phase < 8:
             self.np = Palette.CreateSoftCoreMolecule("np", "P")
             self.npname = "np"
         else:
-            if self.phase <= 13:
+            if self.phase < 14:
                 self.npname = "np"
             else:
                 self.npname = npname
             self.np = Palette.LoadSoftCoreColloid("phase%i/%s.cof" %(self.phase,self.npname))
 
-        # If there are no nanoparticle, set the NP model name to None (orders the gallery nicely).
+        # If there are no nanoparticles, set the NP model name to None (orders the gallery nicely).
         if self.pop == 0:
             self.npname = None
 
@@ -324,7 +318,7 @@ class Simulation:
             self.npvolume = self.cc/self.kd1 + (self.beads_per_np-1)*self.ca/self.kd1
         self.dexcluded = self.npvolume
 
-        # Estimate the effective density of the polymer field, with correction as of phase 2.
+        # Estimate the effective density of the polymer field, with a correction as of phase 2.
         self.effective_density = self.density
         if self.phase > 1:
             self.effective_density = self.density - self.pop*self.npvolume/self.volume
@@ -333,6 +327,7 @@ class Simulation:
         # Output paths and names used for this run.
         self.path = getpath(self)
         self.name = getname(self)
+        self.outroot = "%s/%s" %(self.path, self.name)
         self.outname = "%s.out" %self.name
         self.outpath = "%s/%s" %(self.path, self.outname)
         self.gallerypath = self.path.replace("phase%s/" %phase,"")
@@ -345,11 +340,11 @@ class Simulation:
         """
 
         # The diblock copolymer model, which we always want to have the same reference density.
-        # Use the effective density, which for phase 1 default to the reference density.
+        # Use the effective density, which for phase 1 defaults to the reference density.
         self.bcp = Palette.CreateGaussianChain("bcp", self.polymer, *self.size)
         self.bcp.CreateHomogeneousRelativeDensity(self.effective_density)
 
-        # Pointer to the total density and block densities.
+        # Pointers to the total density and block densities.
         self.bcp_total = self.bcp.GetRelativeDensityFieldCmds()
         self.bcp_A = self.bcp.GetBeadTypeRelativeDensityFieldCmds("A")
         self.bcp_A.SetDisplayClampLevels(0.0, self.density)
@@ -359,17 +354,17 @@ class Simulation:
         # The absolute chi can now be derived based on the BCP model.
         self.chi = self.nchi / self.bcp.GetNumBeads()
 
-        # The simulation box, with BCP and nanoparticles.
+        # Create the simulation box, with the BCP and nanoparticles.
         # Note that the nanoparticles are colloids starting from phase 8.
         self.box = Palette.CreateMesoBox("box", *self.size)
         self.box.AddGaussianChain(self.bcp)
-        if self.phase <= 7:
+        if self.phase < 8:
             self.box.CopySoftCoreMolecules(self.np, self.pop)
         else:
             self.box.CopySoftCoreColloids(self.np, self.pop)
 
         # Convenience hooks for nanoparticle commands.
-        if self.phase <= 7:
+        if self.phase < 8:
             get_np_cmds = self.box.GetSoftCoreMoleculeCmds
         else:
             get_np_cmds = self.box.GetSoftCoreColloidCmds
@@ -377,55 +372,56 @@ class Simulation:
         self.NPs = self.nanoparticles
 
         # Initial distribution of nanoparticles inside the simulation box.
-        # For phase 5 and 6, use some ordered starting distribution.
-        # Starting phase 7, use a random starting distribution again (equilibrate later).
-        # Warning! Due to a mistake, phase 7 actually uses the same initial configuration as phase 6.
-        # Since this is 2d, the Z coordinates is always equal to 0.5, though.
-        # In phase 12, use a sampled initial distribution, to get an experimental-like initial RDF.
+        # Since this is 2D, the Z coordinats is always equal to 0.5.
+        # For phases 5 and 6, use some ordered starting distribution.
+        # After phase 6, use a random starting distribution again (equilibrate later). Due to a mistake,
+        #   phase 7 actually initially used the same initial configuration as phase 6 (now fixed). So in this
+        #   case, all we need to do is set the Z coordinates, because Culgi randomizes by default.
+        # In phase 12, use a kind-of sampled initial distribution, to get an experimental-like initial RDF.
+        # After phase 16, the distribution is generated by equilibrating in a smaller box,
+        #   but that is done later in during the actual simulation run (so this here is irrelevant).
         Z = 0.5
-        if self.phase == 12 and self.pop != 0:
-            dh = 1.6
-            ds = 1.33*sqrt(0.9*self.area/self.pop/pi)
-            coords = zeros((self.pop, 3))
-            norms = lambda ni,r: sqrt(sum((coords[:ni,:2]-r)**2, axis=1))
-            hardwalls = lambda ni,r: sum(norms(ni,r) <= dh)
-            rdf = lambda n: 1/(1+exp(-(n-dh-ds))) + 1.0*exp(-(n-dh-ds)**2)
-            coords[:,2] = Z
-            coords[0,:2] = array(self.size[:2]) * random.random(2)
-            self.nanoparticles[0].SetCenterOfMass(*coords[0])
-            for ni in range(1,self.pop):
-                r = coords[ni-1,:2]
-                while hardwalls(ni,r) > 0 or random.random() <= exp(-1/rdf(min(norms(ni,r)))):
-                    r = array(self.size[:2]) * random.random(2)
-                coords[ni,:2] = r
-                self.nanoparticles[ni].SetCenterOfMass(*coords[ni])
-        elif self.phase in [5,6,7] and self.pop != 0:
-            if self.phase == 5:
-                rfactor = 1.75
-            else:
-                rfactor = 3.25
-            Nx = int(sqrt(self.pop))
-            Ny = int(self.pop // Nx)
-            n = self.pop - Nx*Ny
-            dX = self.size[0] * 1.0 / Nx
-            dY = self.size[1] * 1.0 / (Ny+1)
-            for i in range(self.pop):
-                dx = dX*MathManager.Rand()/rfactor
-                dy = dY*MathManager.Rand()/rfactor
-                if i < Nx*Ny:
-                    X = dX * (i%Nx + dx)
-                    Y = dY * (i//Nx + dy)
-                else:
-                    X = (i - Nx*Ny + dx) * self.size[0] * 1.0 / n
-                    Y = dY * (Ny + dy)
-                self.nanoparticles[i].SetCenterOfMass(X, Y, Z)
-        else:
-            for i in range(self.pop):
-                X = self.nanoparticles[i].GetCenterOfMass().GetX()
-                Y = self.nanoparticles[i].GetCenterOfMass().GetY()
-                self.nanoparticles[i].SetCenterOfMass(X, Y, Z)
+        if self.pop != 0:
+            if self.phase == 12:
+                dh = 1.6
+                ds = 1.33 * sqrt(0.9*self.area/self.pop/pi)
+                coords = zeros((self.pop, 3))
+                norms = lambda ni,r: sqrt(sum((coords[:ni,:2]-r)**2, axis=1))
+                hardwalls = lambda ni,r: sum(norms(ni,r) <= dh)
+                rdf = lambda n: 1/(1+exp(-(n-dh-ds))) + 1.0*exp(-(n-dh-ds)**2)
+                coords[:,2] = Z
+                coords[0,:2] = array(self.size[:2]) * random.random(2)
+                self.nanoparticles[0].SetCenterOfMass(*coords[0])
+                for ni in range(1,self.pop):
+                    r = coords[ni-1,:2]
+                    while hardwalls(ni,r) > 0 or random.random() <= exp(-1/rdf(min(norms(ni,r)))):
+                        r = array(self.size[:2]) * random.random(2)
+                    coords[ni,:2] = r
+                    self.nanoparticles[ni].SetCenterOfMass(*coords[ni])
+            elif self.phase in [5,6,7]:
+                rfactor - 1.75*(self.phase == 5) or 3.25
+                Nx = int(sqrt(self.pop))
+                Ny = int(self.pop // Nx)
+                n = self.pop - Nx*Ny
+                dX = self.size[0] * 1.0 / Nx
+                dY = self.size[1] * 1.0 / (Ny+1)
+                for i in range(self.pop):
+                    dx = dX*MathManager.Rand()/rfactor
+                    dy = dY*MathManager.Rand()/rfactor
+                    if i < Nx*Ny:
+                        X = dX * (i%Nx + dx)
+                        Y = dY * (i//Nx + dy)
+                    else:
+                        X = (i - Nx*Ny + dx) * self.size[0] * 1.0 / n
+                        Y = dY * (Ny + dy)
+                    self.nanoparticles[i].SetCenterOfMass(X, Y, Z)
+            elif self.phase < 17:
+                for i in range(self.pop):
+                    X = self.nanoparticles[i].GetCenterOfMass().GetX()
+                    Y = self.nanoparticles[i].GetCenterOfMass().GetY()
+                    self.nanoparticles[i].SetCenterOfMass(X, Y, Z)
 
-        # From phase 16, also orient the nanoparticle randomly.
+        # After phase 15, also orient the nanoparticle randomly.
         if self.phase > 15 and self.pop != 0:
             for i in range(self.pop):
                 self.nanoparticles[i].Rotate(0, 0, 1, 180*random.random())
@@ -433,9 +429,9 @@ class Simulation:
         # The calculator object is a MBF (meso bead-field) hybrid.
         # We will always be using the external potential (entropy field) dynamic scheme.
         self.calc = CalculatorsManager.CreateMBFHybridCalculator()
-        self.calc.SetSystem(self.box)
-        self.calc.SetTimeStep(self.timestep)
         self.calc.SetFieldDiffusionMethod("EntropyFieldDynamics")
+        self.calc.SetTimeStep(self.timestep)
+        self.calc.SetSystem(self.box)
 
         # The output file settings.
         # Note that the archive plugin needs to be used for this starting Culgi 6.
@@ -453,7 +449,7 @@ class Simulation:
         	self.calc.SetCoordinateSaveFrequency(self.sfreq)
         	self.calc.SetRelativeDensityFieldSaveFrequency(self.sfreq)
 
-        # Calculator parameter commands and simulation engine.
+        # Calculator parameter commands and simulation engine commands.
         self.params = self.calc.GetParametersCmds()
         self.params_GC = self.params.GetGCParametersCmds()
         self.params_SC = self.params.GetSCMParametersCmds()
@@ -461,39 +457,38 @@ class Simulation:
         self.engine.SetMaxIterations(maxiters)
 
         # Parameters pertaining to mobility.
-        # Until phase 7, nanoparticle are single beads (SC molecules with 'P' beads),
-        #   so the mobility has the same meaning as in standard Culgi.
-        # From phase 8, nanoparticles are colloids with two different kinds of beads,
-        #  but the diffusion constant is set for the colloid as a whole.
-        # Phase 8 assumes zero angular diffusion, but phase 9 and higher do not.
-        # From phase 10, the GC chain mobilities can also change.
+        # Up to phase 7, nanoparticle are single beads (SC molecules with 'P' beads),
+        #   so the mobility has the same meaning as in standard Culgi Brownian motion.
+        # After phase 7, nanoparticles are colloids with two different kinds of beads,
+        #   but the diffusion constant is set for the colloid as a whole (custom code).
+        # Phase 8 assumes zero angular diffusion, but phase 9 and higher phases do not,
+        #   and the rotational factor about the Z axis is the same as the translational
+        #   mobility. Not that restrict_colloid_z takes care of fixing the Z axis.
+        # After phase 9, the GC chain mobilities can also change.
         self.calc.SetTemperature(self.temperature)
         self.params_GC.SetExpansionParameter("A", self.expansion)
         self.params_GC.SetExpansionParameter("B", self.expansion)
-        if (self.phase <= 7):
+        if (self.phase < 8):
             self.params_SC.SetDiffusionFactor("P", self.mobility)
         else:
             for i in range(self.pop):
-                self.nanoparticles[i].SetConstVelocity('Z', 0.0)
-                self.nanoparticles[i].SetDiffusionFactor(self.mobility)
                 restrict_colloid_z(self.nanoparticles[i])
+                self.nanoparticles[i].SetDiffusionFactor(self.mobility)
                 if self.phase == 8:
                     self.nanoparticles[i].SetConstAngularVelocity(0.0, 0.0, 0.0)
                 else:
-                    self.nanoparticles[i].SetConstAngularVelocity('X', 0.0)
-                    self.nanoparticles[i].SetConstAngularVelocity('Y', 0.0)
                     self.nanoparticles[i].SetRotationalFactors(0.0, 0.0, self.mob)
         if self.phase > 9:
             self.params_GC.SetDiffusionFactor("A", self.chmob)
             self.params_GC.SetDiffusionFactor("B", self.chmob)
 
-        # Parameters concerning interactions.
-        # From phase 8, nanoparticle are colloids with two different types of beads.
+        # Parameters related directly to interactions.
+        # After phase 7, nanoparticle are colloids with two different types of beads.
         self.calc.SetKappa(self.kappa)
         self.params_GC.SetBeadVolume("A", self.beadvolume)
         self.params_GC.SetBeadVolume("B", self.beadvolume)
         self.params_GC.SetChi("A", "B", self.chi)
-        if self.phase <= 7:
+        if self.phase < 8:
             self.params.SetBeadFieldCoupling("P", "A", self.ca)
             self.params.SetBeadFieldCoupling("P", "B", self.cb)
             self.params_SC.SetA("P", "P", self.a)
@@ -505,13 +500,14 @@ class Simulation:
             self.params_SC.SetA("C", "C", self.a)
             self.params_SC.SetA("C", "S", self.a)
             self.params_SC.SetA("S", "S", self.a)
+
+        # After phase 14, the sigma parameter can also change.
         if self.phase > 14:
             self.params_SC.SetSigma("C", self.sigma)
             self.params_SC.SetSigma("S", self.sigma)
 
         # Output path and file name
         self.calc.SetOutputFileName(self.name)
-
 
     def getcenterofmass(self, name, num=0):
         """Return the center of mass of a soft core molecule."""
@@ -540,18 +536,17 @@ class Simulation:
             - the simulation proper
         """
 
-        # Equilibrations start from phase 4, and consists of two phases,
+        # Equilibrations start after phase 3, and consist of two phases,
         #   one where the particles are equilibrated without any interactions
         #   with the field, and another where the density field is equilibrated with
         #   static nanoparticles and base interactions (the lower ones).
-        # From phase 17, we do something more special, namely equilibrate
-        #   the nanoparticles in a boc small for the interactions to be independent,
-        #   that is the DPD cutoff is comparable to the average distance between
-        #   nanoparticles. The temperature is arbitrarily chosen to be 0.25, which
-        #   gave reasonably ordered, but noisy distribution for test runs.
-        if self.phase >= 4:
+        # After phase 16, we do something less straightforward, namely we equilibrate
+        #   the nanoparticles in a box where the DPD cutoff is comparable to the average
+        #   distance between nanoparticles. The temperature is arbitrarily chosen as 0.25,
+        #   which gave reasonably ordered, fairly noisy distribution for test runs.
+        if self.phase > 3:
 
-            # Turn off all archives
+            # Turn off all archives.
             self.calc.SetSaveInstantResultsOff()
             if Culgi.GetVersionID()[0] == "5":
                 self.calc.SetSaveRelativeDensityFieldsOff()
@@ -559,15 +554,15 @@ class Simulation:
             if Culgi.GetVersionID()[0] == "6":
                 self.calc.RemovePlugin(self.archive)
 
-            # No phase separation at all during equilibration
+            # No phase separation at all during equilibration.
             self.params_GC.SetChi("A", "B", 0.0)
 
-            # From phase 7, first equilibrate nanoparticles not interacting with the field.
-            if self.phase >= 7:
+            # After phase 6, first equilibrate nanoparticles not interacting with the field.
+            if self.phase > 6:
 
                 # Set all coupling parameters to zero.
-                # For phase 7, nanoparticles are still molecules, but
-                #   afterwards they are colloids, and so the bead names differ.
+                # For phase 7, nanoparticles are still molecules, but after that
+                #   they are colloids and so the bead names differ.
                 if self.phase == 7:
                     self.params.SetBeadFieldCoupling("P", "A", 0.0)
                     self.params.SetBeadFieldCoupling("P", "B", 0.0)
@@ -580,11 +575,11 @@ class Simulation:
                 # No field diffusion in this part of the simulation.
                 self.calc.SetFieldDiffusionOff()
 
-                # From phase 17, we will create a temporary, smaller box to euqilibrate
-                #   the particles at a higher density, in order to induce some degree
+                # After phase 16, we will create a temporary, smaller box to euqilibrate
+                #   the particles at a higher density, so as to induce some degree
                 #   of order. The size of the temporary box can be estimated by
                 #   assuming an interparticle distance of 1.0 (counting from the shell)
-                #   and calculating the appropriate area needed.
+                #   and calculating the appropriate area needed to achieve that.
                 if self.phase > 16:
 
                     # Packing fraction for maximal circles in two dimensions.
@@ -593,14 +588,14 @@ class Simulation:
                     # Distance between touching maximal circles in this box.
                     dmax = 2*sqrt(packing*self.area/(self.pop*pi))
 
-                    # Approximate observed distance between nanoparticles at 0h.
-                    # This is totally phenomenological, and calibrated in order
-                    #   not to go much above 3.0, which is the practical limit
-                    #   of depletion interactions in the simulations, and to
-                    #   approach the optimum 1.5 rather slowly (for higher concentrations).
-                    # Since this phenomenological scaling depends effectively on
-                    #   other parameters, allow it to be adjusted by an additional
-                    #   dispersion parameter that describes the initial NP dispersion.
+                    # Approximate observed distance between nanoparticles before simulation.
+                    # This is entirely phenomenological, although based on experimental data.
+                    # The calibration is done so as not to go much over 3.0-4.0, which is just above
+                    #   the practical limit of depletion interactions in these simulations, and to
+                    #   approach the optimum 1.5-1.8 rather slowly (for higher concentrations).
+                    # Since this callibration depends on other parameters, we allow it to be
+                    #   adjusted by an additional dispersion parameter that describes the initial
+                    #   extent of NP dispersion (lower disp parameter implies more dispersion).
                     dobs = 4.0*(1 - exp(-dmax/self.disp))
 
                     # Distance between core and shell beads in the nanoparticle model.
@@ -610,9 +605,9 @@ class Simulation:
                     dy = b0.GetY() - b1.GetY()
                     rnp = sqrt(dx**2 + dy**2)
 
-                    # Now, we want a temporary box that will scale dobs to 2*rnp+1,
-                    #   because that is always the approximate final distance since
-                    #   the DPD cutoff is 1. Add one to dimension for excess space.
+                    # Now we want a temporary box that will scale dobs to 2*rnp+1,
+                    #   because that is always the approximate final distance when
+                    #   the DPD cutoff is 1. Add one to dimension for some excess space.
                     f = (2*rnp+1) / dobs
                     X = int(f*self.size[0])+1
                     Y = int(f*self.size[1])+1
@@ -637,12 +632,12 @@ class Simulation:
                         np.SetRotationalFactors(0.0, 0.0, 0.01)
                         restrict_colloid_z(np)
 
-                nsteps = int(Teq_np[self.phase-1]/self.timestep)
-                self.calc.Run(nsteps)
+                # Run the equilibration.
+                self.calc.Run(int(phases_eqtime_np[self.phase-1]/self.timestep))
 
                 # We need to revert some of the simualtion parameters and transfer coordinates
                 #   after equilibrating in phases after 16. The temporary box should be deleted.
-                # Not that the NP coordinates need to be scaled back to the simulation box size.
+                # Note that the NP coordinates need to be scaled back to the simulation box size.
                 if self.phase > 16:
 
                     self.calc.SetSystem(self.box)
@@ -660,9 +655,9 @@ class Simulation:
 
                     Palette.DeleteObject(box)
 
-            # Now equilibrate fields with only base coupling,
-            #   keeping the nanoparticle positions fixed.
-            if self.phase <= 7:
+            # Now equilibrate fields with only base coupling, keeping nanoparticles fixed.
+            # Remember that after phase 7 nanoparticles are colloids.
+            if self.phase < 8:
                 self.params_SC.SetDiffusionFactor("P", 0)
                 self.params.SetBeadFieldCoupling("P", "A", self.ca)
                 self.params.SetBeadFieldCoupling("P", "B", self.ca)
@@ -675,11 +670,11 @@ class Simulation:
                 self.params.SetBeadFieldCoupling("S", "B", self.ca)
             self.calc.SetFieldDiffusionOn()
             self.calc.SetBeadDiffusionOff()
-            self.calc.Run(int(Teq_field[self.phase-1]/self.timestep))
+            self.calc.Run(int(phases_eqtime_field[self.phase-1]/self.timestep))
 
-            # Set relevant parameters back to the original values
+            # Set relevant parameters back to their target simulation values.
             self.params_GC.SetChi("A", "B", self.chi)
-            if self.phase <= 7:
+            if self.phase < 8:
                 self.params_SC.SetDiffusionFactor("P", self.mobility)
                 self.params.SetBeadFieldCoupling("P", "A", self.ca)
                 self.params.SetBeadFieldCoupling("P", "B", self.cb)
@@ -692,7 +687,7 @@ class Simulation:
                 self.params.SetBeadFieldCoupling("S", "B", self.cb)               
             self.calc.SetBeadDiffusionOn()
 
-            # Turn archiving back on
+            # Turn archiving back on.
             if Culgi.GetVersionID()[0] == "5":
                 self.calc.SetSaveRelativeDensityFieldsOn()
                 self.calc.SetSaveCoordinatesOn()
@@ -700,6 +695,5 @@ class Simulation:
                 self.calc.AddPlugin(self.archive)
             self.calc.SetSaveInstantResultsOn(instant_fields_all)
 
-        # Run the simulation proper.
+        # Run the target simulation.
         self.calc.Run(self.nsteps)
-

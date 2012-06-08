@@ -1,13 +1,16 @@
+"""Script to run task0013 simulations."""
+
+
 import os
 
 from pyculgi import *
 
-from simulation import *
 from systems import *
+from task0013 import *
 
 
 def printnow(fname, content, mode='a'):
-    """Print to a file without delay, so make sure to flush and close."""
+    """Print to a file without delay, so make sure to flush and close right now."""
 
     f = open(fname, mode)
     print >>f, content
@@ -17,19 +20,21 @@ def printnow(fname, content, mode='a'):
 
 if __name__ == "__main__":
 
-    # Set log file
+    # Set log file for this run job.
     flogname, flogpath = None, None
     if os.environ.has_key('PBS_JOBID'):
         flogname = 'run_%s.log' %os.environ['PBS_JOBID']
 
+    # Loop over all phases flagged to run.
     for p in phases_to_run:
 
+        # Loop over all parameter sets in this phase.
         for s in systems[p]:
 
-            # Remember the current base directory we start from
+            # Remember the current base directory we start from.
             basedir = os.path.abspath(os.curdir)
 
-            # Create the simulation object
+            # Create the simulation object.
             sim = Simulation(p, *s)
 
             # Create the output directory if needed.
@@ -47,11 +52,11 @@ if __name__ == "__main__":
                 os.chdir(basedir)
                 continue
 
-            # Log file to print message to during simulations.
+            # Full path to log file.
             if flogname:
                 flogpath = "%s/%s" %(basedir,flogname)
 
-            # Print a log message there that the simulation is starting.
+            # Print a log message that the simulation is starting.
             line = "Path: %s Output file: %s" %(sim.path,sim.name)
             if Culgi.GetProcRank() == 0:
                 if flogpath:
@@ -59,7 +64,7 @@ if __name__ == "__main__":
                 else:
                     print line
 
-            # Setup simulation only now (this stuff can take some time).
+            # Setup simulation now (this can take some time), no earlier.
             sim.setup()
 
             # Run the simulation.
