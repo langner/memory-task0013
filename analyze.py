@@ -192,7 +192,7 @@ class Analysis():
         self.orderrange = (-self.fmax,self.fmax)
         self.rrange = [0.0,self.rmax]
         self.nbins_f = 256
-        self.nbins_rad = 512
+        self.nbins_rad = 1024
         self.nbins_res = 256
         self.nbins_ang = 128
 
