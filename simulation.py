@@ -14,7 +14,8 @@ parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "kappa", "temperature", "expansion",
                 "ca", "cb", "a", "mobility", "population",
                 "timestep", "totaltime" ,
-                "chmob", "cc", "npname", "sigma" ]
+                "chmob", "cc", "npname", "sigma",
+                "disp" ]
 # All instant result types -- no spaces tolerated!
 instant_fields_all = "\
 SCMBondEnergy,SCMBendingEnergy,SCMTorsionEnergy,SCMNBEnergy,\
@@ -83,11 +84,14 @@ def getname(sim):
 
     # Until phase 11, this was just the total time, now it contains the time step also.
     # From phase 14, also add the nanoparticle model name.
+    # From phase 18, also add the dispersion factor.
     name = "tt%i" %sim.totaltime
     if sim.phase > 10:
         name += "_ts%s" %str(sim.timestep)
     if sim.phase > 13 and sim.pop > 0:
         name += "_%s" %sim.npname
+    if sim.phase > 17 and sim.pop > 1:
+        name += "_disp%.1f" %sim.disp
 
     return name
 
@@ -158,11 +162,21 @@ def loadpath(path, setup=True, main=False):
     else:
         a = 0.0
 
-    # The output file name contain just the total time,
-    #  and the time step after phase 10.
-    # Before phase 10, the time step is always 0.01
+    # The output file name contains just the total time, and the time step
+    #   after phase 10 (before that the time step is always 0.01).
+    # After phase 14, the name also contains the NP model name (if there are NPs).
+    # After phase 17, the name can also contain the dispersion factor.
     outname = outfile[:-4]
-    if phase > 13:
+    if phase > 17:
+        if pop > 0:
+            totaltime, timestep, npname, disp = outname.split("_")
+            disp = float(disp[4:])
+        else:
+            totaltime, timestep = outname.split("_")
+            disp = 0.4
+        totaltime = int(totaltime[2:])
+        timestep = float(timestep[2:])
+    elif phase > 13:
         if pop > 0:
             totaltime, timestep, npname = outname.split("_")
         else:
@@ -196,6 +210,8 @@ def loadpath(path, setup=True, main=False):
         args += [npname]
     if phase > 14:
         args += [sigma]
+    if phase > 17:
+        args += [disp]
     sim = Simulation(*args)
 
     # Setup the simulation if requested.
@@ -221,7 +237,8 @@ class Simulation:
                  temperature, expansion, density, population,
                  kappa, nchi, ca, cb, a, mobility,
                  timestep, totaltime,
-                 chmob=None, cc=0.0, npname=None, sigma=0.8):
+                 chmob=None, cc=0.0, npname=None, sigma=0.8,
+                 disp=4.0):
         """Initialize the simulation.
 
         This, along with initialization, does the following tasak:
@@ -581,7 +598,10 @@ class Simulation:
                     #   not to go much above 3.0, which is the practical limit
                     #   of depletion interactions in the simulations, and to
                     #   approach the optimum 1.5 rather slowly (for higher concentrations).
-                    dobs = 4.0*(1 - exp(-dmax/4.0))
+                    # Since this phenomenological scaling depends effectively on
+                    #   other parameters, allow it to be adjusted by an additional
+                    #   dispersion parameter that describes the initial NP dispersion.
+                    dobs = 4.0*(1 - exp(-dmax/self.disp))
 
                     # Distance between core and shell beads in the nanoparticle model.
                     b0 = self.np.GetBeadCmds(0).GetCoordinates()

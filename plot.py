@@ -44,7 +44,10 @@ if __name__ == "__main__":
     phase = int(phase[5:])
     size = map(int,model.split("_")[0].split('x'))
     population = int(system.split('_')[3][3:])
-    npname = run.split("_")[-1].split('.')[0]
+    if phase > 13 and population > 0:
+        npname = run.split("_")[2]
+    if phase > 17 and population > 0:
+        disp = float(run.split("_")[3][4:].split('.')[0])
     data = numpy.load(bz2.BZ2File(fpath))
 
     if "energy.npy.bz2" in fpath:
