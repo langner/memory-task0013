@@ -93,23 +93,31 @@ def printinfo(sim):
     """
 
     name = "%s/%s" %(sim.gallerypath,sim.name)
+    first = '%s.first.jpg' %name
+    last = '%s.jpg' %name
+    if sim.phase > 13:
+        first = '%s.frame0001.jpg' %name
+        last = '%s.frame1101.jpg' %name
     text = "<table><tr>"
-    text += "<td width='300'><center>last snapshot<br/><a href='%s.jpg'><img height='250pt' src='%s.jpg' /></a></center></td>" %(name,name)
+    if sim.phase >= 4:
+        text += "<td width='300'><center>first snapshot<br/><a href='%s'><img height='250pt' src='%s' /></a></center></td>" %(first,first)
+    text += "<td width='300'><center>last snapshot<br/><a href='%s'><img height='250pt' src='%s' /></a></center></td>" %(last,last)
     if sim.population > 0:
-        text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial.png'><img border=0 height='250pt' src='%s.hist-radial.png' /></a></center></td>" %(name,name)
         text += "<td width='300'><center>radial distribution g(r)<a href='%s.hist-radial.zoom.png'><img border=0 height='250pt' src='%s.hist-radial.zoom.png' /></a></center></td>" %(name,name)
     text += "</tr></table>"
 
     text += "Other visual: "
-    if sim.phase >= 4:
-        text += ", <a href='%s.first.jpg'>first snapshot</a>" %name
-    text += ", <a href='%s.avi'>movie (AVI)</a>" %name
+    if sim.phase > 13:
+        text += "<a href='%s.frame0045.jpg'>snapshot 45</a>, " %name
+        text += "<a href='%s.frame0321.jpg'>snapshot 321</a>, " %name
+    text += "<a href='%s.avi'>movie (AVI)</a>" %name
     text += "<br/>"
 
     text += "General: "
     text += "<a href='%s.out'>output file</a>" %name
     if sim.population > 0:
         text += ", <a href='%s.offsets.png'>grid offsets</a>" %name
+        text += ", <a href='%s.hist-radial.png'>grid offsets</a>" %name
         if sim.phase > 8:
             text += ", <a href='%s.offsets-ang.png'>angular offsets</a>" %name
             text += ", <a href='%s.hist-ang.png'>angular distribution</a>" %name

@@ -1,3 +1,4 @@
+import os
 import sys
 
 from pyculgi import *
@@ -13,10 +14,12 @@ if __name__ == "__main__":
 
     tmpdir = sys.argv[2]
     tosave = "save" in sys.argv
+    issnapshots = "snapshots" in sys.argv
 
     # Make sure that simulation has finished (if we want to save)
     # Note that from phase 4, there are two runs for each simulation
-    if tosave and not "Time used" in open(sim.outpath).read().strip().split('\n')[-1]:
+    isfinished = "Time used" in open(sim.outpath).read().strip().split('\n')[-1]
+    if (issnapshots or tosave) and not isfinished:
         print "This simulation has not finished."
         sys.exit(1)
 
@@ -66,7 +69,19 @@ if __name__ == "__main__":
     graphics.SetPosition(100,100)
     graphics.Zoom(1.3)
 
-    if tosave:
+    if issnapshots:
+
+        print "Saving snapshots..."
+        N = archive.GetNumberOfFrames()
+        for i in 1, 2*N/48, 14*N/48, N:
+            archive.LoadFrame(i)
+            fname = "%s/%s.frame%s" %(sim.path, sim.name, str(i).zfill(4))
+            graphics.WriteJPEG(fname+"_tmp")
+            if os.path.exists(fname+".jpg"):
+                os.remove(fname+".jpg")
+            os.rename(fname+"_tmp.jpg", fname+".jpg")
+
+    elif tosave:
 
         N = archive.GetNumberOfFrames()
         fps = 10.0
@@ -89,11 +104,6 @@ if __name__ == "__main__":
             graphics.WriteJPEG("%s/frame_%s" %(tmpdir,num))
             iframe += ifreq
             inum += 1
-
-    elif "first" in sys.argv:
-
-        archive.LoadFrame(1)
-        graphics.WriteJPEG("first")
 
     else:
     

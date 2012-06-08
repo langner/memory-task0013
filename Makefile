@@ -160,11 +160,11 @@ exp:
 
 # Plots for article0015
 .PHONY: article0015
-article0015: article0015-fig2.png article0015-fig3.png article0015-fig4-single.png article0015-fig4.png
+article0015: article0015-fig2.png article0015-fig3.png article0015-fig4-single.png article0015-fig4.png article0015-fig5.png article0015-fig6.png
 article0015-fig4-single.png: article0015.py
-	"$(PYTHON)" article0015.py fig4 single
+	"$(PYCULGI)" article0015.py fig4 single
 article0015-%.png: article0015.py
-	"$(PYTHON)" article0015.py $*
+	"$(PYCULGI)" article0015.py $*
 
 # Cleanup old files (run manually)
 .PHONY: cleanup
@@ -177,12 +177,17 @@ cleanup:
 
 # Generate movies and snapshots for simulations based on Culgi outputs.
 # The touching is to signify for other processes this parameter set is busy.
-.PHONY: avi
+.PHONY: snapshots, avi
+snapshots: $(subst .out,.frame0001.jpg,$(SIMS_OUT_NEW))
+%.frame0001.jpg: %.out %.cga
+	touch $@
+	-"$(PYCULGI_FB)" replay.py $< snapshots
 avi: $(subst .out,.avi,$(SIMS_OUT_NEW))
 %.avi: %.out %.cga
+	rm -rvf $(AVIDIR)
 	mkdir -p $(AVIDIR)
 	touch $@
-	-"$(PYCULGI_FB)" replay.py $@ $(AVIDIR) save xvfb && mencoder "mf://$(AVIDIR)/*.jpg" -mf fps=10 -o $@ -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=1600 && cp `ls $(AVIDIR)/*.jpg | head -1` $(subst .avi,.first.jpg,$@) && cp `ls $(AVIDIR)/*.jpg | tail -1` $(subst .avi,.jpg,$@)
+	-"$(PYCULGI_FB)" replay.py $< $(AVIDIR) save xvfb && mencoder "mf://$(AVIDIR)/*.jpg" -mf fps=10 -o $@ -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=1600
 	rm -rvf $(AVIDIR)
 
 # Convert Culgi output (cga/csa/ctf) to NumPy archives, and then compress
