@@ -23,7 +23,7 @@ GCDensityInhomogeneity,GCTotalFreeEnergy,GCIdealFreeEnergy,GCContactFreeEnergy,\
 GCCompressibilityFreeEnergy,GCElectrostaticFreeEnergy,CouplingEnergy"
 
 # Maximum number of iterations when solving nonlinear equations.
-maxiters = 25000
+maxiters = 50000
 
 
 def getpath(sim):
