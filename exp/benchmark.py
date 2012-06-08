@@ -18,8 +18,8 @@ benchmarks_cropy = {
     "benchmark/r7.png": (0,350),
 }
 benchmarks_scalebarstart = {
-    "benchmark/F20-atom_res.preview.png": (29, 944),
-    "benchmark/a06fig02a.png": (85,245),
+    "benchmark/F20-atom_res.preview.png": (30, 944),
+    "benchmark/a06fig02a.png": (86,245),
     "benchmark/r6.png": (6,280),
     "benchmark/r7.png": (7,361),
 }
