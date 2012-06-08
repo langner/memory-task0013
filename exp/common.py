@@ -38,7 +38,6 @@ def getscalebarlength(im, xstart, ystart):
 
     # Now increase the measure until white ends
     length = 0
-    j += 1
     while im[i,j] > 200:
         length += 1
         j += 1
@@ -131,22 +130,24 @@ class SEMAnalysis():
     def loadimage(self, fpath, cropx=None, cropy=None, scale=None, scalebarstart=None):
         """Load image with cropping, set filename derivatives and extract scale if possible"""
 
-        # Load the image as an array, flattened
+        # Load the image as an array, flattened.
         self.fpath = fpath
         self.img = misc.imread(self.fpath, flatten=1)
         self.img = self.img.astype(numpy.uint8)
-        self.imgwidth = self.img.shape[1]
-        self.imgheight = self.img.shape[0]
 
-        # If no cropping limits chosen, use entire image
+        # If no cropping limits chosen, use entire image.
         if cropx == None:
             cropx = (0,-1)
         if cropy == None:
             cropy = (0,-1)
 
-        # Cropy image saving the cropped out portion for reading the scale bar
+        # Cropy image saving the cropped out portion for reading the scale bar.
         self.img_scale = self.img[cropy[1]:,:]
         self.img = self.img[cropy[0]:cropy[1],cropx[0]:cropx[1]]
+
+        # Only now can we take the image dimensions.
+        self.imgwidth = self.img.shape[1]
+        self.imgheight = self.img.shape[0]
 
         # Various name components
         self.dirname, self.fname = os.path.split(self.fpath)
