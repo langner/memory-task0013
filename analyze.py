@@ -126,7 +126,7 @@ class Analysis():
         self.npoints = 1100
         self.freq = self.ctf.shape[0]/self.npoints or 1
         if self.pop > 0:
-            self.freq_csa = self.csa.shape[0]/self.npoints
+            self.freq_csa = self.csa.shape[0]/self.npoints or 1
         self.indices = self.ctf[::self.freq,0]
         self.npoints = self.ctf.shape[0]/self.freq
         self.nrange = range(self.npoints)
@@ -171,7 +171,7 @@ class Analysis():
         T = time.time()
 
         # Generate list of frames to analyze, with context for averaging.
-        self.baseframes, self.nsamples = phase_frames[self.phase]
+        self.baseframes, self.nsamples = phases_frames[self.phase]
         self.frames = hstack([0]+[range(bf,bf+self.nsamples) for bf in self.baseframes])
         self.nframes = len(self.frames)
 

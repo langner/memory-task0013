@@ -174,7 +174,7 @@ cleanup:
 
 # Generate movies and snapshots for simulations based on Culgi outputs.
 # The touching is to signify for other processes this parameter set is busy.
-.PHONY: snapshots, avi
+.PHONY: snapshots avi
 snapshots: $(subst .out,.frame0001.jpg,$(SIMS_OUT_NEW))
 %.frame0001.jpg: %.out %.cga
 	touch $@

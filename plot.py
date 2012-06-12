@@ -48,7 +48,7 @@ if __name__ == "__main__":
     #   and load a simulation object from that. This is a lot easier
     #   than writing all the code to decrypt the path over again.
     out = ".".join(fpath.split('.')[:-3]) + ".out"
-    sim = loadpath(out)
+    sim = loadpath(out, setup=False)
 
     # Archives with energy data are used to produce energy plots (three different types),
     #   or grid offset plots. The energy plots are quite similar, so we can treat them

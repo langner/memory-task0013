@@ -6,7 +6,7 @@ import sys
 
 from pyculgi import *
 
-from task0013 import loadpath
+from task0013 import gen_shell_beads, loadpath
 
 
 if __name__ == "__main__":
@@ -52,7 +52,9 @@ if __name__ == "__main__":
     graphics.AddViewable(sim.bcp_B)
 
     # Set bead dispay radii and add them to the graphics object.
-    # Remember that after phase 7 the nanoparticles are colloids
+    # Remember that after phase 7 the nanoparticles are colloids.
+    # After phase 18 there is a whole range of polydisperse shell beads,
+    #   and we want to set the radius to zero for all of these.
     for i in GPERange(0, sim.population, 1, "<"):
         if sim.phase <= 7:
             npi = sim.box.GetSoftCoreMoleculeCmds("np", i)
@@ -61,6 +63,10 @@ if __name__ == "__main__":
             npi = sim.box.GetSoftCoreColloidCmds("np", i)
             npi.SetBeadDisplayRadius("C", 1.5)
             npi.SetBeadDisplayRadius("S", 0.0)
+            if sim.phase > 18:
+                for d,s,name in gen_shell_beads():
+                    npi.SetBeadDisplayRadius(name, 0.0)
+            
         graphics.AddViewable(npi)
 
     # Paths to cga and csa archive files.

@@ -131,6 +131,12 @@ def printsummary(sim):
     if sim.phase > 10:
         summary += " -- tt=%i, ts=%s" %(sim.totaltime, str(sim.timestep))
 
+    # Population-related parameters.
+    if sim.phase > 17:
+        summary += " -- disp=%.2f" %(sim.disp)
+    if sim.phase > 18:
+        summary += ", poly=%.2f" %(sim.poly)
+
     return summary
 
 def printinfo(sim):

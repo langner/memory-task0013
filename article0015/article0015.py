@@ -421,7 +421,7 @@ if __name__ == "__main__":
 
         # The chosen experimental images and simulation archive.
         chosen_exp = "../exp/sem/5k/C6/48-Image5-500.jpg"
-        chosem_sim = "../phase17/64x64x1_A20B16_bv1.00_sigma1.00/temp0.01_exp0.01_den1.0_pop400_chmob1.00/k15.0_nchi24.0_cc10.0_ca1.0_cb2.0_mob0.001_a10.0/tt11000_ts0.01_np4.hist-radial.npy.bz2"
+        chosem_sim = "../phase18/64x64x1_A20B16_bv1.00_sigma1.00/temp0.01_exp0.01_den1.0_pop400_chmob1.00/k15.0_nchi24.0_cc10.0_ca1.0_cb2.0_mob0.001_a10.0/tt11000_ts0.01_np4_disp3.5.hist-radial.npy.bz2"
 
         # Load the SEM object and analyze it.
         sem = loadsem(chosen_exp)

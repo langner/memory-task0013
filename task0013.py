@@ -3,7 +3,8 @@
 
 import os
 
-from numpy import array, exp, pi, random, sqrt, sum, zeros
+from numpy import array, average, exp, pi, random
+from numpy import round, sqrt, std, sum, zeros
 
 from pyculgi import *
 
@@ -19,7 +20,7 @@ parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "ca", "cb", "a", "mobility", "population",
                 "timestep", "totaltime" ,
                 "chmob", "cc", "npname", "sigma",
-                "disp" ]
+                "disp", "poly" ]
 
 # All instant result types -- no spaces tolerated!
 instant_fields_all = "\
@@ -86,6 +87,7 @@ def getname(sim):
     # Up to phase 10, this was just the total time, afterwards it also contains the time step.
     # After phase 13, also add the nanoparticle model name.
     # After phase 17, also add the initial dispersion factor.
+    # After phase 18, also add the dispersion factor.
     name = "tt%i" %sim.totaltime
     if sim.phase > 10:
         name += "_ts%s" %str(sim.timestep)
@@ -93,6 +95,8 @@ def getname(sim):
         name += "_%s" %sim.npname
     if sim.phase > 17 and sim.pop > 1:
         name += "_disp%.1f" %sim.disp
+    if sim.phase > 18 and sim.pop > 1:
+        name += "_poly%.2f" %sim.poly
 
     return name
 
@@ -169,6 +173,7 @@ def loadpath(path, setup=True, main=False):
     #   after phase 10 (before that the time step is always 0.01).
     # After phase 13, the name also contains the NP model name (if there are any NPs).
     # After phase 17, the name can also contain the dispersion factor (if there are any NPs).
+    # After phase 18, the name can also contain the spread for polydispersity.
     outname = outfile[:-4]
     if phase < 11:
         totaltime = int(outname[2:])
@@ -180,9 +185,13 @@ def loadpath(path, setup=True, main=False):
             disp = 0.0
         elif phase < 18:
             totaltime, timestep, npname = outname.split("_")
-        else:
+        elif phase < 19:
             totaltime, timestep, npname, disp = outname.split("_")
             disp = float(disp[4:])
+        else:
+            totaltime, timestep, npname, disp, poly = outname.split("_")
+            disp = float(disp[4:])
+            poly = float(poly[4:])
         totaltime = int(totaltime[2:])
         timestep = float(timestep[2:])
 
@@ -203,6 +212,8 @@ def loadpath(path, setup=True, main=False):
         args += [sigma]
     if phase > 17:
         args += [disp]
+    if phase > 18:
+        args += [poly]
     sim = Simulation(*args)
 
     # Setup the simulation if requested.
@@ -224,6 +235,38 @@ def restrict_colloid_z(colloid):
     colloid.SetConstAngularVelocity("Y", 0.0)
 
 
+def gen_shell_beads():
+    """Generator for all types of polydisperse shell beads.
+
+    Will return the digits (int), sign (int),
+    value of the delta (float) and name of bead (string).
+    """
+
+    for digits in range(1,100):
+        for sign in -1,1:
+            delta = sign * digits / 100.0
+            name = "S%s%s" %("p"*(sign>0) or "m", str(digits).zfill(2))
+            yield digits, sign, delta, name
+
+
+def set_shell_beads_A(sim, a=None):
+    """Set A parameter between all pairs of shell bead types."""
+
+    # For any given shell bead type, there will be interactions between
+    #   core beads (C), normal shell beads (S), the same bead type,
+    #   as well as all other shell bead types.
+    # This below is a bit redundant, but it's still fast.
+    # If no value provided, use that of simulation object.
+    a = a or sim.a
+    for digits1,sign1,delta1,name1 in gen_shell_beads():
+        sim.params_SC.SetA("C", name1, a)
+        sim.params_SC.SetA("S", name1, a)
+        sim.params_SC.SetA(name1, name1, a)
+        for digits2,sign2,delta2,name2 in gen_shell_beads():
+            sim.params_SC.SetA(name1, name2, a)
+            sim.params_SC.SetA(name2, name2, a)
+
+
 class Simulation:
 
     def __init__(self, phase,
@@ -232,10 +275,10 @@ class Simulation:
                 size, population,
                 timestep, totaltime,
                 chmob=None, cc=0.0, npname=None, sigma=0.8,
-                disp=4.0):
+                disp=4.0, poly=0.0):
         """Initialize the simulation.
 
-        This, along with initialization, does the following tasak:
+        This, along with initialization, does the following tasks:
             - sets all relevant parameters passed to the constructor as attributes
             - calculates most importnat derived parameters
             - corrects the effective density for the presence of NPs
@@ -484,6 +527,7 @@ class Simulation:
 
         # Parameters related directly to interactions.
         # After phase 7, nanoparticle are colloids with two different types of beads.
+        # After phase 16, coupling and repulsion will be set later, after equilibration.
         self.calc.SetKappa(self.kappa)
         self.params_GC.SetBeadVolume("A", self.beadvolume)
         self.params_GC.SetBeadVolume("B", self.beadvolume)
@@ -492,7 +536,7 @@ class Simulation:
             self.params.SetBeadFieldCoupling("P", "A", self.ca)
             self.params.SetBeadFieldCoupling("P", "B", self.cb)
             self.params_SC.SetA("P", "P", self.a)
-        else:
+        elif self.phase < 17:
             self.params.SetBeadFieldCoupling("C", "A", self.cca)
             self.params.SetBeadFieldCoupling("C", "B", self.ccb)
             self.params.SetBeadFieldCoupling("S", "A", self.ca)
@@ -506,7 +550,66 @@ class Simulation:
             self.params_SC.SetSigma("C", self.sigma)
             self.params_SC.SetSigma("S", self.sigma)
 
-        # Output path and file name
+        # After phase 18, we also have some notion of polydispersity.
+        # This is implemented by modifying the coupling parameter of shell beads,
+        #   or more precisely by changing their bead types to new bead types with
+        #   slightly different coupling parameters. These new beat types
+        #   have names with the pattern (S[mp][0-9][0-9]), where [mp] means
+        #   plus or minus and the digits are the digits found in the delta,
+        #   that is the difference between the normal couplind and that new
+        #   shell bead type in parts per hundred. That makes 2*99 new bead types
+        # We want a normal distribution of coupling parameters, so the coupling
+        #   is first taken from a distribution and then rounded and converted
+        #   to a bead type with an appropriate name. Bead types are defined
+        #   implicitely, so it will be enough to just set the coupling parameter
+        #   and then the beat type for each shell bead. If zero is sampled,
+        #   the bead type of course does not change.
+        # Note that Culgi requires parentheses around the bead type name when
+        #   it is longer than one character.
+        # Overall, the average coupling does not change, and so the effective
+        #   density in the field does not need to be corrected. What should be
+        #   seen is a population of NPs with varying shapes.
+        # Remember that the interaction will need to be set again after equilibration.
+        if self.phase > 18 and self.poly > 0.0:
+
+            # Set the coupling parameters and sigmas for all new shell bead types.
+            for digits,sign,delta,name in gen_shell_beads():
+                self.params.SetBeadFieldCoupling(name, "A", self.ca + delta)
+                self.params.SetBeadFieldCoupling(name, "B", self.cb + delta)
+                self.params_SC.SetSigma(name, self.sigma)
+
+            # We also need to set repulsions for each pair of new beads.
+            # This will will be redone for equilibration, so there is a separate procedure.
+            set_shell_beads_A(self)
+
+            # Generate all deltas in one go, and check their mean and standard
+            #   deviation (and bail out if not appropriate). The core bead is not
+            #   to be changed, so there are population*(beads_per_np-1) deltas.
+            deltas = random.normal(0.0, self.poly, self.pop*(self.beads_per_np-1))
+            deltas_avg = average(deltas)
+            deltas_std = std(deltas)
+            limit = 0.05
+            assert abs(deltas_avg)/self.ca < limit, \
+                "Average delta (%.3f) is more than %.2f from zero." %(deltas_avg, limit)
+            assert (abs(deltas_std) - self.poly)/self.poly < limit, \
+                "Deviation of deltas (%.3f) differs from choice (%.3f) by more than %.2f." %(deltas_std, self.poly, limit)
+
+            # Round the deltas to two significant digits and make sure no values
+            #   are smaller than -0.99 and none larger than 0.99.
+            deltas = round(deltas, 2)
+            deltas[deltas < -0.99] = -0.99
+            deltas[deltas > 0.99] = 0.99
+
+            # Now set new bead types of all shell beads.
+            # Remember that the core bead does not change!
+            for npi in range(self.pop):
+                for bi in range(self.beads_per_np-1):
+                    d = deltas[npi*(self.beads_per_np-1) + bi]
+                    if d != 0.00:
+                        name = "S%s%s" %("p"*(d>0) or "m", str(int(100*abs(d))).zfill(2))
+                        self.nanoparticles[npi].GetBeadCmds(1+bi).SetElementType(name)
+
+        # Output path and file name.
         self.calc.SetOutputFileName(self.name)
 
     def getcenterofmass(self, name, num=0):
@@ -563,6 +666,7 @@ class Simulation:
                 # Set all coupling parameters to zero.
                 # For phase 7, nanoparticles are still molecules, but after that
                 #   they are colloids and so the bead names differ.
+                # After phase 18, we have many types of polydipserse beads.
                 if self.phase == 7:
                     self.params.SetBeadFieldCoupling("P", "A", 0.0)
                     self.params.SetBeadFieldCoupling("P", "B", 0.0)
@@ -571,6 +675,10 @@ class Simulation:
                     self.params.SetBeadFieldCoupling("C", "B", 0.0)
                     self.params.SetBeadFieldCoupling("S", "A", 0.0)
                     self.params.SetBeadFieldCoupling("S", "B", 0.0)
+                if self.phase > 18:
+                    for digits,sign,delta,name in gen_shell_beads():
+                        self.params.SetBeadFieldCoupling(name, "A", 0.0)
+                        self.params.SetBeadFieldCoupling(name, "B", 0.0)
 
                 # No field diffusion in this part of the simulation.
                 self.calc.SetFieldDiffusionOff()
@@ -614,7 +722,14 @@ class Simulation:
                     box = Palette.CreateMesoBox("tmp", X, Y, 1)
 
                     # Add some nanoparticle to this box, too.
+                    # After phase 18, we want to change the bead types of shell beads,
+                    #   to correspond to the bead types in the original box.
                     box.CopySoftCoreColloids(self.np, self.pop)
+                    if self.phase > 18:
+                        for npi,np in enumerate(self.nanoparticles):
+                            for bi in range(self.beads_per_np-1):
+                                bt = np.GetBeadCmds(1+bi).GetElementType()
+                                box.GetSoftCoreColloidCmds(npi).GetBeadCmds(1+bi).SetElementType(bt)
 
                     # Make this box the system of the simulation calculator, temporarily.
                     self.calc.SetSystem(box)
@@ -625,6 +740,8 @@ class Simulation:
                     self.params_SC.SetA("C", "C", 10)
                     self.params_SC.SetA("C", "S", 10)
                     self.params_SC.SetA("S", "S", 10)
+                    if self.phase > 18:
+                        set_shell_beads_A(self, 10)
                     for i in range(self.pop):
                         np = box.GetSoftCoreColloidCmds(i)
                         np.SetCenterOfMass(X*random.random(), Y*random.random(), 0.5)
@@ -646,7 +763,8 @@ class Simulation:
                     self.params_SC.SetA("C", "C", self.a)
                     self.params_SC.SetA("C", "S", self.a)
                     self.params_SC.SetA("S", "S", self.a)
-
+                    if self.phase > 18:
+                        set_shell_beads_A(self)
                     for i in range(self.pop):
                         com = box.GetSoftCoreColloidCmds(i).GetCenterOfMass()
                         x = com.GetX() * self.size[0] / X
@@ -668,8 +786,13 @@ class Simulation:
                 self.params.SetBeadFieldCoupling("C", "B", self.cca)
                 self.params.SetBeadFieldCoupling("S", "A", self.ca)
                 self.params.SetBeadFieldCoupling("S", "B", self.ca)
+                if self.phase > 18:
+                    for digits,ssign,delta,name in gen_shell_beads():
+                        self.params.SetBeadFieldCoupling(name, "A", self.ca)
+                        self.params.SetBeadFieldCoupling(name, "B", self.ca)
             self.calc.SetFieldDiffusionOn()
             self.calc.SetBeadDiffusionOff()
+
             self.calc.Run(int(phases_eqtime_field[self.phase-1]/self.timestep))
 
             # Set relevant parameters back to their target simulation values.
@@ -685,6 +808,10 @@ class Simulation:
                 self.params.SetBeadFieldCoupling("C", "B", self.ccb)               
                 self.params.SetBeadFieldCoupling("S", "A", self.ca)
                 self.params.SetBeadFieldCoupling("S", "B", self.cb)               
+                if self.phase > 18:
+                    for digits,sign,delta,name in gen_shell_beads():
+                        self.params.SetBeadFieldCoupling(name, "A", self.ca+delta)
+                        self.params.SetBeadFieldCoupling(name, "B", self.cb+delta)
             self.calc.SetBeadDiffusionOn()
 
             # Turn archiving back on.
@@ -697,3 +824,6 @@ class Simulation:
 
         # Run the target simulation.
         self.calc.Run(self.nsteps)
+
+        # Save the box after running for reference.
+        self.box.SaveAs(self.name)
