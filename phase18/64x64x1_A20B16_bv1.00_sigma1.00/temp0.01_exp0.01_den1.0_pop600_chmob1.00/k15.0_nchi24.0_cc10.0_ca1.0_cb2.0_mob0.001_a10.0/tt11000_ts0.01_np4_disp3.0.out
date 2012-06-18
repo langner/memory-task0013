@@ -274,3 +274,61 @@ Gaussian compressibility free energy: 1194.03
 Gaussian electrostatic free energy: 0
 Softcore molecules field coupling energy: 9929.38
 
+Average Energies:
+Softcore molecules bond stretching energy: 0
+Softcore molecules angle bending energy: 0
+Softcore molecules torsional energy: 0
+Softcore molecules non-bonded energy: 70.5853
+Softcore molecules electrostatics energy: 0
+Softcore molecules external potential energy: 0
+Softcore molecules Potential energy: 7035.16
+Gaussian total free energy: 1996.17
+Gaussian ideal free energy: -129.843
+Gaussian contact free energy: 205.826
+Gaussian compressibility free energy: 1920.18
+Gaussian electrostatic free energy: 0
+Softcore molecules field coupling energy: 6964.58
+
+Average Explicit Charge: 0
+
+Average Gaussian Chains Density Inhomogeneity: 0.355725
+
+Final Energies:
+Softcore molecules bond stretching energy: 0
+Softcore molecules angle bending energy: 0
+Softcore molecules torsional energy: 0
+Softcore molecules non-bonded energy: 81.7947
+Softcore molecules electrostatics energy: 0
+Softcore molecules external potential energy: 0
+Softcore molecules Potential energy: 6818.65
+Gaussian total free energy: 2058.29
+Gaussian ideal free energy: -143.543
+Gaussian contact free energy: 202.395
+Gaussian compressibility free energy: 1999.44
+Gaussian electrostatic free energy: 0
+Softcore molecules field coupling energy: 6736.85
+
+Final Gaussian Chains Density Inhomogeneity: 0.356874
+
+Iteration report, DDFT Molecular Diffusion
+Number of solves: 1100000
+Number of function calls: 5918911
+Average number of iterations: 4.38083 (min 3, max 9)
+Average end norm: 6.68034e-05 (min 3.42701e-05, max 0.0001)
+
+
+Final Explicit Charge: 0
+
+Plugins and corresponding results from this calculation:----------
+
+Archive Plugin:
+Archive mode: Text
+Archive file name: tt11000_ts0.01_np4_disp3.0.csa
+Archive frequency: 1000
+
+Instant results Plugin:
+Instant results file name: tt11000_ts0.01_np4_disp3.0_Inst.ctf
+Instant results frequency: 100
+
+Time used by 1100000 calculation steps on 1 processors: 30 Hours 47 Minutes 20 Seconds.
+
