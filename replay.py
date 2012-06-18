@@ -64,7 +64,7 @@ if __name__ == "__main__":
             npi.SetBeadDisplayRadius("C", 1.5)
             npi.SetBeadDisplayRadius("S", 0.0)
             if sim.phase > 18:
-                for d,s,name in gen_shell_beads():
+                for digits,sign,delta,name in gen_shell_beads():
                     npi.SetBeadDisplayRadius(name, 0.0)
             
         graphics.AddViewable(npi)
@@ -100,10 +100,15 @@ if __name__ == "__main__":
     #   is touched in a makefile for logistic purposes.
     if issnapshots:
 
-        print "Saving snapshots..."
+        # Which frames to save as snapshots.
+        # At first this was done linearly, with frames in progression scaled linearly
+        #   with the experimental times, but now we use different frames, because
+        #   the correspondence is not linear, and different for NPs and the BCP.
+        snaps = [1, 11, 21, 101, 301, 501, 1101]
+        snaps.sort()
+        for i in snaps:
 
-        for i in 1, 2*N/48, 14*N/48, N:
-
+            print "Saving snapshot %i..." %i
             archive.LoadFrame(i)
             fname = "%s/%s.frame%s" %(sim.path, sim.name, str(i).zfill(4))
             graphics.WriteJPEG(fname+"_tmp")
@@ -124,6 +129,7 @@ if __name__ == "__main__":
         iframe = 1
         inum = 1
         for i in range(int(tslow*fps)):
+            print "Loading frame %i..." %iframe
             archive.LoadFrame(iframe)
             num = ("%i" %inum).zfill(4)
             graphics.SetInputText("")
@@ -131,6 +137,7 @@ if __name__ == "__main__":
             iframe += 1
             inum += 1
         while iframe < N:
+            print "Loading frame %i..." %iframe
             archive.LoadFrame(iframe)
             num = ("%i" %inum).zfill(4)
             graphics.SetInputText("")

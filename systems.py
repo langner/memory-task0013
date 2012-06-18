@@ -21,6 +21,7 @@ frames_1 = [1, 11, 101, 1001, 10001]
 frames_2 = [1, 11, 51, 101, 501, 1001, 5001, 10001, 50001]
 frames_3 = [1, 11, 21, 51, 101, 201, 501, 1001, 2001, 5001, 10001]
 frames_4 = [1, 11, 21, 31, 41, 51, 101, 201, 301, 401, 501, 1001]
+frames_5 = [1, 11, 21, 31, 41, 51, 101, 201, 301, 401, 501, 1001, 1090]
 phases_data = {
 #      run    eq_np eq_f snaps  energ   frames        description 
  1  : (False, 1000, 100, 11000, 110000, frames_1, 16, "Bare NPs moving in 3D (Z&ne;0), random starting ditribution"),
@@ -40,8 +41,8 @@ phases_data = {
  15 : (False, 1000, 100, 1100,  11000,  frames_4, 10, "Same as phase 14, with variable sigma"),
  16 : (False, 1000, 100, 1100,  11000,  frames_4, 10, "Same as phase 15, with randomized nanoparticle orientations"),
  17 : (True,  10,   10,  1100,  11000,  frames_4, 10, "Same as phase 16, with a more realistic initial distirbution"),
- 18 : (True,  10,   10,  1100,  11000,  frames_4, 10, "Same as phase 17, with an adjustable initial dispersion"),
- 19 : (True,  10,   10,  1100,  11000,  frames_4, 10, "Same as phase 18, with polydispersity in the nanoparticles population"),
+ 18 : (True,  10,   10,  1100,  11000,  frames_5, 10, "Same as phase 17, with an adjustable initial dispersion"),
+ 19 : (True,  10,   10,  1100,  11000,  frames_5, 10, "Same as phase 18, with polydispersity in the nanoparticles population"),
 #      run    eq_np eq_f snaps  energ   frames        description 
 }
 phases = phases_data.keys()

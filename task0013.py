@@ -442,7 +442,7 @@ class Simulation:
                     coords[ni,:2] = r
                     self.nanoparticles[ni].SetCenterOfMass(*coords[ni])
             elif self.phase in [5,6,7]:
-                rfactor - 1.75*(self.phase == 5) or 3.25
+                rfactor = 1.75*(self.phase == 5) or 3.25
                 Nx = int(sqrt(self.pop))
                 Ny = int(self.pop // Nx)
                 n = self.pop - Nx*Ny

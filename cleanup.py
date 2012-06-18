@@ -33,7 +33,7 @@ if __name__ == "__main__":
         # Find all output files in this phase and load them as simulation objects.
         outpattern = "phase%i/*x*x*_A*B*_bv*/temp*_exp?.??_den?.?_pop*/k*_nchi*/t*.out" %p
         outs = glob.glob(outpattern)
-        sims_ondisk = [loadpath(out) for out in outs]
+        sims_ondisk = [loadpath(out, setup=False) for out in outs]
 
         # Loop over all simulation found on disk.
         for sim in sims_ondisk:

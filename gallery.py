@@ -41,7 +41,7 @@ def controltree(sims, params):
         #   filtered simulations and shorter control list as input, unless the system is neat
         #   and the we've come to a NP-specific parameter.
         # Otherwise, set the tree node to the filtered list.
-        if params[1:] and not (params[0] in ("mobility", "temperature") and s.population > 0):
+        if params[1:] and not (params[0] in ("mobility", "temperature") and s.population == 0):
             tree[value,params[0]] = controltree(filtered, params[1:])
         else:
             tree[value,params[0]] = filtered
@@ -167,8 +167,15 @@ def printinfo(sim):
     text += "</tr></table>"
 
     # Other snapshots and the animation.
+    # After phase 16, the indexes of snapshots are different.
     text += "Other visual: "
-    if sim.phase > 13:
+    if sim.phase > 16:
+        text += "<a href='%s.frame0011.jpg'>snapshot 11</a>, " %name
+        text += "<a href='%s.frame0021.jpg'>snapshot 21</a>, " %name
+        text += "<a href='%s.frame0101.jpg'>snapshot 101</a>, " %name
+        text += "<a href='%s.frame0301.jpg'>snapshot 301</a>, " %name
+        text += "<a href='%s.frame0501.jpg'>snapshot 501</a>, " %name
+    elif sim.phase > 13:
         text += "<a href='%s.frame0045.jpg'>snapshot 45</a>, " %name
         text += "<a href='%s.frame0321.jpg'>snapshot 321</a>, " %name
     text += "<a href='%s.avi'>movie (AVI)</a>" %name
@@ -179,10 +186,11 @@ def printinfo(sim):
     text += "<a href='%s.out'>output file</a>" %name
     if sim.population > 0:
         text += ", <a href='%s.offsets.png'>grid offsets</a>" %name
-        text += ", <a href='%s.hist-radial.png'>grid offsets</a>" %name
         if sim.phase > 8:
             text += ", <a href='%s.offsets-ang.png'>angular offsets</a>" %name
             text += ", <a href='%s.hist-ang.png'>angular distribution</a>" %name
+        if sim.phase > 16:
+            text += ", <a href='%s.interface.png'>NPs at interface</a>" %name
     text += "<br/>"
 
     # Energy plots.

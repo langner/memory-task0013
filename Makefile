@@ -1,6 +1,6 @@
 # By default do plots and gallery, perhaps copy.
 .PHONY: default all
-default: plot gallery report exp article0015
+default: plot gallery report exp
 all: copy default
 
 include $(wildcard ../common.mk)
@@ -157,11 +157,6 @@ report: $(NAME).pdf
 .PHONY: exp
 exp:
 	$(MAKE) -C exp
-
-# Plots for article0015
-.PHONY: article0015
-article0015:
-	$(MAKE) -C article0015
 
 # Cleanup old files (run manually)
 .PHONY: cleanup
