@@ -9,13 +9,14 @@ than even the converted npy archives.
 
 
 import gzip
+import itertools
 import os
 import sys
 import time
 
-from numpy import all, arange, arctan2, array, average
-from numpy import concatenate, histogram, hstack, load
-from numpy import max, round, save, sqrt, std, vstack
+from numpy import abs, all, arange, arctan2, array, average
+from numpy import concatenate, dstack, histogram, hstack, load
+from numpy import max, round, save, sqrt, std, sum, vstack, zeros
 from numpy.linalg import norm
 
 from scipy import mean, var
@@ -163,6 +164,26 @@ class Analysis():
             self.angles = [abs(arctan2(snap[iref,:,1]-snap[icenter,:,1],snap[iref,:,0]-snap[icenter,:,0])) for snap in self.csa[::self.freq_csa]]
             self.offsets_angles = [[f(a, axis=None) for a in self.angles] for f in funcs]
 
+        # Precalculate total densities and order parameters for whole trajectory.
+        self.totals = self.cga[:,0] + self.cga[:,1]
+        self.orders = self.cga[:,0] - self.cga[:,1]
+
+        # Fraction of nanoparticles at the interface (after phase 16).
+        # It can be shown that the normalized order parameter, scaled by the local total density,
+        #   is equal, roughly, to the distance to the interface.
+        if self.phase > 16 and self.pop > 0:
+            self.distances = []
+            self.normalized_orders = self.orders / self.totals
+            for ib,bi in enumerate(self.bead_ind):
+                self.distances.append(zeros((self.npoints,self.pop*len(bi))))
+                for ni in range(self.npoints):
+                    ci = ni * self.freq_csa
+                    csar = round(self.csa[ci,bi]).astype(int)
+                    csar = csar.reshape((csar.shape[0]*csar.shape[1],csar.shape[2]))
+                    for i,j in itertools.product([-1,0,1],[-1,0,1]):
+                        self.distances[ib][ni] += self.normalized_orders[ci].take((csar[:,0]+i)*64 + csar[:,1]+j, mode='wrap')
+            self.distances = [1.0 * sum(d/9.0 < 0.5, axis=1) / d.shape[1] for d in self.distances]
+
         return time.time() - T
 
     def analyze_histograms(self):
@@ -178,7 +199,10 @@ class Analysis():
         # Leave only the cga frames we want. Do the same for coordinates if there are in fact NPs.
         # Note that since the cga/csa attributes are changed, we should do this ONLY after
         #   energy analysis is finished, because there we use more frames.
+        # Also do this for the total densities and order parameters calcualted with energies.
         self.cga = self.cga[self.frames]
+        self.totals = self.totals[self.frames]
+        self.orders = self.orders[self.frames]
         if self.pop > 0:
             self.csa = self.csa[self.frames]
 
@@ -194,8 +218,6 @@ class Analysis():
         self.nbins_ang = 128
 
         # Histograms of field values and order parameters.
-        self.totals = self.cga[:,0] + self.cga[:,1]
-        self.orders = self.cga[:,0] - self.cga[:,1]
         self.hist_field_total = array([histogram(f.flatten(), bins=self.nbins_f, range=self.totalrange)[0] for f in self.totals])
         self.hist_field_order = array([histogram(f.flatten(), bins=self.nbins_f, range=self.orderrange)[0] for f in self.orders])
         self.hist_field_shape = (self.nframes,1,self.nbins_f)
@@ -255,7 +277,9 @@ class Analysis():
                     if self.phase > 8:
                         self.offsets_angles = [o[:-1] for o in self.offsets_angles]
             if self.pop > 0:
-                if self.phase > 8:
+                if self.phase > 16:
+                    energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets+self.offsets_angles+self.distances).transpose()
+                elif self.phase > 8:
                     energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets+self.offsets_angles).transpose()
                 else:
                     energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets).transpose()
@@ -312,4 +336,4 @@ if __name__ == "__main__":
 
     # Save archives.
     if "energy" in sys.argv or "histograms" in sys.argv:
-        print "save:, %.2fs" %a.save()
+        print "save: %.2fs" %a.save()

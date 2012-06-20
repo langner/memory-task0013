@@ -17,14 +17,17 @@ SYSTEMS = $(foreach p,$(PHASES),$(wildcard $(p)/*x*x*_A*B*_bv*))
 SYSTEMS8 = $(wildcard phase8/*x*x*_A*B*_bv?.??)
 SYSTEMS9 = $(wildcard phase9/*x*x*_A*B*_bv?.??)
 SYSTEMS10 = $(wildcard phase1?/*x*x*_A*B*_bv*)
+SYSTEMS17 = $(wildcard phase1[7-9]/*x*x*_A*B*_bv*)
 MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
 MODELS8 = $(foreach s,$(SYSTEMS8),$(wildcard $(s)/temp*_exp*_den*_pop*))
 MODELS9 = $(foreach s,$(SYSTEMS9),$(wildcard $(s)/temp*_exp*_den*_pop*))
 MODELS10 = $(foreach s,$(SYSTEMS10),$(wildcard $(s)/temp*_exp*_den*_pop*))
+MODELS17 = $(foreach s,$(SYSTEMS17),$(wildcard $(s)/temp*_exp*_den*_pop*))
 SIMS = $(foreach m,$(MODELS),$(wildcard $(m)/k*_nchi*))
 SIMS8 = $(foreach m,$(MODELS8),$(wildcard $(m)/k*_nchi*))
 SIMS9 = $(foreach m,$(MODELS9),$(wildcard $(m)/k*_nchi*))
 SIMS10 = $(foreach m,$(MODELS10),$(wildcard $(m)/k*_nchi*))
+SIMS17 = $(foreach m,$(MODELS17),$(wildcard $(m)/k*_nchi*))
 SIMS_OUT = $(foreach s,$(SIMS),$(wildcard $(s)/*.out))
 
 # More output files
@@ -35,15 +38,18 @@ SIMS_ENERGY = $(foreach m,$(SIMS),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_ENERGY8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_ENERGY9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_ENERGY10 = $(foreach m,$(SIMS10),$(wildcard $(m)/*.energy.npy.bz2))
+SIMS_ENERGY17 = $(foreach m,$(SIMS17),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_HIST_FIELD = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-field.npy.bz2))
 SIMS_HIST_RADIAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RADIAL8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RADIAL9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RADIAL10 = $(foreach m,$(SIMS10),$(wildcard $(m)/*.hist-radial.npy.bz2))
+SIMS_HIST_RADIAL17 = $(foreach m,$(SIMS17),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RESIDUAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_RESIDUAL8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_RESIDUAL9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_RESIDUAL10 = $(foreach m,$(SIMS10),$(wildcard $(m)/*.hist-residual.npy.bz2))
+SIMS_HIST_RESIDUAL17 = $(foreach m,$(SIMS17),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_ANGLES = $(foreach m,$(SIMS9) $(SIMS10),$(wildcard $(m)/*.hist-ang.npy.bz2))
 
 # Plots to be generated
@@ -52,6 +58,7 @@ PLOTS_ENERGY_FIELD = $(subst .energy.npy.bz2,.energy-field.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_COUPL = $(subst .hist-residual.npy.bz2,.energy-coupl.png,$(SIMS_HIST_RESIDUAL))
 PLOTS_OFFSETS_RAD = $(subst .hist-radial.npy.bz2,.offsets.png,$(SIMS_HIST_RADIAL8) $(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10))
 PLOTS_OFFSETS_ANG = $(subst .hist-radial.npy.bz2,.offsets-ang.png,$(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10))
+PLOTS_INTERFACE = $(subst .hist-residual.npy.bz2,.interface.png,$(SIMS_HIST_RESIDUAL17))
 PLOTS_HIST_FIELD_TOTAL = $(subst .hist-field.npy.bz2,.hist-field-total.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_FIELD_ORDER = $(subst .hist-field.npy.bz2,.hist-field-order.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_RADIAL = $(subst .hist-radial.npy.bz2,.hist-radial.png,$(SIMS_HIST_RADIAL))
@@ -98,8 +105,8 @@ copy:
 
 # Generate plots based on analyzed data, but don't depend on
 #   coupling and offset plots, since neat systems don't get those.
-.PHONY: plot plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
-plot: plot-energy plot-offsets plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
+.PHONY: plot plot-energy plot-offsets plot-interface plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
+plot: plot-energy plot-offsets plot-interface plot-hist-field plot-hist-radial plot-hist-residual plot-hist-angles
 plot-energy: $(PLOTS_ENERGY)
 %.energy-total.png: %.energy.npy.bz2
 	$(PYCULGI) plot.py $< total save
@@ -112,6 +119,9 @@ plot-energy: $(PLOTS_ENERGY)
 plot-offsets: $(PLOTS_OFFSETS)
 %.offsets-ang.png: %.energy.npy.bz2
 	$(PYCULGI) plot.py $< offsets angles save
+plot-interface: $(PLOTS_INTERFACE)
+%.interface.png: %.energy.npy.bz2
+	$(PYCULGI) plot.py $< interface save
 plot-hist-field: $(PLOTS_HIST_FIELD)
 %.hist-field-total.png: %.hist-field.npy.bz2
 	$(PYCULGI) plot.py $< total save

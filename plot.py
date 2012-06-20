@@ -62,6 +62,7 @@ if __name__ == "__main__":
         isoffsets = "offsets" in sys.argv
         if isoffsets:
             isangles = "angles" in sys.argv
+        isinterface = "interface" in sys.argv
 
     # Histogram plots can be of several kinds. Field histograms can show the distribution
     #   of total field values or the distirbution of order parameters. Radial histograms
@@ -88,7 +89,8 @@ if __name__ == "__main__":
     # ############
     # ENERGY PLOTS
     # ############
-    if isenergy and not isoffsets:
+
+    if isenergy and not isoffsets and not isinterface:
 
         # Things that are specific to each type. Remember that coupling requires
         #   there to be at least one nanoparticle. If no type, then bail out here.
@@ -115,9 +117,38 @@ if __name__ == "__main__":
         datas = [ "instant.", "average" ]
         dataset = { "instant.": instant, "average": average }
 
+        # With the above set, plotting is now straightforward.
+        for ds in datas:
+            pylab.plot(data[:,0], dataset[ds], label=ds)
+        pylab.xlabel("time step")
+        pylab.ylabel(ylabel)
+
+        # Set the X axis range a bit further than the last point.
+        xmin = data[0,0]
+        xmax = data[-1,0]*1.1
+
+        # Now play around with the range for the Y axis.
+        ymin = min([min(dataset[ds][100:]) for ds in dataset])
+        ymax = max([max(dataset[ds][100:]) for ds in dataset])
+        dy = ymax - ymin
+        if isfield:
+            ymin = ymax - dy/1.05
+            ymax = ymax + dy/100
+        else:
+            ymin = ymin - dy/100
+            ymax = ymin + dy/1.05
+
+        # Finally set the ranges for axes.
+        pylab.xlim(xmin,xmax)
+        pylab.ylim(ymin,ymax)
+
+        # Let pylab place the legend on its own.
+        pylab.legend(loc="best")
+
     # ############
     # OFFSET PLOTS
     # ############
+
     if isenergy and isoffsets:
 
         # These are possible after phase 6 and when there are nanoparticles.
@@ -170,22 +201,12 @@ if __name__ == "__main__":
         xmin = data[0,0]
         xmax = data[-1,0]*1.1
 
-        # Now play around with the range for the Y axis.
-        ymin = min([min(dataset[ds][100:]) for ds in dataset])
-        ymax = max([max(dataset[ds][100:]) for ds in dataset])
-        dy = ymax - ymin
-        if isfield:
-            ymin = ymax - dy/1.05
-            ymax = ymax + dy/100
-        else:
-            ymin = ymin - dy/100
-            ymax = ymin + dy/1.05
-        if isoffsets:
-            ymin = -1.3
-            ymax = 0.6
-            if isangles:
-                ymin = -2.0
-                ymax = 4.0
+        # Y axis range is quite straightforward.
+        ymin = -1.3
+        ymax = 0.6
+        if isangles:
+            ymin = -2.0
+            ymax = 4.0
 
         # Finally set the ranges for axes.
         pylab.xlim(xmin,xmax)
@@ -195,32 +216,50 @@ if __name__ == "__main__":
         pylab.legend(loc="best")
 
         # For offset plots, we want to add a number of extra eye candy.
-        if isoffsets:
+        y_mean = 0.5
+        y_var = 1.0 / 12
+        y_skew = 0.0
+        y_kurt = - 6.0 / 5
+        str_mean = r"$\frac{1}{2}$"
+        str_var = r"$\frac{1}{12}$"
+        str_skew = r"$0.0$"
+        str_kurt = r"-$\frac{6}{5}$"
+        if isangles:
+            y_mean = numpy.pi / 2
+            y_var = numpy.pi**2 / 12
+            str_mean = r"$\frac{\pi}{2}$"
+            str_var = r"$\frac{\pi^2}{12}$"
 
-            y_mean = 0.5
-            y_var = 1.0 / 12
-            y_skew = 0.0
-            y_kurt = - 6.0 / 5
-            str_mean = r"$\frac{1}{2}$"
-            str_var = r"$\frac{1}{12}$"
-            str_skew = r"$0.0$"
-            str_kurt = r"-$\frac{6}{5}$"
-            if isangles:
-                y_mean = numpy.pi / 2
-                y_var = numpy.pi**2 / 12
-                str_mean = r"$\frac{\pi}{2}$"
-                str_var = r"$\frac{\pi^2}{12}$"
+        y_values = (y_mean, y_var, y_skew, y_kurt)
+        y_strings = (str_mean, str_var, str_skew, str_kurt)
+        for y in y_values:
+            pylab.axhline(y=y, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
+        for y,s in zip(y_values,y_strings):
+            pylab.text(xmax*1.01, y, s, fontsize=12, horizontalalignment="left", verticalalignment="center")
 
-            y_values = (y_mean, y_var, y_skew, y_kurt)
-            y_strings = (str_mean, str_var, str_skew, str_kurt)
-            for y in y_values:
-                pylab.axhline(y=y, xmin=data[0,0], xmax=data[-1,0], linestyle='--', color='gray')
-            for y,s in zip(y_values,y_strings):
-                pylab.text(xmax*1.01, y, s, fontsize=12, horizontalalignment="left", verticalalignment="center")
+    # #######################
+    # DISTANCE FROM INTERFACE
+    # #######################
+
+    if isenergy and isinterface:
+
+        plotfname = "%s.interface.png" %sim.outroot
+
+        dist_core = data[:,31]
+        dist_shell = data[:,32]
+
+        pylab.plot(100*dist_core, label="core beads")
+        pylab.plot(100*dist_shell, label="shell beads")
+
+        pylab.xlabel("time step")
+        pylab.ylabel(r"NPs at interface [%]")
+
+        pylab.legend(loc="best")
 
     # ######################
     # SETUP FIELD HISTOGRAMS
     # ######################
+
     if ishist and isfield:
 
         if istotal:
@@ -237,6 +276,7 @@ if __name__ == "__main__":
     # #######################
     # SETUP RADIAL HISTOGRAMS
     # #######################
+
     if ishist and isradial:
 
         # Generate the plot file name.
@@ -314,6 +354,7 @@ if __name__ == "__main__":
     # ###############
     # PLOT HISTOGRAMS
     # ###############
+
     if ishist:
 
         # Frames are stored in a separate archive file.
