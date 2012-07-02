@@ -1,0 +1,334 @@
+@CulgiVersion: 6.1.0
+MBF-Hybrid Simulation of tmp
+Job Start time: Sun Jul 15 12:58:03 2012
+----------------------------------------------------------------------------
+
+Simulation Parameters:
+----------------------
+
+Field Diffusion: off
+Bead Diffusion: on
+Temperature: 0.1
+Bead Diffusion frequency: 1
+Time step: 0.01
+
+Soft core model interaction parameters:
+---------------------------------------
+
+Bead parameters:
+Type  Mass  BondValence  Diffusion  Sigma  ExtFieldConst  ChargeType  Charge  pK   Dielec  ImplIonInter  
+C     1     2            0.04       1      1              Strong      0       N/A  1       0             
+S     1     2            0.04       1      1              Strong      0       N/A  1       0             
+
+Pair interaction parameters:
+Type1  Type2  A   
+C      C      10  
+C      S      10  
+S      S      10  
+
+Mesoscopic bead-field hybrid interaction parameters:
+----------------------------------------------------
+
+Bead-Field coupling parameters:
+Bead  Field  parameter  
+
+System Details:
+---------------
+
+Box: 58 X 44 X 1
+Overall gaussian beads number density: 0
+SOFTCORECOLLOID: np: 580 (Bead fraction: 1)
+Overall Soft-core bead number density: 2.04545
+
+
+Initial Explicit Charge: 0
+
+Initial Energies:
+Softcore molecules bond stretching energy: 0
+Softcore molecules angle bending energy: 0
+Softcore molecules torsional energy: 0
+Softcore molecules non-bonded energy: 12623.2
+Softcore molecules electrostatics energy: 0
+Softcore molecules external potential energy: 0
+Softcore molecules Potential energy: 12623.2
+
+Average Energies:
+Softcore molecules bond stretching energy: 0
+Softcore molecules angle bending energy: 0
+Softcore molecules torsional energy: 0
+Softcore molecules non-bonded energy: 572.888
+Softcore molecules electrostatics energy: 0
+Softcore molecules external potential energy: 0
+Softcore molecules Potential energy: 572.888
+
+Average Explicit Charge: 0
+
+Final Energies:
+Softcore molecules bond stretching energy: 0
+Softcore molecules angle bending energy: 0
+Softcore molecules torsional energy: 0
+Softcore molecules non-bonded energy: 86.6732
+Softcore molecules electrostatics energy: 0
+Softcore molecules external potential energy: 0
+Softcore molecules Potential energy: 86.6732
+
+Final Explicit Charge: 0
+
+Time used by 1000 calculation steps on 1 processors: 0 Hours 0 Minutes 5 Seconds.
+
+@CulgiVersion: 6.1.0
+MBF-Hybrid Simulation of box
+Job Start time: Sun Jul 15 12:58:09 2012
+----------------------------------------------------------------------------
+
+Simulation Parameters:
+----------------------
+
+Field Diffusion: on
+Bead Diffusion: off
+Field Diffusion frequency: 1
+Time step: 0.01
+
+DDFT Engine parameters: 
+Field diffusion Method: EntropyFieldDynamics
+Kappa: 15
+Reference density: 1
+
+NLESolverEngine parameters, DDFT Molecular Diffusion
+Strict tolerance: On
+Direction optimization Method: SteepestDescent
+Starting Alpha: 0.5
+Reset Alpha: On
+Tolerance: 0.0001
+Maximum Iterations: 50000
+Maximum Line Iterations: 5
+
+Gaussian chain interaction parameters:
+---------------------------------------
+
+Bead parameters:
+Type  Volume  Diffusion  Viscosity  Expansion  ExtFieldConst  ChargeType  Charge  pK   Dielec  ImplIonInter  
+A     1       1          1          0.01       1              Strong      0       N/A  1       0             
+B     1       1          1          0.01       1              Strong      0       N/A  1       0             
+
+Binary interaction parameters:
+Type1  Type2  Chi  ChiL  
+A      B      0    0     
+
+Mesoscopic bead-field hybrid interaction parameters:
+----------------------------------------------------
+
+Bead-Field coupling parameters:
+Bead  Field  parameter  
+C     A      10         
+C     B      10         
+S     A      1          
+S     B      1          
+
+System Details:
+---------------
+
+Box: 86 X 64 X 1
+GAUSSIANCHAIN: bcp (A20B16):  (Average number density: 0.88145)
+Overall gaussian beads number density: 0.88145
+SOFTCORECOLLOID: np: 580 (Bead fraction: 0.518294)
+Overall Soft-core bead number density: 0.948401
+
+
+Initial Gaussian Chains Density Inhomogeneity: 4.30489e-14
+
+Initial Explicit Charge: 0
+
+Initial Energies:
+Gaussian total free energy: -54.5435
+Gaussian ideal free energy: -634.698
+Gaussian contact free energy: 0
+Gaussian compressibility free energy: 580.155
+Gaussian electrostatic free energy: 0
+Softcore molecules field coupling energy: 9202.34
+
+Average Energies:
+Gaussian total free energy: 348.127
+Gaussian ideal free energy: -625.259
+Gaussian contact free energy: 0
+Gaussian compressibility free energy: 973.387
+Gaussian electrostatic free energy: 0
+Softcore molecules field coupling energy: 8387.75
+
+Average Explicit Charge: 0
+
+Average Gaussian Chains Density Inhomogeneity: 0.0487839
+
+Final Energies:
+Gaussian total free energy: 349.534
+Gaussian ideal free energy: -625.238
+Gaussian contact free energy: 0
+Gaussian compressibility free energy: 974.772
+Gaussian electrostatic free energy: 0
+Softcore molecules field coupling energy: 8385.05
+
+Final Gaussian Chains Density Inhomogeneity: 0.0488874
+
+Iteration report, DDFT Molecular Diffusion
+Number of solves: 1000
+Number of function calls: 2288
+Average number of iterations: 1.288 (min 1, max 7)
+Average end norm: 8.32678e-05 (min 4.11676e-05, max 9.99855e-05)
+
+
+Final Explicit Charge: 0
+
+Time used by 1000 calculation steps on 1 processors: 0 Hours 1 Minutes 10 Seconds.
+
+@CulgiVersion: 6.1.0
+MBF-Hybrid Simulation of box
+Job Start time: Sun Jul 15 12:59:20 2012
+----------------------------------------------------------------------------
+
+Simulation Parameters:
+----------------------
+
+Field Diffusion: on
+Bead Diffusion: on
+Temperature: 0.01
+Bead Diffusion frequency: 1
+Field Diffusion frequency: 1
+Time step: 0.01
+
+DDFT Engine parameters: 
+Field diffusion Method: EntropyFieldDynamics
+Kappa: 15
+Reference density: 1
+
+NLESolverEngine parameters, DDFT Molecular Diffusion
+Strict tolerance: On
+Direction optimization Method: SteepestDescent
+Starting Alpha: 0.5
+Reset Alpha: On
+Tolerance: 0.0001
+Maximum Iterations: 50000
+Maximum Line Iterations: 5
+
+Gaussian chain interaction parameters:
+---------------------------------------
+
+Bead parameters:
+Type  Volume  Diffusion  Viscosity  Expansion  ExtFieldConst  ChargeType  Charge  pK   Dielec  ImplIonInter  
+A     1       1          1          0.01       1              Strong      0       N/A  1       0             
+B     1       1          1          0.01       1              Strong      0       N/A  1       0             
+
+Binary interaction parameters:
+Type1  Type2  Chi       ChiL  
+A      B      0.666667  0     
+
+Soft core model interaction parameters:
+---------------------------------------
+
+Bead parameters:
+Type  Mass  BondValence  Diffusion  Sigma  ExtFieldConst  ChargeType  Charge  pK   Dielec  ImplIonInter  
+C     1     2            0.04       1      1              Strong      0       N/A  1       0             
+S     1     2            0.04       1      1              Strong      0       N/A  1       0             
+
+Pair interaction parameters:
+Type1  Type2  A   
+C      C      10  
+C      S      10  
+S      S      10  
+
+Mesoscopic bead-field hybrid interaction parameters:
+----------------------------------------------------
+
+Bead-Field coupling parameters:
+Bead  Field  parameter  
+C     A      10         
+C     B      10         
+S     A      1          
+S     B      2          
+
+System Details:
+---------------
+
+Box: 86 X 64 X 1
+GAUSSIANCHAIN: bcp (A20B16):  (Average number density: 0.88145)
+Overall gaussian beads number density: 0.88145
+SOFTCORECOLLOID: np: 580 (Bead fraction: 0.518294)
+Overall Soft-core bead number density: 0.948401
+
+
+Initial Gaussian Chains Density Inhomogeneity: 0.0488874
+
+Initial Explicit Charge: 0
+
+Initial Energies:
+Softcore molecules bond stretching energy: 0
+Softcore molecules angle bending energy: 0
+Softcore molecules torsional energy: 0
+Softcore molecules non-bonded energy: 0
+Softcore molecules electrostatics energy: 0
+Softcore molecules external potential energy: 0
+Softcore molecules Potential energy: 10052.8
+Gaussian total free energy: 1058.78
+Gaussian ideal free energy: -625.238
+Gaussian contact free energy: 709.25
+Gaussian compressibility free energy: 974.772
+Gaussian electrostatic free energy: 0
+Softcore molecules field coupling energy: 10052.8
+
+Average Energies:
+Softcore molecules bond stretching energy: 0
+Softcore molecules angle bending energy: 0
+Softcore molecules torsional energy: 0
+Softcore molecules non-bonded energy: 68.7848
+Softcore molecules electrostatics energy: 0
+Softcore molecules external potential energy: 0
+Softcore molecules Potential energy: 7127.28
+Gaussian total free energy: 1744.21
+Gaussian ideal free energy: -237.567
+Gaussian contact free energy: 307.364
+Gaussian compressibility free energy: 1674.42
+Gaussian electrostatic free energy: 0
+Softcore molecules field coupling energy: 7058.49
+
+Average Explicit Charge: 0
+
+Average Gaussian Chains Density Inhomogeneity: 0.365461
+
+Final Energies:
+Softcore molecules bond stretching energy: 0
+Softcore molecules angle bending energy: 0
+Softcore molecules torsional energy: 0
+Softcore molecules non-bonded energy: 83.2064
+Softcore molecules electrostatics energy: 0
+Softcore molecules external potential energy: 0
+Softcore molecules Potential energy: 6835.79
+Gaussian total free energy: 1841.3
+Gaussian ideal free energy: -252.116
+Gaussian contact free energy: 299.276
+Gaussian compressibility free energy: 1794.14
+Gaussian electrostatic free energy: 0
+Softcore molecules field coupling energy: 6752.58
+
+Final Gaussian Chains Density Inhomogeneity: 0.368226
+
+Iteration report, DDFT Molecular Diffusion
+Number of solves: 110000
+Number of function calls: 554076
+Average number of iterations: 4.03705 (min 4, max 8)
+Average end norm: 7.62304e-05 (min 4.65691e-05, max 9.99972e-05)
+
+
+Final Explicit Charge: 0
+
+Plugins and corresponding results from this calculation:----------
+
+Archive Plugin:
+Archive mode: Text
+Archive file name: tt1100_ts0.01_np4_disp3.0_poly0.00.csa
+Archive frequency: 100
+
+Instant results Plugin:
+Instant results file name: tt1100_ts0.01_np4_disp3.0_poly0.00_Inst.ctf
+Instant results frequency: 10
+
+Time used by 110000 calculation steps on 1 processors: 4 Hours 13 Minutes 7 Seconds.
+

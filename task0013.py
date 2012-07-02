@@ -20,7 +20,7 @@ parameters = [  "phase", "size", "polymer", "beadvolume", "density", "nchi",
                 "ca", "cb", "a", "mobility", "population",
                 "timestep", "totaltime" ,
                 "chmob", "cc", "npname", "sigma",
-                "disp", "poly" ]
+                "disp", "poly", "stencilsize" ]
 
 # All instant result types -- no spaces tolerated!
 instant_fields_all = "\
@@ -42,9 +42,12 @@ def getpath(sim):
 
     # Second directory: system size, polymer architecture, bead size.
     # After phase 14, the sigma parameter is appended to this directory name.
+    # After phase 19, the coupling stencil can also be changed.
     dir2 = "%ix%ix%i_%s_bv%.2f" %(sim.size[0], sim.size[1], sim.size[2], sim.polymer, sim.beadvolume)
     if sim.phase > 14:
         dir2 += "_sigma%.2f" %sim.sigma
+    if sim.phase > 19:
+        dir2 += "_ss%i" %sim.stencilsize
 
     # Third directory: system temperature, noise, density, population.
     # From phase 10, add the chain mobility here as a parameter.
@@ -115,7 +118,10 @@ def loadpath(path, setup=True, main=False):
 
     # The second contains the systems size, polymer architecture and bead volume.
     # After phase 14, the sigma parameter is in this directory name, too.
-    if phase > 14:
+    # After phase 19, the stencil size is also in this directory name.
+    if phase > 19:
+        size,pol,bv,sigma,stencilsize = dir2.split("_")
+    elif phase > 14:
         size,pol,bv,sigma = dir2.split("_")
     else:
         size,pol,bv = dir2.split('_')
@@ -123,6 +129,8 @@ def loadpath(path, setup=True, main=False):
     bv = float(bv[2:])
     if phase > 14:
         sigma = float(sigma[5:])
+    if phase > 19:
+        stencilsize = int(stencilsize[2:])
 
     # The third has temperature, exp. factor, density and population.
     # After phase 9, this also contains the chain mobility (chmob).
@@ -214,6 +222,8 @@ def loadpath(path, setup=True, main=False):
         args += [disp]
     if phase > 18:
         args += [poly]
+    if phase > 19:
+        args += [stencilsize]
     sim = Simulation(*args)
 
     # Setup the simulation if requested.
@@ -275,7 +285,7 @@ class Simulation:
                 size, population,
                 timestep, totaltime,
                 chmob=None, cc=0.0, npname=None, sigma=0.8,
-                disp=4.0, poly=0.0):
+                disp=4.0, poly=0.0, stencilsize=3):
         """Initialize the simulation.
 
         This, along with initialization, does the following tasks:
@@ -297,6 +307,7 @@ class Simulation:
         self.bv = self.beadvolume
         self.mob = self.mobility
         self.pop = self.population
+        self.ss = self.stencilsize
         self.ts = self.timestep
         self.tt = self.totaltime
 
@@ -471,10 +482,13 @@ class Simulation:
 
         # The calculator object is a MBF (meso bead-field) hybrid.
         # We will always be using the external potential (entropy field) dynamic scheme.
+        # After phase 19, we might be changing the stencil size.
         self.calc = CalculatorsManager.CreateMBFHybridCalculator()
         self.calc.SetFieldDiffusionMethod("EntropyFieldDynamics")
         self.calc.SetTimeStep(self.timestep)
         self.calc.SetSystem(self.box)
+        if self.phase > 19:
+            self.calc.SetStencilSize(self.stencilsize)
 
         # The output file settings.
         # Note that the archive plugin needs to be used for this starting Culgi 6.

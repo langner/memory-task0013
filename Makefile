@@ -18,16 +18,19 @@ SYSTEMS8 = $(wildcard phase8/*x*x*_A*B*_bv?.??)
 SYSTEMS9 = $(wildcard phase9/*x*x*_A*B*_bv?.??)
 SYSTEMS10 = $(wildcard phase1?/*x*x*_A*B*_bv*)
 SYSTEMS17 = $(wildcard phase1[7-9]/*x*x*_A*B*_bv*)
+SYSTEMS20 = $(wildcard phase2?/*x*x*_A*B*_bv*)
 MODELS = $(foreach s,$(SYSTEMS),$(wildcard $(s)/temp*_exp*_den*_pop*))
 MODELS8 = $(foreach s,$(SYSTEMS8),$(wildcard $(s)/temp*_exp*_den*_pop*))
 MODELS9 = $(foreach s,$(SYSTEMS9),$(wildcard $(s)/temp*_exp*_den*_pop*))
 MODELS10 = $(foreach s,$(SYSTEMS10),$(wildcard $(s)/temp*_exp*_den*_pop*))
 MODELS17 = $(foreach s,$(SYSTEMS17),$(wildcard $(s)/temp*_exp*_den*_pop*))
+MODELS20 = $(foreach s,$(SYSTEMS20),$(wildcard $(s)/temp*_exp*_den*_pop*))
 SIMS = $(foreach m,$(MODELS),$(wildcard $(m)/k*_nchi*))
 SIMS8 = $(foreach m,$(MODELS8),$(wildcard $(m)/k*_nchi*))
 SIMS9 = $(foreach m,$(MODELS9),$(wildcard $(m)/k*_nchi*))
 SIMS10 = $(foreach m,$(MODELS10),$(wildcard $(m)/k*_nchi*))
 SIMS17 = $(foreach m,$(MODELS17),$(wildcard $(m)/k*_nchi*))
+SIMS20 = $(foreach m,$(MODELS20),$(wildcard $(m)/k*_nchi*))
 SIMS_OUT = $(foreach s,$(SIMS),$(wildcard $(s)/*.out))
 
 # More output files
@@ -39,36 +42,39 @@ SIMS_ENERGY8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_ENERGY9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_ENERGY10 = $(foreach m,$(SIMS10),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_ENERGY17 = $(foreach m,$(SIMS17),$(wildcard $(m)/*.energy.npy.bz2))
+SIMS_ENERGY20 = $(foreach m,$(SIMS20),$(wildcard $(m)/*.energy.npy.bz2))
 SIMS_HIST_FIELD = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-field.npy.bz2))
 SIMS_HIST_RADIAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RADIAL8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RADIAL9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RADIAL10 = $(foreach m,$(SIMS10),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RADIAL17 = $(foreach m,$(SIMS17),$(wildcard $(m)/*.hist-radial.npy.bz2))
+SIMS_HIST_RADIAL20 = $(foreach m,$(SIMS20),$(wildcard $(m)/*.hist-radial.npy.bz2))
 SIMS_HIST_RESIDUAL = $(foreach m,$(SIMS),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_RESIDUAL8 = $(foreach m,$(SIMS8),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_RESIDUAL9 = $(foreach m,$(SIMS9),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_RESIDUAL10 = $(foreach m,$(SIMS10),$(wildcard $(m)/*.hist-residual.npy.bz2))
 SIMS_HIST_RESIDUAL17 = $(foreach m,$(SIMS17),$(wildcard $(m)/*.hist-residual.npy.bz2))
-SIMS_HIST_ANGLES = $(foreach m,$(SIMS9) $(SIMS10),$(wildcard $(m)/*.hist-ang.npy.bz2))
+SIMS_HIST_RESIDUAL20 = $(foreach m,$(SIMS20),$(wildcard $(m)/*.hist-residual.npy.bz2))
+SIMS_HIST_ANGLES = $(foreach m,$(SIMS9) $(SIMS10) $(SIMS20),$(wildcard $(m)/*.hist-ang.npy.bz2))
 
 # Plots to be generated
 PLOTS_ENERGY_TOTAL = $(subst .energy.npy.bz2,.energy-total.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_FIELD = $(subst .energy.npy.bz2,.energy-field.png,$(SIMS_ENERGY))
 PLOTS_ENERGY_COUPL = $(subst .hist-residual.npy.bz2,.energy-coupl.png,$(SIMS_HIST_RESIDUAL))
-PLOTS_OFFSETS_RAD = $(subst .hist-radial.npy.bz2,.offsets.png,$(SIMS_HIST_RADIAL8) $(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10))
-PLOTS_OFFSETS_ANG = $(subst .hist-radial.npy.bz2,.offsets-ang.png,$(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10))
-PLOTS_INTERFACE = $(subst .hist-residual.npy.bz2,.interface.png,$(SIMS_HIST_RESIDUAL17))
+PLOTS_OFFSETS_RAD = $(subst .hist-radial.npy.bz2,.offsets.png,$(SIMS_HIST_RADIAL8) $(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10) $(SIMS_HIST_RADIAL20))
+PLOTS_OFFSETS_ANG = $(subst .hist-radial.npy.bz2,.offsets-ang.png,$(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10) $(SIMS_HIST_RADIAL20))
+PLOTS_INTERFACE = $(subst .hist-residual.npy.bz2,.interface.png,$(SIMS_HIST_RESIDUAL17) $(SIMS_HIST_RESIDUAL20))
 PLOTS_HIST_FIELD_TOTAL = $(subst .hist-field.npy.bz2,.hist-field-total.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_FIELD_ORDER = $(subst .hist-field.npy.bz2,.hist-field-order.png,$(SIMS_HIST_FIELD))
 PLOTS_HIST_RADIAL = $(subst .hist-radial.npy.bz2,.hist-radial.png,$(SIMS_HIST_RADIAL))
 PLOTS_HIST_RADIAL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial.zoom.png,$(SIMS_HIST_RADIAL))
-PLOTS_HIST_RADIAL_SHELL = $(subst .hist-radial.npy.bz2,.hist-radial-shell.png,$(SIMS_HIST_RADIAL8) $(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10))
-PLOTS_HIST_RADIAL_SHELL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial-shell.zoom.png,$(SIMS_HIST_RADIAL8) $(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10))
+PLOTS_HIST_RADIAL_SHELL = $(subst .hist-radial.npy.bz2,.hist-radial-shell.png,$(SIMS_HIST_RADIAL8) $(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10) $(SIMS_HIST_RADIAL20))
+PLOTS_HIST_RADIAL_SHELL_ZOOM = $(subst .hist-radial.npy.bz2,.hist-radial-shell.zoom.png,$(SIMS_HIST_RADIAL8) $(SIMS_HIST_RADIAL9) $(SIMS_HIST_RADIAL10) $(SIMS_HIST_RADIAL20))
 PLOTS_HIST_RES_TOTAL = $(subst .hist-residual.npy.bz2,.hist-residual-total.png,$(SIMS_HIST_RESIDUAL))
-PLOTS_HIST_RES_TOTAL_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-total-shell.png,$(SIMS_HIST_RESIDUAL8) $(SIMS_HIST_RESIDUAL9) $(SIMS_HIST_RESIDUAL10))
+PLOTS_HIST_RES_TOTAL_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-total-shell.png,$(SIMS_HIST_RESIDUAL8) $(SIMS_HIST_RESIDUAL9) $(SIMS_HIST_RESIDUAL10) $(SIMS_HIST_RESIDUAL20))
 PLOTS_HIST_RES_ORDER = $(subst .hist-residual.npy.bz2,.hist-residual-order.png,$(SIMS_HIST_RESIDUAL))
-PLOTS_HIST_RES_ORDER_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-order-shell.png,$(SIMS_HIST_RESIDUAL8) $(SIMS_HIST_RESIDUAL9) $(SIMS_HIST_RESIDUAL10))
+PLOTS_HIST_RES_ORDER_SHELL = $(subst .hist-residual.npy.bz2,.hist-residual-order-shell.png,$(SIMS_HIST_RESIDUAL8) $(SIMS_HIST_RESIDUAL9) $(SIMS_HIST_RESIDUAL10) $(SIMS_HIST_RESIDUAL20))
 PLOTS_ENERGY = $(PLOTS_ENERGY_TOTAL) $(PLOTS_ENERGY_FIELD) $(PLOTS_ENERGY_COUPL)
 PLOTS_OFFSETS = $(PLOTS_OFFSETS_RAD) $(PLOTS_OFFSETS_ANG)
 PLOTS_HIST_FIELD = $(PLOTS_HIST_FIELD_TOTAL) $(PLOTS_HIST_FIELD_ORDER)
@@ -84,10 +90,10 @@ SYNC_DATA = /home/kml/data/
 
 # Frame buffer parameters (for xvfb)
 XVFBOPTS = "-screen 0 1280x1024x24"
-PYCULGI = python-culgi-6.0.0-kml
-PYCULGI_FB = "xvfb-run -n $(shell echo $$RANDOM) -s $(XVFBOPTS) python-culgi-6.0.0-kml"
+PYCULGI = python-culgi-6.1.0-kml
+PYCULGI_FB = "xvfb-run -n $(shell echo $$RANDOM) -s $(XVFBOPTS) $(PYCULGI)"
 PYTHON = python
-PYTHON_FB = "xvfb-run -n $(shell echo $$RANDOM) -s $(XVFBOPTS) python"
+PYTHON_FB = "xvfb-run -n $(shell echo $$RANDOM) -s $(XVFBOPTS) $(PYTHON)"
 
 # #############
 # Local targets

@@ -123,6 +123,8 @@ def printsummary(sim):
         summary += "c<sub>A</sub> %.1f, c<sub>B</sub> %.1f" %(sim.ca, sim.cb)
         if sim.phase > 14:
             summary += ", &sigma;=%.2f" %sim.sigma
+        if sim.phase > 19:
+            summary += ", stencil=%i" %sim.stencilsize
 
     # BCP-related parameters.
     summary += " -- bv=%.2f, nchi=%.1f, exp %.2f"%(sim.bv, sim.nchi, sim.expansion)
