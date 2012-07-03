@@ -10,22 +10,6 @@ import numpy
 from systems import phases_frames
 from task0013 import loadpath
 
-sys.path.append("exp/")
-from common import rdfcorrection
-
-
-def rdfmodel(X, p, m, l, a, b, t, gd):
-    """Approximate radial distribution function for a hard sphere liquid.
-
-    Coded according to Matteoli and Mansoori, JPC 1995.
-    All parameters have same meaning, but I also added the first peak position, p.
-    """
-    Y = X/p
-    Ym1 = Y-1
-    left = gd*numpy.exp(-t*Ym1*Ym1)
-    right = 1.0 + numpy.power(Y,-m)*(gd-1.0-l) + numpy.exp(-a*Ym1)*numpy.cos(b*Ym1)*(Ym1+l)/Y
-    return (Y<1)*left + (Y>=1)*right
-
 
 if __name__ == "__main__":
 
@@ -35,6 +19,10 @@ if __name__ == "__main__":
     if "save" in sys.argv:
         matplotlib.use("Agg")
     import pylab
+
+    # Import this just now, because something nested imports pylab secretively!
+    sys.path.append("exp/")
+    from common import rdfcorrection, rdfmodel
 
     # Makefile passes the path to some archive file, from which we should
     #   know what kind of plot to make. But we don't know beforehand what
@@ -63,6 +51,7 @@ if __name__ == "__main__":
         if isoffsets:
             isangles = "angles" in sys.argv
         isinterface = "interface" in sys.argv
+        iscluster = "cluster" in sys.argv
 
     # Histogram plots can be of several kinds. Field histograms can show the distribution
     #   of total field values or the distirbution of order parameters. Radial histograms
@@ -90,7 +79,7 @@ if __name__ == "__main__":
     # ENERGY PLOTS
     # ############
 
-    if isenergy and not isoffsets and not isinterface:
+    if isenergy and not (isoffsets or isinterface or iscluster):
 
         # Things that are specific to each type. Remember that coupling requires
         #   there to be at least one nanoparticle. If no type, then bail out here.
@@ -253,6 +242,23 @@ if __name__ == "__main__":
 
         pylab.xlabel("time step")
         pylab.ylabel(r"NPs at interface [%]")
+
+        pylab.legend(loc="best")
+
+    # ############
+    # CLUSTER SIZE
+    # ############
+
+    if isenergy and iscluster:
+
+        plotfname = "%s.clusters.png" %sim.outroot
+
+        clusters = data[:,33]
+
+        pylab.plot(100*clusters, label="cluster size")
+
+        pylab.xlabel("time step")
+        pylab.ylabel(r"cluster size")
 
         pylab.legend(loc="best")
 
@@ -425,7 +431,7 @@ if __name__ == "__main__":
 
         else:
 
-            frames_to_plot = [1, 11, 21, 101, 201, 1001]
+            frames_to_plot = [1, 11, 21, 101, 201, 501, 1001]
             for f in frames_to_plot:
                 hist = factor * numpy.sum([data[frames.index(f+i)] for i in range(nsamples)], axis=0) / nsamples
                 pylab.plot(xrange, hist, label="frames %i-%i" %(f,f+nsamples))

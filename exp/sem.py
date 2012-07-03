@@ -31,6 +31,9 @@ gaussian_custom = {
     "sem/20k/C5/0-Image6-1000.jpg" : 1,
     "sem/20k/C5/0-Image24-500.jpg" : 2,
     "sem/20k/C5/0-Image25-1000.jpg" : 1,
+    "sem/20k/C6/0-Image4-500.jpg" : 2,
+    "sem/20k/C6/2-Image20-1000.jpg" : 1,
+    "sem/20k/C8/48-Image18-200.jpg" : 3,
 }
 
 # Balance filters for images
@@ -86,6 +89,9 @@ threshold_custom = {
     "sem/20k/C5/48-Image24-500.jpg" : 1.5,
     "sem/20k/C5/48-Image25-200.jpg" : 2.5,
     "sem/20k/C5/48-Image27-500.jpg" : 2.5,
+    "sem/20k/C6/0-Image4-500.jpg" : 2.5,
+    "sem/20k/C6/2-Image20-1000.jpg" : 2.5,
+    "sem/20k/C8/48-Image18-200.jpg" : 2.5,
 }
 
 # Erosion on the thresholded image
@@ -131,19 +137,27 @@ if __name__ == "__main__":
     analysis.labelimage()
     analysis.distimage()
     analysis.watershedimage()
+    analysis.clusterparticles()
     analysis.radialdistribution()
     try:
         analysis.fitrdf()
     except:
-        "Error fitting to RDF"
+        print "Error fitting to RDF"
 
     # Print some data.
     print "**************************"
     print "Number of particles: %i" %analysis.npcount
     print "Particle concentration: %.1f/micron^2" %analysis.npconc
-    print "First peak: %.1fnm" %analysis.popt[0]
-    print "Pixel size: %.2fnm" %analysis.ps
+    print "**************************"
     print "RDF bin size: %.2fnm" %analysis.dbin
+    print "First RDF peak: %.1fnm" %analysis.rdfmax
+    print "Pixel size: %.2fnm" %analysis.ps
+    print "**************************"
+    print "Cluster threshold: %.3f pixels" %analysis.cluster_threshold
+    print "Cluster threshold: %.3f nm" %(analysis.cluster_threshold*analysis.ps)
+    print "Number of clusters: %i" %analysis.cluster_count
+    print "Average cluster size: %.2f NPs" %analysis.cluster_size
+    print "Cluster per micron^2: %.2f" %analysis.clusters_per_micron
     print "**************************"
 
     # Do the plotting.

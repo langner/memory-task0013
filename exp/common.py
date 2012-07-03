@@ -11,6 +11,7 @@ import sys
 
 import numpy
 import scipy
+
 from scipy import misc
 from scipy import ndimage
 from scipy import optimize
@@ -57,9 +58,9 @@ def stretchimage(img):
 def balanceimage(img, r, R):
     """Balance the brightness of an image by leveling.
 
-    This is achieved here by applying a minimum filter over radius r,
-    and then a uniform filter over radius R, and substracting the result
-    from the original image."""
+    This is achieved here by applying a minimum filter over radius r
+    and a uniform filter over radius R, and substracting the minimum
+    of the two from the original image."""
 
     img_min = ndimage.minimum_filter(img, r)
     img_uni = ndimage.uniform_filter(img, R)
@@ -88,6 +89,22 @@ def normalize_rdf(hist, X, Y, bins, N, npairs=None):
     return factor * hist
 
 
+def clusterparticles(coms, threshold=1.0):
+    """Cluster the coordinates of nanoparticles in an image.
+
+    Use the DBSCAN algorithm with minimum sample count of 1."""
+
+    # Import this just now, because it seems to drag in dependecy in matplotlib.
+    from sklearn import cluster
+
+    # Setup the analysis object and do the clustering
+    dbscan = cluster.DBSCAN(eps=threshold, min_samples=1)
+    dbscan.fit(coms)
+
+    # Return the labels, but incremented by one.
+    return dbscan.labels_ + 1
+
+
 def radialdistribution(coords, img, ps):
     """Radial ditribution function for points in an image"""
 
@@ -106,6 +123,7 @@ def radialdistribution(coords, img, ps):
     hist,bins = scipy.histogram(pds, bins=nbins, range=[0,maxr])
     bins = bins[:-1] + (bins[1]-bins[0])/2.0
     return normalize_rdf(hist, X, Y, bins, N), bins
+
 
 def rdfmodel(X, p, m, l, a, b, t, gd):
     """Approximate Radial distribution function
@@ -149,10 +167,12 @@ class SEMAnalysis():
         self.imgwidth = self.img.shape[1]
         self.imgheight = self.img.shape[0]
 
-        # Various name components
+        # Various name components.
+        # Replace both 'sem' and 'homo', but these should exclude each other.
         self.dirname, self.fname = os.path.split(self.fpath)
         self.name, self.fext = os.path.splitext(self.fname)
         self.dirname = self.dirname.replace("sem/","sem-analyzed/")
+        self.dirname = self.dirname.replace("homo/","homo-analyzed/")
         self.outname = "%s/%s" %(self.dirname,self.name)
         if not os.path.exists(self.dirname):
             os.makedirs(self.dirname)
@@ -164,6 +184,7 @@ class SEMAnalysis():
         self.fdist = "%s-dist" %self.outname
         self.fnps = "%s-nps" %self.outname
         self.fcoms = "%s-coms" %self.outname
+        self.fclusters = "%s-clusters" %self.outname
         self.frdf = "%s-rdf" %self.outname
 
         # This will be useful, since there are some difference for the benchmark
@@ -174,6 +195,10 @@ class SEMAnalysis():
             self.scale = scale
         if not scale and not self.isbench:
             self.scale = int(self.fname.split('-')[2][:-4])
+
+        # Extract the ligand type from the file name (not for benchmarks).
+        if not self.isbench:
+            self.ligand_type = self.dirname.split("/")[1]
 
         # Extract the length of the scale bar, if starting position provided
         # Assume that the bar is in the portion cropped away
@@ -192,17 +217,31 @@ class SEMAnalysis():
         if not self.isbench:
             self.time = int(self.fname.split('-')[0])
 
+    def load_archive(self, archive):
+        fname = "f"+archive
+        fpath = getattr(self, fname) + ".npy.bz2"
+        if os.path.exists(fpath):
+            data = numpy.load(bz2.BZ2File(fpath))
+            if archive == "rdf":
+                setattr(self, "bins", data[0])
+                setattr(self, "rdf", data[1])
+            else:
+                setattr(self, archive, data)
+            return True
+        else:
+            return False
+
     def filterimage(self, gaussian=1, balance=[]):
         """Try to balance brightness and smooth a bit"""
 
-        if os.path.exists(self.ffiltered+".npy.bz2"):
-            self.filtered = numpy.load(bz2.BZ2File(self.ffiltered+".npy.bz2"))
-        else:
-            self.filtered = ndimage.gaussian_filter(self.img, gaussian)
-            for b in balance:
-                if b:
-                    self.filtered = balanceimage(self.filtered, b[0], b[1])
-            self.filtered = stretchimage(self.filtered)
+        if self.load_archive("filtered"):
+            return
+
+        self.filtered = ndimage.gaussian_filter(self.img, gaussian)
+        for b in balance:
+            if b:
+                self.filtered = balanceimage(self.filtered, b[0], b[1])
+        self.filtered = stretchimage(self.filtered)
 
     def thresholdimage(self, factor=1.0, erode=True):
         """Thresholding with optional erosion"""
@@ -210,19 +249,20 @@ class SEMAnalysis():
         if not hasattr(self, "filtered"):
             self.filterimage()
 
-        if os.path.exists(self.fthreshold+".npy.bz2"):
-            self.threshold = numpy.load(bz2.BZ2File(self.fthreshold+".npy.bz2"))
-        else:
-            limit = factor*mahotas.otsu(self.filtered)
-            self.threshold = self.filtered > limit
-            if erode:
-                self.threshold = pymorph.erode(self.threshold)
+        if self.load_archive("threshold"):
+            return
+
+        limit = factor*mahotas.otsu(self.filtered)
+        self.threshold = self.filtered > limit
+        if erode:
+            self.threshold = pymorph.erode(self.threshold)
 
     def labelimage(self, threshold=None):
         """Label regions in image corresponding to regional maxima"""
 
         if threshold is None:
             threshold = self.threshold
+
         self.seeds = pymorph.regmax(self.filtered) * threshold
         self.labels, self.nlabels = ndimage.label(self.seeds, structure=numpy.ones((3,3)))
 
@@ -239,21 +279,17 @@ class SEMAnalysis():
     def watershedimage(self):
         """Watershed and extract region centers of mass"""
 
-        # Generate distrivution transform first
+        # Generate distribution transform first.
         self.distimage()
 
         if not hasattr(self, "labels"):
             self.labelimage()
 
-        # Load regions if available (takes a bit)
-        if os.path.exists(self.fnps+".npy.bz2"):
-            self.nps = numpy.load(bz2.BZ2File(self.fnps+".npy.bz2"))
-        else:
+        # Load regions if available (takes a bit).
+        if not self.load_archive("nps"):
             self.nps = pymorph.cwatershed(self.dist, self.labels, Bc=numpy.ones((3,3), dtype=bool))
 
-        if os.path.exists(self.fcoms+".npy.bz2"):
-            self.coms = numpy.load(bz2.BZ2File(self.fcoms+".npy.bz2"))
-        else:
+        if not self.load_archive("coms"):
             self.coms = numpy.array(ndimage.center_of_mass(self.filtered, self.nps, range(1,self.nlabels+1)))
 
         self.regcom = numpy.zeros(self.img.shape, dtype="uint8")
@@ -263,6 +299,42 @@ class SEMAnalysis():
         self.npcount = len(self.coms)
         self.npconc = 10.0**6*self.npcount/self.area
 
+    def clusterparticles(self):
+
+        # Use a threshold of 35nm for 5k and 45nm for 20k ligands.
+        # Benchmarks should use their own thresholds (we can try some default, though).
+        if not self.isbench:
+            self.cluster_threshold = (32.0 + (self.ligand_type == "20k")*10)/self.ps
+        else:
+            self.cluster_threshold = 10.0
+
+        if not hasattr(self, "coms"):
+            self.watershedimage()
+
+        # Load the cluster data if possible.
+        if self.load_archive("clusters"):
+
+            # We still need to restore the cluster labels.
+            self.cluster_labels =  [self.clusters[com[0],com[1]] for com in self.coms]
+
+        else:
+
+            # Do the clustering in a separate function and save the labels.
+            self.cluster_labels = clusterparticles(self.coms, self.cluster_threshold)
+
+            # Now use the cluster labels to color nanoparticle clusters.
+            self.clusters = numpy.copy(self.nps)
+            for ci,cn in enumerate(self.cluster_labels):
+                self.clusters[self.nps == ci+1] = cn
+
+        # Some statistics.
+        self.cluster_count = len(set(self.cluster_labels))
+        self.cluster_sizes = numpy.array([numpy.sum(self.cluster_labels==l) for l in set(self.cluster_labels)])
+        self.cluster_size = 1.0 * self.npcount / self.cluster_count
+        self.cluster_size_inv = 1.0 / self.cluster_size
+        self.clusters_per_micron = 10.0**6 * self.cluster_count / self.area
+        self.clusters_per_micron_inv = 1.0 / self.clusters_per_micron
+
     def radialdistribution(self):
         """Calculate radial distribution function of regions centers"""
 
@@ -270,9 +342,7 @@ class SEMAnalysis():
             self.watershedimage()
 
         # Load RDFs if available.
-        if os.path.exists(self.frdf+".npy.bz2"):
-            self.bins, self.rdf = numpy.load(bz2.BZ2File(self.frdf+".npy.bz2"))
-        else:
+        if not self.load_archive("rdf"):
             self.rdf, self.bins = radialdistribution(self.coms, self.img, self.ps)
 
         # Estimate the bin width.
@@ -295,26 +365,42 @@ class SEMAnalysis():
         # It is also nice to have an apprixmate peak position to start from,
         #   but just start from 20 nanometers if the first peak is not highest.
         imax = numpy.argmax(self.Y)
-        imax = imax*(self.X[imax] < 60) or 20
+        imax = imax*(self.X[imax] < 100) or 50
+
+        # Do the actual curve fitting now.
         P0 = [self.X[imax], 5, 0.5, 2, 5, 100, 2]
         self.popt, self.pcov = optimize.curve_fit(rdfmodel, self.X, self.Y, p0=P0)
+
+        # An RDF model equation based on this fit.
         self.rdfmodel = lambda X: rdfmodel(X, *self.popt)
+
+        # Some handy aliases for analysis and plotting.
         self.rdfmax = self.popt[0]
+        self.rdfheight = self.popt[-1]
+        self.rdfmax_var = self.pcov[0,0]
+        self.rdfheight_var = self.pcov[1,1]
 
     def plot(self, pylab, xmax=100, areaunit="micron"):
         """Helper routine for plotting in this task"""
+
+        if not hasattr(self, "clusters"):
+            self.clusterparticles()
+        if not hasattr(self, "rdf"):
+            self.radialdistribution()
 
         # Various stages of the image analysis are straightforward
         # 1 - filtered images
         # 2 - threshold with seeds
         # 3 - nanoparticle regions
         # 4 - centers of mass on to of original image
+        # 5 - colored clusters of nanoparticles
         # The list figure_params contains parameter tuples to pass to imshow,
         #   with the mandatory and optional parameters (in a dict) as elements
         figure_params = [ (self.filtered, dict()),
                           (pymorph.overlay(self.threshold, self.seeds), dict()),
                           ((self.nps % 20 + 5)*(self.nps>0), dict(cmap=pylab.cm.spectral)),
                           (pymorph.overlay(self.img, self.regcom), dict()),
+                          ((self.clusters % 20 + 5)*(self.clusters>0), dict(cmap=pylab.cm.spectral)),
                         ]
         for ip,params in enumerate(figure_params):
             pylab.figure(ip+1)
@@ -361,6 +447,8 @@ class SEMAnalysis():
             numpy.save(self.fnps+".npy", self.nps)
         if not os.path.exists(self.fcoms+".npy.bz2"):
             numpy.save(self.fcoms+".npy", self.coms)
+        if not os.path.exists(self.fclusters+".npy.bz2"):
+            numpy.save(self.fclusters+".npy", self.clusters)
         if not os.path.exists(self.frdf+".npy.bz2"):
             numpy.save(self.frdf+".npy", [self.bins, self.rdf])
 
@@ -382,5 +470,8 @@ class SEMAnalysis():
         if not os.path.exists(self.fcoms+".png"):
             pylab.figure(4)
             pylab.savefig(self.fcoms+".png", bbox_inches="tight")
-        pylab.figure(5)
+        if not os.path.exists(self.fclusters+".png"):
+            pylab.figure(5)
+            pylab.savefig(self.fclusters+".png", bbox_inches="tight")
+        pylab.figure(6)
         pylab.savefig(self.frdf+".png")

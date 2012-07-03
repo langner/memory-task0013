@@ -1,3 +1,5 @@
+SHELL=/bin/bash
+
 # By default do plots and gallery, perhaps copy.
 .PHONY: default all
 default: plot gallery report exp

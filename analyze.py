@@ -25,6 +25,8 @@ from scipy.spatial.distance import pdist
 from scipy.stats import kurtosis
 from scipy.stats import skew
 
+from sklearn import cluster
+
 from systems import *
 
 
@@ -109,8 +111,7 @@ class Analysis():
                                 snap[:,icb,ix] %= 64.0
 
         # Indices of beads to use for analysis.
-        # After phase 7, there are both core and shell beads, and we want
-        #   to analyze those separately.
+        # After phase 7, there are both core and shell beads, and we want to analyze those separately.
         if self.phase <= 7:
             self.bead_ind = [[0]]
         else:
@@ -130,6 +131,7 @@ class Analysis():
             self.freq_csa = self.csa.shape[0]/self.npoints or 1
         self.indices = self.ctf[::self.freq,0]
         self.npoints = self.ctf.shape[0]/self.freq
+        self.npoints_csa = self.csa.shape[0]/self.freq_csa
         self.nrange = range(self.npoints)
 
         # Instantaneous energies as found in ctf file.
@@ -183,6 +185,16 @@ class Analysis():
                     for i,j in itertools.product([-1,0,1],[-1,0,1]):
                         self.distances[ib][ni] += self.normalized_orders[ci].take((csar[:,0]+i)*64 + csar[:,1]+j, mode='wrap')
             self.distances = [1.0 * sum(d/9.0 < 0.5, axis=1) / d.shape[1] for d in self.distances]
+
+        # Average size of nanoparticle clusters (after phase 17).
+        # Note that here we hardcode a clustering threshold of 2 grid points.
+        if self.phase > 17 and self.pop > 0:
+            self.clusters = zeros((self.npoints_csa,))
+            icenter = self.bead_ind[0][0]
+            dbscan = cluster.DBSCAN(eps=2.0, min_samples=1)
+            for isnap,snap in enumerate(self.csa[::self.freq_csa]):
+                dbscan.fit(snap[icenter])
+                self.clusters[isnap] = 1.0 * self.pop / len(set(dbscan.labels_))
 
         return time.time() - T
 
@@ -276,7 +288,11 @@ class Analysis():
                     self.offsets = [o[:-1] for o in self.offsets]
                     if self.phase > 8:
                         self.offsets_angles = [o[:-1] for o in self.offsets_angles]
+                    if self.phase > 17:
+                        self.clusters = [self.clusters[:-1]]
             if self.pop > 0:
+                if self.phase > 17:
+                    energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets+self.offsets_angles+self.distances+self.clusters).transpose()
                 if self.phase > 16:
                     energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets+self.offsets_angles+self.distances).transpose()
                 elif self.phase > 8:
@@ -293,7 +309,7 @@ class Analysis():
 
             # Save also the frames used in histograms for reference, in a separate archive.
             save(self.fname+".hist-frames.npy", self.frames)
-            
+
             # Save histograms of field values.
             total = self.hist_field_total.reshape(self.hist_field_shape)
             order = self.hist_field_order.reshape(self.hist_field_shape)
