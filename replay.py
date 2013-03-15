@@ -6,7 +6,7 @@ import sys
 
 from pyculgi import *
 
-from task0013 import gen_shell_beads, loadpath
+from task0013 import gen_shell_beads, loadpath, phases_data
 
 
 if __name__ == "__main__":
@@ -104,7 +104,8 @@ if __name__ == "__main__":
         # At first this was done linearly, with frames in progression scaled linearly
         #   with the experimental times, but now we use different frames, because
         #   the correspondence is not linear, and different for NPs and the BCP.
-        snaps = [1, 11, 21, 101, 301, 501, 1101]
+        # In the end, just save snapshots for all frames that are archived.
+        snaps = phases_data[sim.phase][5]
         snaps.sort()
         for i in snaps:
 
