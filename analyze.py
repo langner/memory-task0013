@@ -36,6 +36,43 @@ columns_nps = dict(zip(energies_nps, [4, 8, 10, 11, 12, 14]))
 energies_neat = ['inhomo', 'ideal', 'contact', 'compress']
 columns_neat = dict(zip(energies_neat, [1, 3, 4, 5]))
 
+# It's hard to keep track of all the things stored in the energy arrays, so here
+#  is an example for simulations with particles.
+#  0 indices
+#  1 instants - nonbonded
+#  2 instants - inhomo
+#  3 instants - ideal
+#  4 instants - contact
+#  5 instants - compress
+#  6 instants - coupling
+#  7 averages - nonbonded
+#  8 averages - inhomo
+#  9 averages - ideal
+# 10 averages - contact
+# 11 averages - compress
+# 12 averages - coupling
+# 13 deviations - nonbonded
+# 14 deviations - inhomo
+# 15 deviations - ideal
+# 16 deviations - contact
+# 17 deviations - compress
+# 18 deviations - coupling
+# 19 offsets - mean (core)
+# 20 offsets - var (core)
+# 21 offsets - skew (core)
+# 22 offsets - kurtosis (core)
+# 23 offsets - mean (shell)
+# 24 offsets - var (shell)
+# 25 offsets - skew (shell)
+# 26 offsets - kurtosis (shell)
+# 27 angle offsets - mean
+# 28 angle offsets - var
+# 29 angle offsets - skew
+# 30 angle offsets - kurtosis
+# 31 distance (core)
+# 32 distance (shell)
+# 33 cluster size
+
 
 class Analysis():
 
@@ -46,10 +83,11 @@ class Analysis():
         self.fout = fout
         self.fname = fout[:-4]
 
-        # Extract phase and populations from the path.
+        # Extract phase, system size and populations from the path.
         # We could load a simulation object, but this way we skip the dependency
         #   on the Culgi Python module.
         self.phase = int(self.fname.split('/')[0][5:])
+        self.size = map(int,self.fname.split('/')[1].split('_')[0].split('x')[:2])
         self.pop = int(self.fname.split('/')[2].split('_')[3][3:])
 
         # Choose columns/energies to use for ctf file.
@@ -102,13 +140,15 @@ class Analysis():
             #   implies the modulo of all related shell beads, and shell beads should not
             #   be subject to the modulo independently of core beads (thus the tripple loop).
             if self.phase <= 7:
-                self.csa %= 64.0
+                self.csa[:,:,0] %= self.size[0]
+                self.csa[:,:,1] %= self.size[1]
             else:
                 for snap in self.csa:
                     for icb, corebead in enumerate(snap[0]):
                         for ix in range(2):
-                            if corebead[ix] >= 64.0 or corebead[ix] < 0.0:
-                                snap[:,icb,ix] %= 64.0
+                            if corebead[ix] >= self.size[ix] or corebead[ix] < 0.0:
+                                dix = corebead[ix] - (corebead[ix] % self.size[ix])
+                                snap[:,icb,ix] -= dix
 
         # Indices of beads to use for analysis.
         # After phase 7, there are both core and shell beads, and we want to analyze those separately.
@@ -181,9 +221,9 @@ class Analysis():
                 for ni in range(self.npoints):
                     ci = ni * self.freq_csa
                     csar = round(self.csa[ci,bi]).astype(int)
-                    csar = csar.reshape((csar.shape[0]*csar.shape[1],csar.shape[2]))
+                    csar = csar.reshape((csar.shape[0]*self.pop,csar.shape[2]))
                     for i,j in itertools.product([-1,0,1],[-1,0,1]):
-                        self.distances[ib][ni] += self.normalized_orders[ci].take((csar[:,0]+i)*64 + csar[:,1]+j, mode='wrap')
+                        self.distances[ib][ni] += self.normalized_orders[ci].take((csar[:,0]+i)*self.size[1] + csar[:,1]+j, mode='wrap')
             self.distances = [1.0 * sum(d/9.0 < 0.5, axis=1) / d.shape[1] for d in self.distances]
 
         # Average size of nanoparticle clusters (after phase 17).
@@ -253,8 +293,8 @@ class Analysis():
 
         # Residual total fields and order parameters at bead positions (core and shell).
         if self.pop > 0:
-            self.edge = range(64)
-            self.splines = [[RectBivariateSpline(self.edge,self.edge,ff,kx=1,ky=1) for ff in f] for f in self.cga]
+            self.edges = [range(self.size[0]), range(self.size[1])]
+            self.splines = [[RectBivariateSpline(self.edges[0],self.edges[1],ff,kx=1,ky=1) for ff in f] for f in self.cga]
             self.values_res = array([[[s.ev(cc[:,0],cc[:,1]) for cc in c] for s in self.splines[i]] for i,c in enumerate(self.csa[:])])
             self.totals_res = self.values_res[:,0,:,:] + self.values_res[:,1,:,:]
             self.orders_res = self.values_res[:,0,:,:] - self.values_res[:,1,:,:]
@@ -293,7 +333,7 @@ class Analysis():
             if self.pop > 0:
                 if self.phase > 17:
                     energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets+self.offsets_angles+self.distances+self.clusters).transpose()
-                if self.phase > 16:
+                elif self.phase > 16:
                     energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets+self.offsets_angles+self.distances).transpose()
                 elif self.phase > 8:
                     energy = vstack([self.indices]+self.instants+self.averages+self.deviations+self.offsets+self.offsets_angles).transpose()

@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # There are always two kinds of fields, but not number of beads. Do not lump beads
     #   together, so there are always the same number of beads for each index and
     #   consequently the array is nicely shaped.
-    cga = numpy.zeros((nframes,2,64,64))
+    cga = numpy.zeros((nframes,2, sim.size[0],sim.size[1]))
     if sim.population > 0:
         csa = numpy.zeros((nframes,Nbeads,sim.population,3))
 
@@ -76,8 +76,8 @@ if __name__ == "__main__":
 
         # Set the field density values for this frame.
         t = time.time()
-        A = [[sim.bcp_A.GetValue(i,j,0) for j in range(64)] for i in range(64)]
-        B = [[sim.bcp_B.GetValue(i,j,0) for j in range(64)] for i in range(64)]
+        A = [[sim.bcp_A.GetValue(i,j,0) for j in range(sim.size[1])] for i in range(sim.size[0])]
+        B = [[sim.bcp_B.GetValue(i,j,0) for j in range(sim.size[1])] for i in range(sim.size[0])]
         cga[nframe][0] = A
         cga[nframe][1] = B
         T3 += time.time() - t
